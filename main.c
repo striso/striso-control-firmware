@@ -29,16 +29,46 @@ static void adccb(ADCDriver *adcp, adcsample_t *buffer, size_t n);
 static void spicb(SPIDriver *spip);
 
 /* Total number of channels to be sampled by a single ADC operation.*/
-#define ADC_GRP1_NUM_CHANNELS   2
+#define ADC_GRP1_NUM_CHANNELS   3
 
 /* Depth of the conversion buffer, channels are sampled four times each.*/
-#define ADC_GRP1_BUF_DEPTH      4
+#define ADC_GRP1_BUF_DEPTH      1
+
+#define ADC_GRP1_BUF_COUNT      9
+
+#define OUT_NUM_CHANNELS        9
+
+static const ioportid_t out_channels_port[9] = {
+  GPIOB,
+  GPIOB,
+  GPIOB,
+  GPIOE,
+  GPIOD,
+  GPIOD,
+  GPIOB,
+  GPIOD,
+  GPIOB
+};
+static const int out_channels_pad[9] = {
+  14,
+  11,
+  12,
+  15,
+   9,
+  10,
+  15,
+   8,
+  13
+};
+
+static int cur_channel = 0;
 
 /*
  * ADC samples buffer.
  */
-static adcsample_t samples[ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH];
+static adcsample_t samples[ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH * ADC_GRP1_BUF_COUNT];
 
+#define ADC_SAMPLE_DEF ADC_SAMPLE_3
 /*
  * ADC conversion group.
  * Mode:        Linear buffer, 4 samples of 2 channels, SW triggered.
@@ -53,11 +83,11 @@ static const ADCConversionGroup adcgrpcfg = {
   /* HW dependent part.*/
   0,
   ADC_CR2_SWSTART,
-  ADC_SMPR1_SMP_AN11(ADC_SAMPLE_56) | ADC_SMPR1_SMP_SENSOR(ADC_SAMPLE_144),
+  ADC_SMPR2_SMP_AN1(ADC_SAMPLE_DEF) | ADC_SMPR1_SMP_AN11(ADC_SAMPLE_DEF) |ADC_SMPR1_SMP_AN12(ADC_SAMPLE_DEF),
   0,
   ADC_SQR1_NUM_CH(ADC_GRP1_NUM_CHANNELS),
   0,
-  ADC_SQR3_SQ2_N(ADC_CHANNEL_IN11) | ADC_SQR3_SQ1_N(ADC_CHANNEL_SENSOR)
+  ADC_SQR3_SQ1_N(ADC_CHANNEL_IN1) | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN12) | ADC_SQR3_SQ3_N(ADC_CHANNEL_IN11)
 };
 
 /*
@@ -67,7 +97,7 @@ static const ADCConversionGroup adcgrpcfg = {
  */
 static PWMConfig pwmcfg = {
   10000,                                    /* 10kHz PWM clock frequency.   */
-  10000,                                    /* PWM period 1S (in ticks).    */
+  100,                                    /* PWM period 1S (in ticks).    */
   pwmpcb,
   {
     {PWM_OUTPUT_ACTIVE_HIGH, NULL},
@@ -93,19 +123,6 @@ static const SPIConfig spi1cfg = {
 };
 
 /*
- * SPI2 configuration structure.
- * Speed 21MHz, CPHA=0, CPOL=0, 16bits frames, MSb transmitted first.
- * The slave select line is the pin 12 on the port GPIOA.
- */
-static const SPIConfig spi2cfg = {
-  spicb,
-  /* HW dependent part.*/
-  GPIOB,
-  12,
-  SPI_CR1_DFF
-};
-
-/*
  * PWM cyclic callback.
  * A new ADC conversion is started.
  */
@@ -117,7 +134,8 @@ static void pwmpcb(PWMDriver *pwmp) {
      will be executed in parallel to the current PWM cycle and will
      terminate before the next PWM cycle.*/
   chSysLockFromIsr();
-  adcStartConversionI(&ADCD1, &adcgrpcfg, samples, ADC_GRP1_BUF_DEPTH);
+  adcStartConversionI(&ADCD1, &adcgrpcfg, &samples[cur_channel*3], ADC_GRP1_BUF_DEPTH);
+  //adcStartConversionI(&ADCD1, &adcgrpcfg, samples, ADC_GRP1_BUF_DEPTH);
   chSysUnlockFromIsr();
 }
 
@@ -132,24 +150,26 @@ void adccb(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   /* Note, only in the ADC_COMPLETE state because the ADC driver fires an
      intermediate callback when the buffer is half full.*/
   if (adcp->state == ADC_COMPLETE) {
-    adcsample_t avg_ch1, avg_ch2;
-
-    /* Calculates the average values from the ADC samples.*/
-    avg_ch1 = (samples[0] + samples[2] + samples[4] + samples[6]) / 4;
-    avg_ch2 = (samples[1] + samples[3] + samples[5] + samples[7]) / 4;
+    int old_channel = cur_channel;
 
     chSysLockFromIsr();
 
-    /* Changes the channels pulse width, the change will be effective
-       starting from the next cycle.*/
-    pwmEnableChannelI(&PWMD4, 0, PWM_FRACTION_TO_WIDTH(&PWMD4, 4096, avg_ch1));
-    pwmEnableChannelI(&PWMD4, 3, PWM_FRACTION_TO_WIDTH(&PWMD4, 4096, avg_ch2));
-
-    /* SPI slave selection and transmission start.*/
-    spiSelectI(&SPID2);
-    spiStartSendI(&SPID2, ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH, samples);
+    palSetPad(out_channels_port[cur_channel], out_channels_pad[cur_channel]);       /* Open old channel */
+    cur_channel = (cur_channel+1) % OUT_NUM_CHANNELS;
+    palClearPad(out_channels_port[cur_channel], out_channels_pad[cur_channel]);         /* Drain new channel */
 
     chSysUnlockFromIsr();
+
+    chprintf((BaseChannel *)&SD2, "%04d %04d %04d ", 4095-samples[old_channel*3], 4095-samples[old_channel*3+1], 4095-samples[old_channel*3+2]);
+    //chprintf((BaseChannel *)&SD2, "%04d %04d %04d ", samples[0], samples[1], samples[2]);
+    if (cur_channel == 0)
+      chprintf((BaseChannel *)&SD2, "\r");
+
+
+    //adcsample_t avg_ch1, avg_ch2;
+
+    //chSysLockFromIsr();
+    //chSysUnlockFromIsr();
   }
 }
 
@@ -185,6 +205,7 @@ static msg_t Thread1(void *arg) {
  * Application entry point.
  */
 int main(void) {
+  int n;
 
   /*
    * System initializations.
@@ -198,11 +219,11 @@ int main(void) {
 
   /*
    * Activates the serial driver 2 using the driver default configuration.
-   * PA2(TX) and PA3(RX) are routed to USART2.
+   * PD5(TX) and PD6(RX) are routed to USART2.
    */
   sdStart(&SD2, NULL);
-  palSetPadMode(GPIOA, 2, PAL_MODE_ALTERNATE(7));
-  palSetPadMode(GPIOA, 3, PAL_MODE_ALTERNATE(7));
+  palSetPadMode(GPIOD, 5, PAL_MODE_ALTERNATE(7));
+  palSetPadMode(GPIOD, 6, PAL_MODE_ALTERNATE(7));
 
   /*
    * If the user button is pressed after the reset then the test suite is
@@ -213,29 +234,20 @@ int main(void) {
     TestThread(&SD2);
 
   /*
-   * Initializes the SPI driver 2. The SPI2 signals are routed as follow:
-   * PB12 - NSS.
-   * PB13 - SCK.
-   * PB14 - MISO.
-   * PB15 - MOSI.
+   * Initialize output channels for the buttons as opendrain
    */
-  spiStart(&SPID2, &spi2cfg);
-  palSetPad(GPIOB, 12);
-  palSetPadMode(GPIOB, 12, PAL_MODE_OUTPUT_PUSHPULL |
-                           PAL_STM32_OSPEED_HIGHEST);           /* NSS.     */
-  palSetPadMode(GPIOB, 13, PAL_MODE_ALTERNATE(5) |
-                           PAL_STM32_OSPEED_HIGHEST);           /* SCK.     */
-  palSetPadMode(GPIOB, 14, PAL_MODE_ALTERNATE(5));              /* MISO.    */
-  palSetPadMode(GPIOB, 15, PAL_MODE_ALTERNATE(5) |
-                           PAL_STM32_OSPEED_HIGHEST);           /* MOSI.    */
+  for (n=0; n<OUT_NUM_CHANNELS; n++) {
+    palSetPadMode(out_channels_port[n], out_channels_pad[n], PAL_MODE_OUTPUT_OPENDRAIN);
+  }
 
   /*
-   * Initializes the ADC driver 1 and enable the thermal sensor.
-   * The pin PC1 on the port GPIOC is programmed as analog input.
+   * Initializes the ADC driver 1.
+   * The pin PC0,PC1,PC2 on the port GPIOC are programmed as analog input.
    */
   adcStart(&ADCD1, NULL);
-  adcSTM32EnableTSVREFE();
+  palSetPadMode(GPIOA, 1, PAL_MODE_INPUT_ANALOG);
   palSetPadMode(GPIOC, 1, PAL_MODE_INPUT_ANALOG);
+  palSetPadMode(GPIOC, 2, PAL_MODE_INPUT_ANALOG);
 
   /*
    * Initializes the PWM driver 4, routes the TIM4 outputs to the board LEDs.
@@ -274,7 +286,7 @@ int main(void) {
     x = (int8_t)lis302dlReadRegister(&SPID1, LIS302DL_OUTX);
     y = (int8_t)lis302dlReadRegister(&SPID1, LIS302DL_OUTY);
     z = (int8_t)lis302dlReadRegister(&SPID1, LIS302DL_OUTZ);
-    chprintf((BaseChannel *)&SD2, "%03d, %03d, %03d \r", x, y, z);
+    //chprintf((BaseChannel *)&SD2, "%03d, %03d, %03d \r", x, y, z);
     chThdSleepMilliseconds(50);
   }
 }
