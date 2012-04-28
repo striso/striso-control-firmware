@@ -21,12 +21,10 @@
 #include "ch.h"
 #include "hal.h"
 #include "test.h"
-#include "lis302dl.h"
 #include "chprintf.h"
 
 static void pwmpcb(PWMDriver *pwmp);
 static void adccb(ADCDriver *adcp, adcsample_t *buffer, size_t n);
-static void spicb(SPIDriver *spip);
 
 /* Total number of channels to be sampled by a single ADC operation.*/
 #define ADC_GRP1_NUM_CHANNELS   3
@@ -110,19 +108,6 @@ static PWMConfig pwmcfg = {
 };
 
 /*
- * SPI1 configuration structure.
- * Speed 5.25MHz, CPHA=1, CPOL=1, 8bits frames, MSb transmitted first.
- * The slave select line is the pin GPIOE_CS_SPI on the port GPIOE.
- */
-static const SPIConfig spi1cfg = {
-  NULL,
-  /* HW dependent part.*/
-  GPIOE,
-  GPIOE_CS_SPI,
-  SPI_CR1_BR_0 | SPI_CR1_BR_1 | SPI_CR1_CPOL | SPI_CR1_CPHA
-};
-
-/*
  * PWM cyclic callback.
  * A new ADC conversion is started.
  */
@@ -174,17 +159,6 @@ void adccb(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
 }
 
 /*
- * SPI end transfer callback.
- */
-static void spicb(SPIDriver *spip) {
-
-  /* On transfer end just releases the slave select line.*/
-  chSysLockFromIsr();
-  spiUnselectI(spip);
-  chSysUnlockFromIsr();
-}
-
-/*
  * This is a periodic thread that does absolutely nothing except flashing
  * a LED.
  */
@@ -194,9 +168,9 @@ static msg_t Thread1(void *arg) {
   (void)arg;
   chRegSetThreadName("blinker");
   while (TRUE) {
-    palSetPad(GPIOD, GPIOD_LED3);       /* Orange.  */
+    palSetPad(GPIOA, GPIOA_LED1);       /* Orange.  */
     chThdSleepMilliseconds(500);
-    palClearPad(GPIOD, GPIOD_LED3);     /* Orange.  */
+    palClearPad(GPIOA, GPIOA_LED1);     /* Orange.  */
     chThdSleepMilliseconds(500);
   }
 }
@@ -230,7 +204,7 @@ int main(void) {
    * executed immediately before activating the various device drivers in
    * order to not alter the benchmark scores.
    */
-  if (palReadPad(GPIOA, GPIOA_BUTTON))
+  if (palReadPad(GPIOG, GPIOG_BUTTON))
     TestThread(&SD2);
 
   /*
@@ -242,19 +216,12 @@ int main(void) {
 
   /*
    * Initializes the ADC driver 1.
-   * The pin PC0,PC1,PC2 on the port GPIOC are programmed as analog input.
+   * The pin PA0,PA1,PA2 on the port GPIOC are programmed as analog input.
    */
   adcStart(&ADCD1, NULL);
+  palSetPadMode(GPIOA, 0, PAL_MODE_INPUT_ANALOG);
   palSetPadMode(GPIOA, 1, PAL_MODE_INPUT_ANALOG);
-  palSetPadMode(GPIOC, 1, PAL_MODE_INPUT_ANALOG);
-  palSetPadMode(GPIOC, 2, PAL_MODE_INPUT_ANALOG);
-
-  /*
-   * Initializes the PWM driver 4, routes the TIM4 outputs to the board LEDs.
-   */
-  pwmStart(&PWMD4, &pwmcfg);
-  palSetPadMode(GPIOD, GPIOD_LED4, PAL_MODE_ALTERNATE(2));  /* Green.   */
-  palSetPadMode(GPIOD, GPIOD_LED6, PAL_MODE_ALTERNATE(2));  /* Blue.    */
+  palSetPadMode(GPIOA, 2, PAL_MODE_INPUT_ANALOG);
 
   /*
    * Creates the example thread.
@@ -266,10 +233,6 @@ int main(void) {
    * are initialized in the board file.
    * Several LIS302DL registers are then initialized.
    */
-  spiStart(&SPID1, &spi1cfg);
-  lis302dlWriteRegister(&SPID1, LIS302DL_CTRL_REG1, 0x43);
-  lis302dlWriteRegister(&SPID1, LIS302DL_CTRL_REG2, 0x00);
-  lis302dlWriteRegister(&SPID1, LIS302DL_CTRL_REG3, 0x00);
 
   /*
    * Normal main() thread activity, in this demo it does nothing except
@@ -280,12 +243,12 @@ int main(void) {
   while (TRUE) {
     int8_t x, y, z;
 
-    if (palReadPad(GPIOA, GPIOA_BUTTON))
+    if (palReadPad(GPIOG, GPIOG_BUTTON))
       TestThread(&SD2);
-
+/*
     x = (int8_t)lis302dlReadRegister(&SPID1, LIS302DL_OUTX);
     y = (int8_t)lis302dlReadRegister(&SPID1, LIS302DL_OUTY);
-    z = (int8_t)lis302dlReadRegister(&SPID1, LIS302DL_OUTZ);
+    z = (int8_t)lis302dlReadRegister(&SPID1, LIS302DL_OUTZ);*/
     //chprintf((BaseChannel *)&SD2, "%03d, %03d, %03d \r", x, y, z);
     chThdSleepMilliseconds(50);
   }
