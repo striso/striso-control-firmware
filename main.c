@@ -32,31 +32,25 @@ static void adccb(ADCDriver *adcp, adcsample_t *buffer, size_t n);
 /* Depth of the conversion buffer, channels are sampled four times each.*/
 #define ADC_GRP1_BUF_DEPTH      1
 
-#define ADC_GRP1_BUF_COUNT      9
+#define ADC_GRP1_BUF_COUNT      51
 
-#define OUT_NUM_CHANNELS        9
+#define OUT_NUM_CHANNELS        51
 
-static const ioportid_t out_channels_port[9] = {
-  GPIOB,
-  GPIOB,
-  GPIOB,
-  GPIOE,
-  GPIOD,
-  GPIOD,
-  GPIOB,
-  GPIOD,
-  GPIOB
+static const ioportid_t out_channels_port[51] = {
+  GPIOA, GPIOA, GPIOA, GPIOA, GPIOC, GPIOC, GPIOB, GPIOB, GPIOF, GPIOF,
+  GPIOF, GPIOF, GPIOF, GPIOG, GPIOG, GPIOE, GPIOE, GPIOE,
+  GPIOE, GPIOE, GPIOE, GPIOE, GPIOE, GPIOE, GPIOB, GPIOB,
+  GPIOB, GPIOB, GPIOB, GPIOB, GPIOD, GPIOD, GPIOD, GPIOD, GPIOD, GPIOD,
+  GPIOD, GPIOD, GPIOG, GPIOG, GPIOG, GPIOG, GPIOG, GPIOG, GPIOG,
+  GPIOC, GPIOC, GPIOC, GPIOC, GPIOA, GPIOA
 };
-static const int out_channels_pad[9] = {
-  14,
-  11,
-  12,
-  15,
-   9,
-  10,
-  15,
-   8,
-  13
+static const int out_channels_pad[51] = {
+   4,  5,  6,  7,  4,  5,  1,  2, 11, 12,
+  13, 14, 15,  0,  1,  7,  8,  9,
+  10, 11, 12, 13, 14, 15, 10, 11,
+  12, 13, 14, 15,  8,  9, 10, 11, 12, 13,
+  14, 15,  2,  3,  4,  5,  6,  7,  8, 
+   6,  7,  8,  9,  8,  9
 };
 
 static int cur_channel = 0;
@@ -81,11 +75,11 @@ static const ADCConversionGroup adcgrpcfg = {
   /* HW dependent part.*/
   0,
   ADC_CR2_SWSTART,
-  ADC_SMPR2_SMP_AN1(ADC_SAMPLE_DEF) | ADC_SMPR1_SMP_AN11(ADC_SAMPLE_DEF) |ADC_SMPR1_SMP_AN12(ADC_SAMPLE_DEF),
+  ADC_SMPR2_SMP_AN0(ADC_SAMPLE_DEF) | ADC_SMPR2_SMP_AN1(ADC_SAMPLE_DEF) | ADC_SMPR2_SMP_AN2(ADC_SAMPLE_DEF),
   0,
   ADC_SQR1_NUM_CH(ADC_GRP1_NUM_CHANNELS),
   0,
-  ADC_SQR3_SQ1_N(ADC_CHANNEL_IN1) | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN12) | ADC_SQR3_SQ3_N(ADC_CHANNEL_IN11)
+  ADC_SQR3_SQ1_N(ADC_CHANNEL_IN0) | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN1) | ADC_SQR3_SQ3_N(ADC_CHANNEL_IN2)
 };
 
 /*
@@ -95,7 +89,7 @@ static const ADCConversionGroup adcgrpcfg = {
  */
 static PWMConfig pwmcfg = {
   10000,                                    /* 10kHz PWM clock frequency.   */
-  100,                                    /* PWM period 1S (in ticks).    */
+  2,                                    /* PWM period 1S (in ticks).    */
   pwmpcb,
   {
     {PWM_OUTPUT_ACTIVE_HIGH, NULL},
@@ -105,6 +99,13 @@ static PWMConfig pwmcfg = {
   },
   /* HW dependent part.*/
   0
+};
+
+static SerialConfig ser_cfg = {
+    2000000,
+    0,
+    0,
+    0,
 };
 
 /*
@@ -146,10 +147,16 @@ void adccb(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
     chSysUnlockFromIsr();
 
     chprintf((BaseChannel *)&SD2, "%04d %04d %04d ", 4095-samples[old_channel*3], 4095-samples[old_channel*3+1], 4095-samples[old_channel*3+2]);
+    //chprintf((BaseChannel *)&SD2, "%02d %02d %02d ", (4095-samples[old_channel*3])/40, (4095-samples[old_channel*3+1])/40, (4095-samples[old_channel*3+2])/40);
     //chprintf((BaseChannel *)&SD2, "%04d %04d %04d ", samples[0], samples[1], samples[2]);
     if (cur_channel == 0)
       chprintf((BaseChannel *)&SD2, "\r");
 
+    //chThdSleepMilliseconds(1);
+
+    //chSysLockFromIsr();
+    //adcStartConversionI(&ADCD1, &adcgrpcfg, &samples[cur_channel*3], ADC_GRP1_BUF_DEPTH);
+    //chSysUnlockFromIsr();
 
     //adcsample_t avg_ch1, avg_ch2;
 
@@ -195,7 +202,7 @@ int main(void) {
    * Activates the serial driver 2 using the driver default configuration.
    * PD5(TX) and PD6(RX) are routed to USART2.
    */
-  sdStart(&SD2, NULL);
+  sdStart(&SD2, &ser_cfg);
   palSetPadMode(GPIOD, 5, PAL_MODE_ALTERNATE(7));
   palSetPadMode(GPIOD, 6, PAL_MODE_ALTERNATE(7));
 
@@ -222,6 +229,12 @@ int main(void) {
   palSetPadMode(GPIOA, 0, PAL_MODE_INPUT_ANALOG);
   palSetPadMode(GPIOA, 1, PAL_MODE_INPUT_ANALOG);
   palSetPadMode(GPIOA, 2, PAL_MODE_INPUT_ANALOG);
+
+  /*
+   * Initializes the PWM driver 4.
+   */
+  pwmStart(&PWMD4, &pwmcfg);
+  //adcStartConversionI(&ADCD1, &adcgrpcfg, &samples[cur_channel*3], ADC_GRP1_BUF_DEPTH);
 
   /*
    * Creates the example thread.
