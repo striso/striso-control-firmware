@@ -153,9 +153,9 @@
                                      PIN_MODE_INPUT(15))
 #define VAL_GPIOB_OTYPER            0x00000000
 #define VAL_GPIOB_OSPEEDR           0xFFFFFFFF
-#define VAL_GPIOB_PUPDR             (PIN_PUDR_FLOATING(0) |                 \
+#define VAL_GPIOB_PUPDR             (PIN_PUDR_PULLUP(0) |                   \
                                      PIN_PUDR_PULLUP(1) |                   \
-                                     PIN_PUDR_PULLUP(2) |                   \
+                                     PIN_PUDR_FLOATING(2) |                 \
                                      PIN_PUDR_PULLUP(3) |                   \
                                      PIN_PUDR_PULLUP(4) |                   \
                                      PIN_PUDR_PULLUP(5) |                   \

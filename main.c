@@ -45,7 +45,7 @@ static const ioportid_t out_channels_port[51] = {
   GPIOC, GPIOC, GPIOC, GPIOC, GPIOA, GPIOA
 };
 static const int out_channels_pad[51] = {
-   4,  5,  6,  7,  4,  5,  1,  2, 11, 12,
+   4,  5,  6,  7,  4,  5,  0,  1, 11, 12,
   13, 14, 15,  0,  1,  7,  8,  9,
   10, 11, 12, 13, 14, 15, 10, 11,
   12, 13, 14, 15,  8,  9, 10, 11, 12, 13,
@@ -254,7 +254,7 @@ int main(void) {
    * driver 2.
    */
   while (TRUE) {
-    int8_t x, y, z;
+//    int8_t x, y, z;
 
     if (palReadPad(GPIOG, GPIOG_BUTTON))
       TestThread(&SD2);
