@@ -29,10 +29,10 @@ static void adccb(ADCDriver *adcp, adcsample_t *buffer, size_t n);
 /* Total number of channels to be sampled by a single ADC operation.*/
 #define ADC_GRP1_NUM_CHANNELS   3
 
-/* Depth of the conversion buffer, channels are sampled four times each.*/
+/* Depth of the conversion buffer, channels are sampled one time each.*/
 #define ADC_GRP1_BUF_DEPTH      1
 
-#define ADC_GRP1_BUF_COUNT      51
+#define ADC_GRP1_BUF_COUNT      (17*ADC_GRP1_NUM_CHANNELS)
 
 #define OUT_NUM_CHANNELS        51
 
@@ -60,7 +60,8 @@ static int cur_channel = 0;
  */
 static adcsample_t samples[ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH * ADC_GRP1_BUF_COUNT];
 
-#define ADC_SAMPLE_DEF ADC_SAMPLE_3
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_3
+#define ADC_SAMPLE_DEF ADC_SAMPLE_15
 /*
  * ADC conversion group.
  * Mode:        Linear buffer, 4 samples of 2 channels, SW triggered.
@@ -80,6 +81,8 @@ static const ADCConversionGroup adcgrpcfg = {
   ADC_SQR1_NUM_CH(ADC_GRP1_NUM_CHANNELS),
   0,
   ADC_SQR3_SQ1_N(ADC_CHANNEL_IN0) | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN1) | ADC_SQR3_SQ3_N(ADC_CHANNEL_IN2)
+  //ADC_SQR3_SQ1_N(ADC_CHANNEL_IN0) | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN3) | ADC_SQR3_SQ3_N(ADC_CHANNEL_IN1) | ADC_SQR3_SQ4_N(ADC_CHANNEL_IN3) | ADC_SQR3_SQ5_N(ADC_CHANNEL_IN2)
+
 };
 
 /*
@@ -120,7 +123,7 @@ static void pwmpcb(PWMDriver *pwmp) {
      will be executed in parallel to the current PWM cycle and will
      terminate before the next PWM cycle.*/
   chSysLockFromIsr();
-  adcStartConversionI(&ADCD1, &adcgrpcfg, &samples[cur_channel*3], ADC_GRP1_BUF_DEPTH);
+  adcStartConversionI(&ADCD1, &adcgrpcfg, &samples[cur_channel*ADC_GRP1_NUM_CHANNELS], ADC_GRP1_BUF_DEPTH);
   //adcStartConversionI(&ADCD1, &adcgrpcfg, samples, ADC_GRP1_BUF_DEPTH);
   chSysUnlockFromIsr();
 }
@@ -146,7 +149,13 @@ void adccb(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
 
     chSysUnlockFromIsr();
 
-    chprintf((BaseChannel *)&SD2, "%04d %04d %04d ", 4095-samples[old_channel*3], 4095-samples[old_channel*3+1], 4095-samples[old_channel*3+2]);
+    int s0,s1,s2;
+    s0 = 4095-samples[old_channel*ADC_GRP1_NUM_CHANNELS];
+    s1 = 4095-samples[old_channel*ADC_GRP1_NUM_CHANNELS+1] - (s0-30)/40;
+    s2 = 4095-samples[old_channel*ADC_GRP1_NUM_CHANNELS+2] - (s1-30)/40;
+
+    chprintf((BaseChannel *)&SD2, "%04d %04d %04d ", s0, s1, s2);
+    //4095-samples[old_channel*ADC_GRP1_NUM_CHANNELS], 4095-samples[old_channel*ADC_GRP1_NUM_CHANNELS+1], 4095-samples[old_channel*ADC_GRP1_NUM_CHANNELS+2]);
     //chprintf((BaseChannel *)&SD2, "%02d %02d %02d ", (4095-samples[old_channel*3])/40, (4095-samples[old_channel*3+1])/40, (4095-samples[old_channel*3+2])/40);
     //chprintf((BaseChannel *)&SD2, "%04d %04d %04d ", samples[0], samples[1], samples[2]);
     if (cur_channel == 0)
