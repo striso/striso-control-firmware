@@ -196,8 +196,8 @@
                                      PIN_MODE_INPUT(2) |                    \
                                      PIN_MODE_INPUT(3) |                    \
                                      PIN_MODE_INPUT(4) |                    \
-                                     PIN_MODE_INPUT(5) |                    \
-                                     PIN_MODE_INPUT(6) |                    \
+                                     PIN_MODE_ALTERNATE(5) |                \
+                                     PIN_MODE_ALTERNATE(6) |                \
                                      PIN_MODE_INPUT(7) |                    \
                                      PIN_MODE_INPUT(8) |                    \
                                      PIN_MODE_INPUT(9) |                    \
