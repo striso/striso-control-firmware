@@ -28,7 +28,7 @@
 #define ID_CONTROL 2
 #define ID_ACCEL 3
 
-#define MIN_PRES 5
+#define MIN_PRES 15
 
 /* Total number of channels to be sampled by a single ADC operation.*/
 #define ADC_GRP1_NUM_CHANNELS   3
@@ -66,7 +66,8 @@ static adcsample_t samples[ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH * ADC_GRP1
 
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_3
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_15
-#define ADC_SAMPLE_DEF ADC_SAMPLE_28
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_28
+#define ADC_SAMPLE_DEF ADC_SAMPLE_56
 /*
  * ADC conversion group.
  * Mode:        Linear buffer, 4 samples of 2 channels, SW triggered.
