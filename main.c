@@ -27,6 +27,7 @@
 #define ID_BAS 1
 #define ID_CONTROL 2
 #define ID_ACCEL 3
+#define ID_SYS 4
 
 #define MIN_PRES 15
 
@@ -91,29 +92,34 @@ static const ADCConversionGroup adcgrpcfg = {
 
 };
 
-#define BUFFERSIZE 256
+#define BUFFERSIZE 240
 static int msg_buffer[BUFFERSIZE];
 static int msg_read = 0;
 static int msg_write = 0;
 static Mutex msg_lock;
 static int underruns = 0;
 
-static void msgSend(int size, int* msg) {
+static int msgSend(int size, int* msg) {
   chMtxLock(&msg_lock);
 
   int n;
+  int old_write = msg_write;
   msg_buffer[msg_write] = size;
   msg_write = (msg_write + 1) % BUFFERSIZE;
   for (n = 0; n < size; n++) {
     if (msg_read == msg_write) {
-      msg_read = (msg_read + msg_buffer[msg_read] + 1) % BUFFERSIZE;
+      //msg_read = (msg_read + msg_buffer[msg_read] + 1) % BUFFERSIZE;
+      msg_write = old_write;
       underruns++;
+      chMtxUnlock();
+      return 1;
     }
     msg_buffer[msg_write] = msg[n];
     msg_write = (msg_write + 1) % BUFFERSIZE;
   }
 
   chMtxUnlock();
+  return 0;
 }
 
 static int msgGet(int maxsize, int* msg) {
@@ -162,11 +168,17 @@ static msg_t Thread1(void *arg) {
 
   (void)arg;
   chRegSetThreadName("blinker");
+  int msg[8];
+  msg[0] = ID_SYS;
+  msg[1] = 1;
   while (TRUE) {
     palSetPad(GPIOA, GPIOA_LED1);       /* Orange.  */
     chThdSleepMilliseconds(500);
     palClearPad(GPIOA, GPIOA_LED1);     /* Orange.  */
     chThdSleepMilliseconds(500);
+    msg[2] = underruns;
+    msgSend(3,msg);
+    //chprintf((BaseChannel *)&SDU1, "hello world\n");
   }
 
   return 0;
@@ -215,6 +227,17 @@ static msg_t ThreadSend(void *arg) {
         //size += chSequentialStreamWrite((BaseSequentialStream *)&SDU1, &cmsg[size], 8-size);
       //}
     }
+    else if (size == 3) {
+      cmsg[0] = 0x80 | ((uint8_t)msg[0])<<3 | 0x00;
+      cmsg[1] = 0x7f & (uint8_t)msg[1];
+      //cmsg[2] = 0x7f & (uint8_t)msg[2];
+      //cmsg[3] = 0;
+      pack(&msg[2], &cmsg[2], 1);
+      size = chSequentialStreamWrite((BaseSequentialStream *)&SD2, cmsg, 4);
+    }
+    else if (size == 0) {
+      chThdSleep(1);
+    }
     /*
     if (size == 5) {
       chprintf((BaseSequentialStream *)&SDU1, "%2d %2d %4d %4d %4d\r", msg[0],msg[1],msg[2],msg[3],msg[4]);
@@ -225,7 +248,7 @@ static msg_t ThreadSend(void *arg) {
     else if (size < 0) {
       chprintf((BaseSequentialStream *)&SDU1, "Error: %d.\n", size);
     }*/
-    chThdSleep(1);
+    //chThdSleep(1);
   }
 
   return 0;
@@ -257,11 +280,17 @@ static msg_t ThreadRead(void *arg) {
       if (n<size) { continue; }
 
       // message OK
-      if (rsize == 4) {
+      if (rsize == 8) {
         msg[0] = (cmsg[0] & 0x7f)>>3;
         msg[1] = cmsg[1];
         unpack(&cmsg[2], &msg[2], 3);
-        msgSend(5, msg);
+        while (msgSend(5, msg)) {
+		  // if it is a note-off message keep retrying
+          if (msg[2] > 0 || msg[3] > 0 || msg[4] > 0) {
+            break;
+          }
+          chThdSleep(1);
+        }
       }
     }
   }
@@ -325,7 +354,7 @@ int main(void) {
 
   chThdCreateStatic(waThreadSend, sizeof(waThreadSend), NORMALPRIO, ThreadSend, NULL);
   //chThdCreateStatic(waThreadRead, sizeof(waThreadRead), NORMALPRIO, ThreadRead, NULL);
-  chThdSleepMilliseconds(500);
+  chThdSleepMilliseconds(50);
   //chThdSleepSeconds(20);
 
   /*
@@ -359,12 +388,17 @@ int main(void) {
       int but_id = cur_but / 3 + n * 17;
 
       if (s0 > MIN_PRES || s1 > MIN_PRES || s2 > MIN_PRES) {
-        pressed[but_id] = 1;
         msg[1] = but_id;
         msg[2] = s0;
         msg[3] = s1;
         msg[4] = s2;
-        msgSend(5, msg);
+        while (msgSend(5, msg)) {
+          if (pressed[but_id]) {
+            break;
+          }
+          chThdSleep(1);
+        }
+        pressed[but_id] = 1;
       }
       else if (pressed[but_id]) {
         pressed[but_id] = 0;
@@ -372,7 +406,9 @@ int main(void) {
         msg[2] = 0;
         msg[3] = 0;
         msg[4] = 0;
-        msgSend(5, msg);
+        while (msgSend(5, msg)) {
+          chThdSleep(1);
+        }
       }
     }
 
