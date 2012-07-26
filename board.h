@@ -60,6 +60,8 @@
 #define GPIOF_SCL               0
 #define GPIOF_SDA               1
 #define GPIOG_BUTTON            15
+#define GPIOB_BUTTON_UP         8
+#define GPIOB_BUTTON_DOWN       9
 
 #define GPIOH_OSC_IN            0
 #define GPIOH_OSC_OUT           1
@@ -161,8 +163,8 @@
                                      PIN_PUDR_PULLUP(5) |                   \
                                      PIN_PUDR_PULLUP(6) |                   \
                                      PIN_PUDR_PULLUP(7) |                   \
-                                     PIN_PUDR_PULLUP(8) |                   \
-                                     PIN_PUDR_PULLUP(9) |                   \
+                                     PIN_PUDR_PULLDOWN(8) |                   \
+                                     PIN_PUDR_PULLDOWN(9) |                   \
                                      PIN_PUDR_PULLUP(10) |                  \
                                      PIN_PUDR_PULLUP(11) |                  \
                                      PIN_PUDR_PULLUP(12) |                  \

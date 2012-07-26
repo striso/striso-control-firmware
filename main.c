@@ -367,6 +367,7 @@ int main(void) {
   int cur_but;
   int pressed[51];
   int msg[5];
+  int sysbut[3] = {-1,-1,-1};
   msg[0] = ID_DIS;
   while (TRUE) {
     cur_but = cur_channel;
@@ -410,6 +411,49 @@ int main(void) {
           chThdSleep(1);
         }
       }
+    }
+
+    if (sysbut[0] > 1) {
+      sysbut[0] -= 2;
+    }
+    else {
+    n = palReadPad(GPIOG, GPIOG_BUTTON);
+    if (n != sysbut[0]) {
+      msg[0] = ID_CONTROL;
+      msg[1] = 0;
+      msg[2] = n;
+      if (!msgSend(3, msg))
+        sysbut[0] = n + 50;
+      msg[0] = ID_DIS;
+    }
+    }
+    if (sysbut[1] > 1) {
+      sysbut[1] -= 2;
+    }
+    else {
+    n = palReadPad(GPIOB, GPIOB_BUTTON_UP);
+    if (n != sysbut[1]) {
+      msg[0] = ID_CONTROL;
+      msg[1] = 1;
+      msg[2] = n;
+      if (!msgSend(3, msg))
+        sysbut[1] = n + 50;
+      msg[0] = ID_DIS;
+    }
+    }
+    if (sysbut[2] > 1) {
+      sysbut[2] -= 2;
+    }
+    else {
+    n = palReadPad(GPIOB, GPIOB_BUTTON_DOWN);
+    if (n != sysbut[2]) {
+      msg[0] = ID_CONTROL;
+      msg[1] = 2;
+      msg[2] = n;
+      if (!msgSend(3, msg))
+        sysbut[2] = n + 50;
+      msg[0] = ID_DIS;
+    }
     }
 
     chThdSleep(1);
