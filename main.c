@@ -625,7 +625,7 @@ int main(void) {
    * Activates the USB driver and then the USB bus pull-up on D+.
    */
   usbDisconnectBus(serusbcfg.usbp);
-  chThdSleepMilliseconds(500);
+  chThdSleepMilliseconds(1000);
   sduObjectInit(&SDU1);
   sduStart(&SDU1, &serusbcfg);
   usbConnectBus(serusbcfg.usbp);
@@ -637,6 +637,8 @@ int main(void) {
   sdStart(&SD2, &ser_cfg);
   palSetPadMode(GPIOD, 5, PAL_MODE_ALTERNATE(7));
   palSetPadMode(GPIOD, 6, PAL_MODE_ALTERNATE(7));
+
+  chThdSleepMilliseconds(500);
 
   /*
    * If the user button is pressed after the reset then the test suite is
