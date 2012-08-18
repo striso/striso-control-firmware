@@ -528,7 +528,7 @@ static msg_t ThreadSend(void *arg) {
       cmsg[0] = 0x80 | ((uint8_t)msg[0])<<3 | 0x01;
       cmsg[1] = 0x7f & (uint8_t)msg[1];
       pack(&msg[2], &cmsg[2], 3);
-      size = chSequentialStreamWrite((BaseSequentialStream *)&SDU1, cmsg, 8);
+      size = chSequentialStreamWrite((BaseSequentialStream *)&SD2, cmsg, 8);
       //if (size < 8) {
         //chprintf((BaseSequentialStream *)&SDU1, "send size: %d\n", size);
         //cmsg[size] = 255;
@@ -541,7 +541,7 @@ static msg_t ThreadSend(void *arg) {
       //cmsg[2] = 0x7f & (uint8_t)msg[2];
       //cmsg[3] = 0;
       pack(&msg[2], &cmsg[2], 1);
-      size = chSequentialStreamWrite((BaseSequentialStream *)&SDU1, cmsg, 4);
+      size = chSequentialStreamWrite((BaseSequentialStream *)&SD2, cmsg, 4);
     }
     else if (size == 0) {
       chThdSleep(1);
