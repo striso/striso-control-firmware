@@ -375,6 +375,10 @@ int main(void) {
     for (n = 0; n < 3; n++) {
       adcConvert(&ADCD1, &adcgrpcfg, &samples[cur_channel*ADC_GRP1_NUM_CHANNELS], ADC_GRP1_BUF_DEPTH);
 
+      // correct crosstalk/adc start effect
+      samples[cur_channel*ADC_GRP1_NUM_CHANNELS + 1] += (4095-samples[cur_channel*ADC_GRP1_NUM_CHANNELS])/250;
+      samples[cur_channel*ADC_GRP1_NUM_CHANNELS + 2] += (4095-samples[cur_channel*ADC_GRP1_NUM_CHANNELS + 1])/250;
+
       old_channel = cur_channel;
       cur_channel = (cur_channel+1) % OUT_NUM_CHANNELS;
 
@@ -382,10 +386,15 @@ int main(void) {
       palClearPad(out_channels_port[cur_channel], out_channels_pad[cur_channel]);         /* Drain new channel */
     }
 
+    // correct crosstalk/adc start effect
+    samples[ cur_but    * ADC_GRP1_NUM_CHANNELS] += 8;
+    samples[(cur_but+1) * ADC_GRP1_NUM_CHANNELS] += 2;
+    samples[(cur_but+2) * ADC_GRP1_NUM_CHANNELS] += 2;
+
     for (n = 0; n < 3; n++) {
       int s0 = 4095-samples[ cur_but    * ADC_GRP1_NUM_CHANNELS + n];
-      int s1 = 4095-samples[(cur_but+1) * ADC_GRP1_NUM_CHANNELS + n];// - (s0-30)/40;
-      int s2 = 4095-samples[(cur_but+2) * ADC_GRP1_NUM_CHANNELS + n];// - (s1-30)/40;
+      int s1 = 4095-samples[(cur_but+1) * ADC_GRP1_NUM_CHANNELS + n];
+      int s2 = 4095-samples[(cur_but+2) * ADC_GRP1_NUM_CHANNELS + n];
       int but_id = cur_but / 3 + n * 17;
 
       if (s0 > MIN_PRES || s1 > MIN_PRES || s2 > MIN_PRES) {
