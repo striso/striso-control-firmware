@@ -23,6 +23,11 @@
 #include "test.h"
 #include "chprintf.h"
 
+#include "usbcfg.h"
+
+/* Virtual serial port over USB.*/
+static SerialUSBDriver SDU1;
+
 #define ID_DIS 0
 #define ID_BAS 1
 #define ID_CONTROL 2
@@ -207,7 +212,7 @@ static WORKING_AREA(waThreadSend, 128);
 static msg_t ThreadSend(void *arg) {
 
   (void)arg;
-  chRegSetThreadName("send messages over UART");
+  chRegSetThreadName("send messages over USB");
   //chprintf((BaseSequentialStream *)&SD2, "Send thread started.\n");
   int msg[8];
   uint8_t cmsg[8];
@@ -220,7 +225,7 @@ static msg_t ThreadSend(void *arg) {
       cmsg[0] = 0x80 | ((uint8_t)msg[0])<<3 | 0x01;
       cmsg[1] = 0x7f & (uint8_t)msg[1];
       pack(&msg[2], &cmsg[2], 3);
-      size = chSequentialStreamWrite((BaseSequentialStream *)&SD2, cmsg, 8);
+      size = chSequentialStreamWrite((BaseSequentialStream *)&SDU1, cmsg, 8);
       //if (size < 8) {
         //chprintf((BaseSequentialStream *)&SDU1, "send size: %d\n", size);
         //cmsg[size] = 255;
@@ -233,7 +238,7 @@ static msg_t ThreadSend(void *arg) {
       //cmsg[2] = 0x7f & (uint8_t)msg[2];
       //cmsg[3] = 0;
       pack(&msg[2], &cmsg[2], 1);
-      size = chSequentialStreamWrite((BaseSequentialStream *)&SD2, cmsg, 4);
+      size = chSequentialStreamWrite((BaseSequentialStream *)&SDU1, cmsg, 4);
     }
     else if (size == 0) {
       chThdSleep(1);
@@ -329,6 +334,25 @@ int main(void) {
   if (palReadPad(GPIOG, GPIOG_BUTTON))
     TestThread(&SD2);
 
+  /*
+   * Initializes a serial-over-USB CDC driver.
+   */
+  sduObjectInit(&SDU1);
+  sduStart(&SDU1, &serusbcfg);
+
+  /*
+   * Activates the USB driver and then the USB bus pull-up on D+.
+   * Note, a delay is inserted in order to not have to disconnect the cable
+   * after a reset.
+   */
+  //usbDisconnectBus(serusbcfg.usbp);
+  //chThdSleepMilliseconds(1000);
+  usbStart(serusbcfg.usbp, &usbcfg);
+  //usbConnectBus(serusbcfg.usbp);
+
+  chThdSleepMilliseconds(1000);
+
+  // init msg mutex
   chMtxInit(&msg_lock);
 
   /*
