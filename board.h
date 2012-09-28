@@ -62,6 +62,9 @@
 #define GPIOG_BUTTON            15
 #define GPIOB_BUTTON_UP         8
 #define GPIOB_BUTTON_DOWN       9
+#define GPIOB_SPI1_SCK          3
+#define GPIOB_SPI1_MISO         4
+#define GPIOB_SPI1_MOSI         5
 
 #define GPIOH_OSC_IN            0
 #define GPIOH_OSC_OUT           1
@@ -140,9 +143,9 @@
 #define VAL_GPIOB_MODER             (PIN_MODE_INPUT(0) |                    \
                                      PIN_MODE_INPUT(1) |                    \
                                      PIN_MODE_INPUT(2) |                    \
-                                     PIN_MODE_INPUT(3) |                    \
-                                     PIN_MODE_INPUT(4) |                    \
-                                     PIN_MODE_INPUT(5) |                    \
+                                     PIN_MODE_ALTERNATE(3) |                    \
+                                     PIN_MODE_ALTERNATE(4) |                    \
+                                     PIN_MODE_ALTERNATE(5) |                    \
                                      PIN_MODE_INPUT(6) |                    \
                                      PIN_MODE_INPUT(7) |                    \
                                      PIN_MODE_INPUT(8) |                    \
@@ -158,9 +161,9 @@
 #define VAL_GPIOB_PUPDR             (PIN_PUDR_PULLUP(0) |                   \
                                      PIN_PUDR_PULLUP(1) |                   \
                                      PIN_PUDR_FLOATING(2) |                 \
-                                     PIN_PUDR_PULLUP(3) |                   \
-                                     PIN_PUDR_PULLUP(4) |                   \
-                                     PIN_PUDR_PULLUP(5) |                   \
+                                     PIN_PUDR_FLOATING(3) |                   \
+                                     PIN_PUDR_FLOATING(4) |                   \
+                                     PIN_PUDR_FLOATING(5) |                   \
                                      PIN_PUDR_PULLUP(6) |                   \
                                      PIN_PUDR_PULLUP(7) |                   \
                                      PIN_PUDR_PULLDOWN(8) |                   \
@@ -172,7 +175,9 @@
                                      PIN_PUDR_PULLUP(14) |                  \
                                      PIN_PUDR_PULLUP(15))
 #define VAL_GPIOB_ODR               0xFFFFFFFF
-#define VAL_GPIOB_AFRL              0x00000000
+#define VAL_GPIOB_AFRL              (PIN_AFIO_AF(GPIOB_SPI1_SCK, 5) | \
+                                     PIN_AFIO_AF(GPIOB_SPI1_MISO, 5) | \
+                                     PIN_AFIO_AF(GPIOB_SPI1_MOSI, 5))
 #define VAL_GPIOB_AFRH              0x00000000
 
 /*
