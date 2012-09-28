@@ -230,8 +230,6 @@ static msg_t ThreadAccel(void *arg) {
   msg_t status = RDY_OK;
   systime_t tmo = MS2ST(4);
 
-
-
   /**
    * Prepares the accelerometer
    */
@@ -260,7 +258,6 @@ static msg_t ThreadAccel(void *arg) {
       errors = i2cGetErrors(&I2CD2);
     }
     else {
-
       msg[2] = complement2unsigned(rxbuf[0], rxbuf[1]);
       msg[3] = complement2unsigned(rxbuf[2], rxbuf[3]);
       msg[4] = complement2unsigned(rxbuf[4], rxbuf[5]);
@@ -318,7 +315,6 @@ static msg_t ThreadSend(void *arg) {
 
   (void)arg;
   chRegSetThreadName("send messages over USB");
-  //chprintf((BaseSequentialStream *)&SD2, "Send thread started.\n");
   int msg[8];
   uint8_t cmsg[8];
   int size, n;
@@ -331,11 +327,6 @@ static msg_t ThreadSend(void *arg) {
       cmsg[1] = 0x7f & (uint8_t)msg[1];
       pack(&msg[2], &cmsg[2], 3);
       size = chSequentialStreamWrite((BaseSequentialStream *)&SDU1, cmsg, 8);
-      //if (size < 8) {
-        //chprintf((BaseSequentialStream *)&SDU1, "send size: %d\n", size);
-        //cmsg[size] = 255;
-        //size += chSequentialStreamWrite((BaseSequentialStream *)&SDU1, &cmsg[size], 8-size);
-      //}
     }
     else if (size == 3) {
       cmsg[0] = 0x80 | ((uint8_t)msg[0])<<3 | 0x00;
@@ -348,17 +339,6 @@ static msg_t ThreadSend(void *arg) {
     else if (size == 0) {
       chThdSleep(1);
     }
-    /*
-    if (size == 5) {
-      chprintf((BaseSequentialStream *)&SDU1, "%2d %2d %4d %4d %4d\r", msg[0],msg[1],msg[2],msg[3],msg[4]);
-    }
-    else if (size == 3) {
-      chprintf((BaseSequentialStream *)&SDU1, "%2d %2d %3d 0 0\r", msg[0],msg[1],msg[2]);
-    }
-    else if (size < 0) {
-      chprintf((BaseSequentialStream *)&SDU1, "Error: %d.\n", size);
-    }*/
-    //chThdSleep(1);
   }
 
   return 0;
