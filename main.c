@@ -42,7 +42,6 @@ static SerialUSBDriver SDU1;
 static uint8_t rxbuf[ACCEL_RX_DEPTH];
 static uint8_t txbuf[ACCEL_TX_DEPTH];
 static i2cflags_t errors = 0;
-static int16_t acceleration_x, acceleration_y, acceleration_z;
 #define mma7455_addr 0b0011101
 
 /**
@@ -82,7 +81,7 @@ static const I2CConfig i2cfg2 = {
 #define ADC_GRP1_NUM_CHANNELS   3
 
 /* Depth of the conversion buffer, channels are sampled one time each.*/
-#define ADC_GRP1_BUF_DEPTH      1
+#define ADC_GRP1_BUF_DEPTH      2 // must be 1 or even
 
 #define ADC_GRP1_BUF_COUNT      (17*ADC_GRP1_NUM_CHANNELS)
 
@@ -106,27 +105,58 @@ static const int out_channels_pad[51] = {
 };
 
 static int cur_channel = 0;
+static int next_conversion = 0;
+static int next_sample = 0;
+static int proc_conversion = 0;
 
 /*
  * ADC samples buffer.
  */
-static adcsample_t samples[ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH * ADC_GRP1_BUF_COUNT];
+static adcsample_t adc_samples[ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH];
+static adcsample_t samples[ADC_GRP1_NUM_CHANNELS * 102];
+
+static const ADCConversionGroup adcgrpcfg;
+
+static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
+  (void)adcp;
+  (void)n;
+
+  next_conversion = (next_conversion+1) % 102;
+
+  /* Open old channel */
+  palSetPad(out_channels_port[cur_channel], out_channels_pad[cur_channel]);
+  cur_channel = next_conversion % OUT_NUM_CHANNELS;
+  /* Drain new channel */
+  palClearPad(out_channels_port[cur_channel], out_channels_pad[cur_channel]);
+
+  /* 
+   * copy adc_samples
+   */
+  samples[next_sample] = buffer[0];
+  samples[next_sample+1] = buffer[1];
+  samples[next_sample+2] = buffer[2];
+  next_sample = next_conversion * ADC_GRP1_NUM_CHANNELS;
+}
+
 
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_3
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_15
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_28
-#define ADC_SAMPLE_DEF ADC_SAMPLE_56
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_56
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_84
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_112
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_144
+#define ADC_SAMPLE_DEF ADC_SAMPLE_480
 /*
  * ADC conversion group.
  * Mode:        Linear buffer, 4 samples of 2 channels, SW triggered.
  * Channels:    IN11   (48 cycles sample time)
- *              Sensor (192 cycles sample time)
  */
 static const ADCConversionGroup adcgrpcfg = {
-  FALSE,
+  TRUE,
   ADC_GRP1_NUM_CHANNELS,
-  NULL, //adccb,
-  NULL,
+  adccallback, /* enc of conversion callback */
+  NULL, /* error callback */
   /* HW dependent part.*/
   0, // CR1
   ADC_CR2_SWSTART,
@@ -135,8 +165,6 @@ static const ADCConversionGroup adcgrpcfg = {
   ADC_SQR1_NUM_CH(ADC_GRP1_NUM_CHANNELS),
   0, // SQR2
   ADC_SQR3_SQ1_N(ADC_CHANNEL_IN0) | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN1) | ADC_SQR3_SQ3_N(ADC_CHANNEL_IN2)
-  //ADC_SQR3_SQ1_N(ADC_CHANNEL_IN0) | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN3) | ADC_SQR3_SQ3_N(ADC_CHANNEL_IN1) | ADC_SQR3_SQ4_N(ADC_CHANNEL_IN3) | ADC_SQR3_SQ5_N(ADC_CHANNEL_IN2)
-
 };
 
 #define BUFFERSIZE 240
@@ -280,13 +308,12 @@ static msg_t Thread1(void *arg) {
   msg[0] = ID_SYS;
   msg[1] = 1;
   while (TRUE) {
+    chThdSleepMilliseconds(50);
     palSetPad(GPIOA, GPIOA_LED1);       /* Orange.  */
-    chThdSleepMilliseconds(500);
-    palClearPad(GPIOA, GPIOA_LED1);     /* Orange.  */
-    chThdSleepMilliseconds(500);
+    chThdSleepMilliseconds(50);
     msg[2] = underruns;
-    msgSend(3,msg);
-    //chprintf((BaseChannel *)&SDU1, "hello world\n");
+    if (!msgSend(3,msg))
+      palClearPad(GPIOA, GPIOA_LED1);     /* Orange.  */
   }
 
   return 0;
@@ -317,7 +344,7 @@ static msg_t ThreadSend(void *arg) {
   chRegSetThreadName("send messages over USB");
   int msg[8];
   uint8_t cmsg[8];
-  int size, n;
+  int size;
   cmsg[0] = 0;
   while (TRUE) {
     size = msgGet(8, msg);
@@ -352,7 +379,6 @@ static msg_t ThreadRead(void *arg) {
 
   (void)arg;
   chRegSetThreadName("read messages over UART");
-  //chprintf((BaseSequentialStream *)&SDU1, "Read thread started.\n");
   int msg[8];
   uint8_t cmsg[16];
   int size, rsize, n;
@@ -434,7 +460,7 @@ int main(void) {
   usbStart(serusbcfg.usbp, &usbcfg);
   //usbConnectBus(serusbcfg.usbp);
 
-  chThdSleepMilliseconds(1000);
+  //chThdSleepMilliseconds(1000);
 
   // init msg mutex
   chMtxInit(&msg_lock);
@@ -467,85 +493,81 @@ int main(void) {
    */
   spiStart(&SPID1, &spi1cfg);
 
+  chThdCreateStatic(waThreadSend, sizeof(waThreadSend), NORMALPRIO, ThreadSend, NULL);
+
   /*
    * Creates the LED flash thread.
    */
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
 
-  chThdCreateStatic(waThreadSend, sizeof(waThreadSend), NORMALPRIO, ThreadSend, NULL);
   //chThdCreateStatic(waThreadRead, sizeof(waThreadRead), NORMALPRIO, ThreadRead, NULL);
-  chThdSleepMilliseconds(50);
-  //chThdSleepSeconds(20);
+  //chThdSleepMilliseconds(500);
 
   /*
    * Creates the accelerometer thread.
    */
   chThdCreateStatic(waThreadAccel, sizeof(waThreadAccel), NORMALPRIO, ThreadAccel, NULL);
 
+  adcStartConversion(&ADCD1, &adcgrpcfg, adc_samples, ADC_GRP1_BUF_DEPTH);
+
   /*
    * Normal main() thread activity.
    * Read out buttons and create messages.
    */
-  int old_channel;
-  int cur_but;
   int pressed[51];
   int msg[5];
   int sysbut[3] = {-1,-1,-1};
+  int cur_conv, s0, s1, s2, but_id, note_id;
   msg[0] = ID_DIS;
   while (TRUE) {
-    cur_but = cur_channel;
 
-    // read 3 buttons * 3 pads
-    for (n = 0; n < 3; n++) {
-      adcConvert(&ADCD1, &adcgrpcfg, &samples[cur_channel*ADC_GRP1_NUM_CHANNELS], ADC_GRP1_BUF_DEPTH);
+    while (proc_conversion != next_conversion) {
+      if ((proc_conversion % 3) == 2) {
+        note_id = (proc_conversion / 3) % 17;
+        cur_conv = (proc_conversion - 2) * 3;
 
-      // correct crosstalk/adc start effect
-      samples[cur_channel*ADC_GRP1_NUM_CHANNELS + 1] += (4095-samples[cur_channel*ADC_GRP1_NUM_CHANNELS])/250;
-      samples[cur_channel*ADC_GRP1_NUM_CHANNELS + 2] += (4095-samples[cur_channel*ADC_GRP1_NUM_CHANNELS + 1])/250;
+        /*
+         * Check button in each octave/adc-channel
+         */
+        for (n = 0; n < 3; n++) {
+          but_id = note_id + n * 17;
+          s0 = 4095-samples[ cur_conv                            + n];
+          s1 = 4095-samples[ cur_conv + 1* ADC_GRP1_NUM_CHANNELS + n];
+          s2 = 4095-samples[ cur_conv + 2* ADC_GRP1_NUM_CHANNELS + n];
 
-      old_channel = cur_channel;
-      cur_channel = (cur_channel+1) % OUT_NUM_CHANNELS;
-
-      palSetPad(out_channels_port[old_channel], out_channels_pad[old_channel]);       /* Open old channel */
-      palClearPad(out_channels_port[cur_channel], out_channels_pad[cur_channel]);         /* Drain new channel */
-    }
-
-    // correct crosstalk/adc start effect
-    samples[ cur_but    * ADC_GRP1_NUM_CHANNELS] += 8;
-    samples[(cur_but+1) * ADC_GRP1_NUM_CHANNELS] += 2;
-    samples[(cur_but+2) * ADC_GRP1_NUM_CHANNELS] += 2;
-
-    for (n = 0; n < 3; n++) {
-      int s0 = 4095-samples[ cur_but    * ADC_GRP1_NUM_CHANNELS + n];
-      int s1 = 4095-samples[(cur_but+1) * ADC_GRP1_NUM_CHANNELS + n];
-      int s2 = 4095-samples[(cur_but+2) * ADC_GRP1_NUM_CHANNELS + n];
-      int but_id = cur_but / 3 + n * 17;
-
-      if (s0 > MIN_PRES || s1 > MIN_PRES || s2 > MIN_PRES) {
-        msg[1] = but_id;
-        msg[2] = s0;
-        msg[3] = s1;
-        msg[4] = s2;
-        while (msgSend(5, msg)) {
-          if (pressed[but_id]) {
-            break;
+          if (s0 > MIN_PRES || s1 > MIN_PRES || s2 > MIN_PRES) {
+            msg[1] = but_id;
+            msg[2] = s0;
+            msg[3] = s1;
+            msg[4] = s2;
+            while (msgSend(5, msg)) {
+              if (pressed[but_id]) {
+                break;
+              }
+              chThdSleep(1);
+            }
+            pressed[but_id] = 1;
           }
-          chThdSleep(1);
+          else if (pressed[but_id]) {
+            pressed[but_id] = 0;
+            msg[1] = but_id;
+            msg[2] = 0;
+            msg[3] = 0;
+            msg[4] = 0;
+            while (msgSend(5, msg)) {
+              chThdSleep(1);
+            }
+          }
         }
-        pressed[but_id] = 1;
+
       }
-      else if (pressed[but_id]) {
-        pressed[but_id] = 0;
-        msg[1] = but_id;
-        msg[2] = 0;
-        msg[3] = 0;
-        msg[4] = 0;
-        while (msgSend(5, msg)) {
-          chThdSleep(1);
-        }
-      }
+      proc_conversion = (proc_conversion+1) % 102;
     }
 
+    /*
+     * Check system buttons
+     * Use a counter to remove quick toggling
+     */
     if (sysbut[0] > 1) {
       sysbut[0] -= 2;
     }
@@ -589,6 +611,6 @@ int main(void) {
     }
     }
 
-    chThdSleep(1);
+    chThdSleepMicroseconds(100);
   }
 }
