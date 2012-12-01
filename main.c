@@ -338,25 +338,16 @@ static msg_t ThreadSend(void *arg) {
   (void)arg;
   chRegSetThreadName("send messages over USB");
   int msg[8];
-  uint8_t cmsg[8];
+  uint8_t cmsg[16];
   int size;
   cmsg[0] = 0;
   while (TRUE) {
     size = msgGet(8, msg);
-    
-    if (size == 5) {
-      cmsg[0] = 0x80 | ((uint8_t)msg[0])<<3 | 0x01;
+    if (size > 0 && size <= 9) {
+      cmsg[0] = 0x80 | ((uint8_t)msg[0])<<3 | ((uint8_t)(size-2));
       cmsg[1] = 0x7f & (uint8_t)msg[1];
-      pack(&msg[2], &cmsg[2], 3);
-      size = chSequentialStreamWrite((BaseSequentialStream *)&SDU1, cmsg, 8);
-    }
-    else if (size == 3) {
-      cmsg[0] = 0x80 | ((uint8_t)msg[0])<<3 | 0x00;
-      cmsg[1] = 0x7f & (uint8_t)msg[1];
-      //cmsg[2] = 0x7f & (uint8_t)msg[2];
-      //cmsg[3] = 0;
-      pack(&msg[2], &cmsg[2], 1);
-      size = chSequentialStreamWrite((BaseSequentialStream *)&SDU1, cmsg, 4);
+      pack(&msg[2], &cmsg[2], size - 2);
+      size = chSequentialStreamWrite((BaseSequentialStream *)&SDU1, cmsg, 2+(size-2)*2);
     }
     else if (size == 0) {
       chThdSleep(1);
@@ -510,9 +501,9 @@ int main(void) {
    * Read out buttons and create messages.
    */
   int pressed[51];
-  int msg[5];
+  int msg[8];
   int sysbut[3] = {-1,-1,-1};
-  int cur_conv, s0, s1, s2, but_id, note_id;
+  int cur_conv, prev_conv, s0, s1, s2, but_id, note_id, v0, v1, v2;
   msg[0] = ID_DIS;
   while (TRUE) {
 
@@ -520,6 +511,7 @@ int main(void) {
       if ((proc_conversion % 3) == 2) {
         note_id = (proc_conversion / 3) % 17;
         cur_conv = (proc_conversion - 2) * 3;
+        prev_conv = (cur_conv + 51*3) % 102*3;
 
         /*
          * Check button in each octave/adc-channel
@@ -529,13 +521,19 @@ int main(void) {
           s0 = 4095-samples[ cur_conv                            + n];
           s1 = 4095-samples[ cur_conv + 1* ADC_GRP1_NUM_CHANNELS + n];
           s2 = 4095-samples[ cur_conv + 2* ADC_GRP1_NUM_CHANNELS + n];
+          v0 = s0 - (4095-samples[ prev_conv                            + n]);
+          v1 = s1 - (4095-samples[ prev_conv + 1* ADC_GRP1_NUM_CHANNELS + n]);
+          v2 = s2 - (4095-samples[ prev_conv + 2* ADC_GRP1_NUM_CHANNELS + n]);
 
           if (s0 > MIN_PRES || s1 > MIN_PRES || s2 > MIN_PRES) {
             msg[1] = but_id;
-            msg[2] = s0;
-            msg[3] = s1;
-            msg[4] = s2;
-            while (msgSend(5, msg)) {
+            msg[2] = s0*2;
+            msg[3] = s1*2;
+            msg[4] = s2*2;
+            msg[5] = v0*2;
+            msg[6] = v1*2;
+            msg[7] = v2*2;
+            while (msgSend(8, msg)) {
               if (pressed[but_id]) {
                 break;
               }
@@ -549,7 +547,10 @@ int main(void) {
             msg[2] = 0;
             msg[3] = 0;
             msg[4] = 0;
-            while (msgSend(5, msg)) {
+            msg[5] = v0*2;
+            msg[6] = v1*2;
+            msg[7] = v2*2;
+            while (msgSend(8, msg)) {
               chThdSleep(1);
             }
           }
