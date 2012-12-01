@@ -45,16 +45,11 @@ static i2cflags_t errors = 0;
 #define mma7455_addr 0b0011101
 
 /**
- * Converts data from 2complemented representation to signed integer
+ * Converts accelerometer data from 2 bytes 10 bits to 14 bits signed integer
  */
-uint16_t complement2unsigned(uint8_t lsb, uint8_t msb){
-  uint16_t word = 0;
-  word = ((~msb & 2) << 8) | ((msb & 1) << 8) | lsb;
-  //word = msb << 8 | lsb;
-  //if (msb > 0x7F){
-  //  return -1 * ((int16_t)((~word) + 1));
-  //}
-  //return (int16_t)word;
+int16_t accel2int14(uint8_t lsb, uint8_t msb){
+  int16_t word = msb << 8 | lsb;
+  word = word << 4;
   return word;
 }
 
@@ -286,9 +281,9 @@ static msg_t ThreadAccel(void *arg) {
       errors = i2cGetErrors(&I2CD2);
     }
     else {
-      msg[2] = complement2unsigned(rxbuf[0], rxbuf[1]);
-      msg[3] = complement2unsigned(rxbuf[2], rxbuf[3]);
-      msg[4] = complement2unsigned(rxbuf[4], rxbuf[5]);
+      msg[2] = accel2int14(rxbuf[0], rxbuf[1]) + 300;
+      msg[3] = accel2int14(rxbuf[2], rxbuf[3]) + 650;
+      msg[4] = accel2int14(rxbuf[4], rxbuf[5]);
       msgSend(5,msg);
     }
   }
