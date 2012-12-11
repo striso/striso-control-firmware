@@ -88,7 +88,7 @@ static const ioportid_t out_channels_port[51] = {
   GPIOE, GPIOE, GPIOE, GPIOE, GPIOE, GPIOE, GPIOB, GPIOB,
   GPIOB, GPIOB, GPIOB, GPIOB, GPIOD, GPIOD, GPIOD, GPIOD, GPIOD, GPIOD,
   GPIOD, GPIOD, GPIOG, GPIOG, GPIOG, GPIOG, GPIOG, GPIOG, GPIOG,
-  GPIOC, GPIOC, GPIOC, GPIOC, GPIOA, GPIOA
+  GPIOC, GPIOC, GPIOC, GPIOC, GPIOA, GPIOE
 };
 static const int out_channels_pad[51] = {
    4,  5,  6,  7,  4,  5,  0,  1, 11, 12,
@@ -96,7 +96,7 @@ static const int out_channels_pad[51] = {
   10, 11, 12, 13, 14, 15, 10, 11,
   12, 13, 14, 15,  8,  9, 10, 11, 12, 13,
   14, 15,  2,  3,  4,  5,  6,  7,  8, 
-   6,  7,  8,  9,  8,  9
+   6,  7,  8,  9,  8,  4
 };
 
 static int cur_channel = 0;
