@@ -281,6 +281,7 @@ static msg_t ThreadAccel(void *arg) {
       errors = i2cGetErrors(&I2CD2);
     }
     else {
+      // TODO: calibration is hardcoded here
       msg[2] = accel2int14(rxbuf[0], rxbuf[1]) + 300;
       msg[3] = accel2int14(rxbuf[2], rxbuf[3]) + 650;
       msg[4] = accel2int14(rxbuf[4], rxbuf[5]);
@@ -521,11 +522,12 @@ int main(void) {
           s0 = 4095-samples[ cur_conv                            + n];
           s1 = 4095-samples[ cur_conv + 1* ADC_GRP1_NUM_CHANNELS + n];
           s2 = 4095-samples[ cur_conv + 2* ADC_GRP1_NUM_CHANNELS + n];
-          v0 = s0 - (4095-samples[ prev_conv                            + n]);
-          v1 = s1 - (4095-samples[ prev_conv + 1* ADC_GRP1_NUM_CHANNELS + n]);
-          v2 = s2 - (4095-samples[ prev_conv + 2* ADC_GRP1_NUM_CHANNELS + n]);
 
           if (s0 > MIN_PRES || s1 > MIN_PRES || s2 > MIN_PRES) {
+            v0 = s0 - (4095-samples[ prev_conv                            + n]);
+            v1 = s1 - (4095-samples[ prev_conv + 1* ADC_GRP1_NUM_CHANNELS + n]);
+            v2 = s2 - (4095-samples[ prev_conv + 2* ADC_GRP1_NUM_CHANNELS + n]);
+
             msg[1] = but_id;
             msg[2] = s0*2;
             msg[3] = s1*2;
@@ -542,6 +544,10 @@ int main(void) {
             pressed[but_id] = 1;
           }
           else if (pressed[but_id]) {
+            v0 = s0 - (4095-samples[ prev_conv                            + n]);
+            v1 = s1 - (4095-samples[ prev_conv + 1* ADC_GRP1_NUM_CHANNELS + n]);
+            v2 = s2 - (4095-samples[ prev_conv + 2* ADC_GRP1_NUM_CHANNELS + n]);
+
             pressed[but_id] = 0;
             msg[1] = but_id;
             msg[2] = 0;
