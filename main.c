@@ -70,7 +70,8 @@ static const I2CConfig i2cfg2 = {
 #define ID_ACCEL 3
 #define ID_SYS 4
 
-#define MIN_PRES 15
+#define MIN_PRES (8<<12)
+#define FILT 16
 
 /* Total number of channels to be sampled by a single ADC operation.*/
 #define ADC_GRP1_NUM_CHANNELS   3
@@ -104,11 +105,19 @@ static int next_conversion = 0;
 static int next_sample = 0;
 static int proc_conversion = 0;
 
+// if next buffers are defined in main the contents change randomly
+static int32_t s0[51] = {0};
+static int32_t s1[51] = {0};
+static int32_t s2[51] = {0};
+static int32_t v0[51] = {0};
+static int32_t v1[51] = {0};
+static int32_t v2[51] = {0};
+
 /*
  * ADC samples buffer.
  */
 static adcsample_t adc_samples[ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH];
-static adcsample_t samples[ADC_GRP1_NUM_CHANNELS * 102];
+static adcsample_t samples[ADC_GRP1_NUM_CHANNELS * 102] = {0};
 
 static const ADCConversionGroup adcgrpcfg;
 
@@ -502,9 +511,26 @@ int main(void) {
    * Read out buttons and create messages.
    */
   int pressed[51];
-  int msg[8];
   int sysbut[3] = {-1,-1,-1};
-  int cur_conv, prev_conv, s0, s1, s2, but_id, note_id, v0, v1, v2;
+  int msg[8];
+  int cur_conv, but_id, note_id;
+  int32_t old_s;
+
+#define ADCFACT (1<<12)
+#define MSGFACT (1<<11)
+/*
+ * Second order Kalman like filter with fast signal start and end conditions
+ */
+#define UPDATE_AND_FILTER(s0, v0, pad)      \
+old_s = s0[but_id];                         \
+s0[but_id] = (15 * (old_s + v0[but_id]) + ADCFACT * (int32_t)(4095-samples[ cur_conv + pad * ADC_GRP1_NUM_CHANNELS + n]) ) / 16; \
+if (s0[but_id] < 0) { s0[but_id] = 0; }     \
+if (s0[but_id] > MIN_PRES && old_s < MIN_PRES) {    \
+  v0[but_id] = s0[but_id] - old_s;          \
+} else {                                    \
+  v0[but_id] = (15 * v0[but_id] + (s0[but_id] - old_s)) / 16;   \
+}
+
   msg[0] = ID_DIS;
   while (TRUE) {
 
@@ -512,29 +538,27 @@ int main(void) {
       if ((proc_conversion % 3) == 2) {
         note_id = (proc_conversion / 3) % 17;
         cur_conv = (proc_conversion - 2) * 3;
-        prev_conv = (cur_conv + 51*3) % 102*3;
 
         /*
          * Check button in each octave/adc-channel
          */
         for (n = 0; n < 3; n++) {
           but_id = note_id + n * 17;
-          s0 = 4095-samples[ cur_conv                            + n];
-          s1 = 4095-samples[ cur_conv + 1* ADC_GRP1_NUM_CHANNELS + n];
-          s2 = 4095-samples[ cur_conv + 2* ADC_GRP1_NUM_CHANNELS + n];
+          UPDATE_AND_FILTER(s0, v0, 0)
+          UPDATE_AND_FILTER(s1, v1, 1)
+          UPDATE_AND_FILTER(s2, v2, 2)
 
-          if (s0 > MIN_PRES || s1 > MIN_PRES || s2 > MIN_PRES) {
-            v0 = s0 - (4095-samples[ prev_conv                            + n]);
-            v1 = s1 - (4095-samples[ prev_conv + 1* ADC_GRP1_NUM_CHANNELS + n]);
-            v2 = s2 - (4095-samples[ prev_conv + 2* ADC_GRP1_NUM_CHANNELS + n]);
-
+          if (s0[but_id] > MIN_PRES || s1[but_id] > MIN_PRES || s2[but_id] > MIN_PRES) {
             msg[1] = but_id;
-            msg[2] = s0*2;
-            msg[3] = s1*2;
-            msg[4] = s2*2;
-            msg[5] = v0*2;
-            msg[6] = v1*2;
-            msg[7] = v2*2;
+            msg[2] = (s0[but_id] - MIN_PRES) / MSGFACT;
+            msg[3] = (s1[but_id] - MIN_PRES) / MSGFACT;
+            msg[4] = (s2[but_id] - MIN_PRES) / MSGFACT;
+            if (msg[2] < 0) msg[2] = 0;
+            if (msg[3] < 0) msg[3] = 0;
+            if (msg[4] < 0) msg[4] = 0;
+            msg[5] = v0[but_id] / MSGFACT;
+            msg[6] = v1[but_id] / MSGFACT;
+            msg[7] = v2[but_id] / MSGFACT;
             while (msgSend(8, msg)) {
               if (pressed[but_id]) {
                 break;
@@ -544,18 +568,14 @@ int main(void) {
             pressed[but_id] = 1;
           }
           else if (pressed[but_id]) {
-            v0 = s0 - (4095-samples[ prev_conv                            + n]);
-            v1 = s1 - (4095-samples[ prev_conv + 1* ADC_GRP1_NUM_CHANNELS + n]);
-            v2 = s2 - (4095-samples[ prev_conv + 2* ADC_GRP1_NUM_CHANNELS + n]);
-
             pressed[but_id] = 0;
             msg[1] = but_id;
             msg[2] = 0;
             msg[3] = 0;
             msg[4] = 0;
-            msg[5] = v0*2;
-            msg[6] = v1*2;
-            msg[7] = v2*2;
+            msg[5] = v0[but_id] / MSGFACT;
+            msg[6] = v1[but_id] / MSGFACT;
+            msg[7] = v2[but_id] / MSGFACT;
             while (msgSend(8, msg)) {
               chThdSleep(1);
             }
