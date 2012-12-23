@@ -112,6 +112,8 @@ static int32_t s2[51] = {0};
 static int32_t v0[51] = {0};
 static int32_t v1[51] = {0};
 static int32_t v2[51] = {0};
+static int pressed[51] = {0};
+static int sysbut[3] = {-1,-1,-1};
 
 /*
  * ADC samples buffer.
@@ -510,8 +512,6 @@ int main(void) {
    * Normal main() thread activity.
    * Read out buttons and create messages.
    */
-  int pressed[51];
-  int sysbut[3] = {-1,-1,-1};
   int msg[8];
   int cur_conv, but_id, note_id;
   int32_t old_s;
