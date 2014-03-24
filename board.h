@@ -47,7 +47,12 @@
 /*
  * MCU type as defined in the ST header file stm32f4xx.h.
  */
-#define STM32F4XX
+#define STM32F40_41xxx
+
+/*
+ * USB VBUSSENS pin is not connected.
+ */
+#define BOARD_OTG_NOVBUSSENS
 
 /*
  * IO pins assignments.

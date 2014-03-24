@@ -20,13 +20,12 @@
 
 #include "ch.h"
 #include "hal.h"
-#include "test.h"
 #include "chprintf.h"
 
 #include "usbcfg.h"
 
 /* Virtual serial port over USB.*/
-static SerialUSBDriver SDU1;
+SerialUSBDriver SDU1;
 
 /*
  * Accelerometer part
@@ -433,14 +432,6 @@ int main(void) {
   sdStart(&SD2, &ser_cfg);
   palSetPadMode(GPIOD, 5, PAL_MODE_ALTERNATE(7));
   palSetPadMode(GPIOD, 6, PAL_MODE_ALTERNATE(7));
-
-  /*
-   * If the user button is pressed after the reset then the test suite is
-   * executed immediately before activating the various device drivers in
-   * order to not alter the benchmark scores.
-   */
-  if (palReadPad(GPIOG, GPIOG_BUTTON))
-    TestThread(&SD2);
 
   /*
    * Initializes a serial-over-USB CDC driver.
