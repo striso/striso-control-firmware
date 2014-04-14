@@ -70,7 +70,7 @@ static const I2CConfig i2cfg2 = {
 #define ID_SYS 4
 
 #define MIN_PRES (8<<12)
-#define FILT 16
+#define FILT 8
 
 /* Total number of channels to be sampled by a single ADC operation.*/
 #define ADC_GRP1_NUM_CHANNELS   3
@@ -150,8 +150,8 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_56
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_84
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_112
-//#define ADC_SAMPLE_DEF ADC_SAMPLE_144
-#define ADC_SAMPLE_DEF ADC_SAMPLE_480
+#define ADC_SAMPLE_DEF ADC_SAMPLE_144
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_480
 /*
  * ADC conversion group.
  * Mode:        Linear buffer, 4 samples of 2 channels, SW triggered.
@@ -514,12 +514,12 @@ int main(void) {
  */
 #define UPDATE_AND_FILTER(s0, v0, pad)      \
 old_s = s0[but_id];                         \
-s0[but_id] = (15 * (old_s + v0[but_id]) + ADCFACT * (int32_t)(4095-samples[ cur_conv + pad * ADC_GRP1_NUM_CHANNELS + n]) ) / 16; \
+s0[but_id] = ((FILT-1) * (old_s + v0[but_id]) + ADCFACT * (int32_t)(4095-samples[ cur_conv + pad * ADC_GRP1_NUM_CHANNELS + n]) ) / FILT; \
 if (s0[but_id] < 0) { s0[but_id] = 0; }     \
 if (s0[but_id] > MIN_PRES && old_s < MIN_PRES) {    \
   v0[but_id] = s0[but_id] - old_s;          \
 } else {                                    \
-  v0[but_id] = (15 * v0[but_id] + (s0[but_id] - old_s)) / 16;   \
+  v0[but_id] = ((FILT-1) * v0[but_id] + (s0[but_id] - old_s)) / FILT;   \
 }
 
   msg[0] = ID_DIS;
