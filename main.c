@@ -103,7 +103,6 @@ static const int out_channels_pad[51] = {
 
 static int cur_channel = 0;
 static int next_conversion = 0;
-static int next_sample = 0;
 static int proc_conversion = 0;
 
 // if next buffers are defined in main the contents change randomly
@@ -119,8 +118,11 @@ static int sysbut[3] = {-1,-1,-1};
 /*
  * ADC samples buffer.
  */
-static adcsample_t adc_samples[ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH];
-static adcsample_t samples[ADC_GRP1_NUM_CHANNELS * 102] = {0};
+static adcsample_t adc_samples[ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH]; // 6
+static adcsample_t samples0[102] = {0};
+static adcsample_t samples1[102] = {0};
+static adcsample_t samples2[102] = {0};
+static adcsample_t* samples[3] = {samples0, samples1, samples2};
 
 static const ADCConversionGroup adcgrpcfg;
 
@@ -128,21 +130,18 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   (void)adcp;
   (void)n;
 
-  next_conversion = (next_conversion+1) % 102;
-
   /* Open old channel */
   palSetPad(out_channels_port[cur_channel], out_channels_pad[cur_channel]);
-  cur_channel = next_conversion % OUT_NUM_CHANNELS;
+  cur_channel = (next_conversion+1) % OUT_NUM_CHANNELS;
   /* Drain new channel */
   palClearPad(out_channels_port[cur_channel], out_channels_pad[cur_channel]);
 
-  /* 
-   * copy adc_samples
-   */
-  samples[next_sample] = buffer[0];
-  samples[next_sample+1] = buffer[1];
-  samples[next_sample+2] = buffer[2];
-  next_sample = next_conversion * ADC_GRP1_NUM_CHANNELS;
+  /* copy adc_samples */
+  samples0[next_conversion] = buffer[0];
+  samples1[next_conversion] = buffer[1];
+  samples2[next_conversion] = buffer[2];
+  
+  next_conversion = (next_conversion+1) % 102;
 }
 
 
@@ -411,17 +410,25 @@ static msg_t ThreadRead(void *arg) {
   return 0;
 }
 
+// Schlick power function, approximation of power function
+float powf_schlick(const float a, const float b) {
+  return (a / (b - a * b + a));
+}
+
 /*
  * Second order Kalman like filter with fast signal start and end conditions
  */
-#define UPDATE_AND_FILTER(s0, v0, pad)      \
-old_s = s0[but_id];                         \
-s0[but_id] = ((FILT-1) * (old_s + v0[but_id]) + ADCFACT * (int32_t)(4095-samples[ cur_conv + pad * ADC_GRP1_NUM_CHANNELS + n]) ) / FILT; \
-if (s0[but_id] < 0) { s0[but_id] = 0; }     \
-if (s0[but_id] > MIN_PRES && old_s < MIN_PRES) {    \
-  v0[but_id] = s0[but_id] - old_s;          \
-} else {                                    \
-  v0[but_id] = ((FILT-1) * v0[but_id] + (s0[but_id] - old_s)) / FILT;   \
+void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
+  int32_t old_s = *s;
+  *s = ((FILT-1) * (old_s + *v) + s_new) / FILT;
+  if (*s < 0) {
+    *s = 0;
+  }
+  if (*s > MIN_PRES && old_s <= MIN_PRES) {
+    *v = *s - old_s;
+  } else {
+    *v = ((FILT-1) * (*v) + (*s - old_s)) / FILT;
+  }
 }
 
 /*
@@ -433,7 +440,7 @@ static msg_t ThreadReadButtons(void *arg) {
 
   int msg[8];
   int cur_conv, but_id, note_id;
-  int32_t old_s;
+  int32_t s_new;
 
   msg[0] = ID_DIS;
   while (TRUE) {
@@ -441,16 +448,19 @@ static msg_t ThreadReadButtons(void *arg) {
       // process 3 buttons if all 3 values * 3 buttons are available
       if ((proc_conversion % 3) == 2) {
         note_id = (proc_conversion / 3) % 17;
-        cur_conv = (proc_conversion - 2) * 3;
+        cur_conv = (proc_conversion - 2);
 
         /*
          * Check button in each octave/adc-channel
          */
         for (int n = 0; n < 3; n++) {
           but_id = note_id + n * 17;
-          UPDATE_AND_FILTER(s0, v0, 0)
-          UPDATE_AND_FILTER(s1, v1, 1)
-          UPDATE_AND_FILTER(s2, v2, 2)
+          s_new = ADCFACT * (int32_t)(4095-samples[n][cur_conv + 0]);
+          update_and_filter(&s0[but_id], &v0[but_id], s_new);
+          s_new = ADCFACT * (int32_t)(4095-samples[n][cur_conv + 1]);
+          update_and_filter(&s1[but_id], &v1[but_id], s_new);
+          s_new = ADCFACT * (int32_t)(4095-samples[n][cur_conv + 2]);
+          update_and_filter(&s2[but_id], &v2[but_id], s_new);
 
           if (s0[but_id] > MIN_PRES || s1[but_id] > MIN_PRES || s2[but_id] > MIN_PRES) {
             msg[1] = but_id;
