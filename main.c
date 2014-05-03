@@ -150,8 +150,8 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_56
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_84
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_112
-#define ADC_SAMPLE_DEF ADC_SAMPLE_144
-//#define ADC_SAMPLE_DEF ADC_SAMPLE_480
+//define ADC_SAMPLE_DEF ADC_SAMPLE_144
+#define ADC_SAMPLE_DEF ADC_SAMPLE_480
 /*
  * ADC conversion group.
  * Mode:        Linear buffer, 4 samples of 2 channels, SW triggered.
@@ -358,7 +358,7 @@ static msg_t ThreadSend(void *arg) {
       cmsg[0] = 0x80 | ((uint8_t)msg[0])<<3 | ((uint8_t)(size-2));
       cmsg[1] = 0x7f & (uint8_t)msg[1];
       pack(&msg[2], &cmsg[2], size - 2);
-      size = chSequentialStreamWrite((BaseSequentialStream *)&SDU1, cmsg, 2+(size-2)*2);
+      size = chSequentialStreamWrite((BaseSequentialStream *)&SD2, cmsg, 2+(size-2)*2);
     }
     else if (size == 0) {
       chThdSleep(1);
@@ -480,7 +480,7 @@ int main(void) {
    * Initializes the SPI driver 1. The signals
    * are already initialized in the board file.
    */
-  spiStart(&SPID1, &spi1cfg);
+  //spiStart(&SPID1, &spi1cfg);
 
   chThdCreateStatic(waThreadSend, sizeof(waThreadSend), NORMALPRIO, ThreadSend, NULL);
 
@@ -495,7 +495,7 @@ int main(void) {
   /*
    * Creates the accelerometer thread.
    */
-  chThdCreateStatic(waThreadAccel, sizeof(waThreadAccel), NORMALPRIO, ThreadAccel, NULL);
+  //chThdCreateStatic(waThreadAccel, sizeof(waThreadAccel), NORMALPRIO, ThreadAccel, NULL);
 
   adcStartConversion(&ADCD1, &adcgrpcfg, adc_samples, ADC_GRP1_BUF_DEPTH);
 
