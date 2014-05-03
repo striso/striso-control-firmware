@@ -69,6 +69,8 @@ static const I2CConfig i2cfg2 = {
 #define ID_ACCEL 3
 #define ID_SYS 4
 
+#define ADCFACT (1<<12)
+#define MSGFACT (1<<11)
 #define MIN_PRES (8<<12)
 #define FILT 8
 
@@ -410,106 +412,6 @@ static msg_t ThreadRead(void *arg) {
 }
 
 /*
- * Application entry point.
- */
-int main(void) {
-  int n;
-
-  /*
-   * System initializations.
-   * - HAL initialization, this also initializes the configured device drivers
-   *   and performs the board-specific initializations.
-   * - Kernel initialization, the main() function becomes a thread and the
-   *   RTOS is active.
-   */
-  halInit();
-  chSysInit();
-
-  /*
-   * Activates the serial driver 2 using the driver default configuration.
-   * PD5(TX) and PD6(RX) are routed to USART2.
-   */
-  sdStart(&SD2, &ser_cfg);
-  palSetPadMode(GPIOD, 5, PAL_MODE_ALTERNATE(7));
-  palSetPadMode(GPIOD, 6, PAL_MODE_ALTERNATE(7));
-
-  /*
-   * Initializes a serial-over-USB CDC driver.
-   */
-  sduObjectInit(&SDU1);
-  sduStart(&SDU1, &serusbcfg);
-
-  /*
-   * Activates the USB driver and then the USB bus pull-up on D+.
-   * Note, a delay is inserted in order to not have to disconnect the cable
-   * after a reset.
-   */
-  //usbDisconnectBus(serusbcfg.usbp);
-  //chThdSleepMilliseconds(1000);
-  usbStart(serusbcfg.usbp, &usbcfg);
-  //usbConnectBus(serusbcfg.usbp);
-
-  //chThdSleepMilliseconds(1000);
-
-  // init msg mutex
-  chMtxInit(&msg_lock);
-
-  /*
-   * Initialize output channels for the buttons as opendrain
-   */
-  for (n=0; n<OUT_NUM_CHANNELS; n++) {
-    palSetPadMode(out_channels_port[n], out_channels_pad[n], PAL_MODE_OUTPUT_OPENDRAIN);
-  }
-
-  /*
-   * Initializes the ADC driver 1.
-   * The pin PA0,PA1,PA2 on the port GPIOC are programmed as analog input.
-   */
-  adcStart(&ADCD1, NULL);
-  palSetPadMode(GPIOA, 0, PAL_MODE_INPUT_ANALOG);
-  palSetPadMode(GPIOA, 1, PAL_MODE_INPUT_ANALOG);
-  palSetPadMode(GPIOA, 2, PAL_MODE_INPUT_ANALOG);
-
-  /*
-   * Starts I2C
-   */
-  i2cStart(&I2CD2, &i2cfg2);
-
-
-  /*
-   * Initializes the SPI driver 1. The signals
-   * are already initialized in the board file.
-   */
-  //spiStart(&SPID1, &spi1cfg);
-
-  chThdCreateStatic(waThreadSend, sizeof(waThreadSend), NORMALPRIO, ThreadSend, NULL);
-
-  /*
-   * Creates the LED flash thread.
-   */
-  chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
-
-  //chThdCreateStatic(waThreadRead, sizeof(waThreadRead), NORMALPRIO, ThreadRead, NULL);
-  //chThdSleepMilliseconds(500);
-
-  /*
-   * Creates the accelerometer thread.
-   */
-  //chThdCreateStatic(waThreadAccel, sizeof(waThreadAccel), NORMALPRIO, ThreadAccel, NULL);
-
-  adcStartConversion(&ADCD1, &adcgrpcfg, adc_samples, ADC_GRP1_BUF_DEPTH);
-
-  /*
-   * Normal main() thread activity.
-   * Read out buttons and create messages.
-   */
-  int msg[8];
-  int cur_conv, but_id, note_id;
-  int32_t old_s;
-
-#define ADCFACT (1<<12)
-#define MSGFACT (1<<11)
-/*
  * Second order Kalman like filter with fast signal start and end conditions
  */
 #define UPDATE_AND_FILTER(s0, v0, pad)      \
@@ -522,10 +424,21 @@ if (s0[but_id] > MIN_PRES && old_s < MIN_PRES) {    \
   v0[but_id] = ((FILT-1) * v0[but_id] + (s0[but_id] - old_s)) / FILT;   \
 }
 
+/*
+ * Read out buttons and create messages.
+ */
+static WORKING_AREA(waThreadReadButtons, 128);
+static msg_t ThreadReadButtons(void *arg) {
+  (void)arg;
+
+  int msg[8];
+  int cur_conv, but_id, note_id;
+  int32_t old_s;
+
   msg[0] = ID_DIS;
   while (TRUE) {
-
     while (proc_conversion != next_conversion) {
+      // process 3 buttons if all 3 values * 3 buttons are available
       if ((proc_conversion % 3) == 2) {
         note_id = (proc_conversion / 3) % 17;
         cur_conv = (proc_conversion - 2) * 3;
@@ -533,7 +446,7 @@ if (s0[but_id] > MIN_PRES && old_s < MIN_PRES) {    \
         /*
          * Check button in each octave/adc-channel
          */
-        for (n = 0; n < 3; n++) {
+        for (int n = 0; n < 3; n++) {
           but_id = note_id + n * 17;
           UPDATE_AND_FILTER(s0, v0, 0)
           UPDATE_AND_FILTER(s1, v1, 1)
@@ -585,7 +498,7 @@ if (s0[but_id] > MIN_PRES && old_s < MIN_PRES) {    \
       sysbut[0] -= 2;
     }
     else {
-    n = palReadPad(GPIOG, GPIOG_BUTTON);
+    int n = palReadPad(GPIOG, GPIOG_BUTTON);
     if (n != sysbut[0]) {
       msg[0] = ID_CONTROL;
       msg[1] = 0;
@@ -599,7 +512,7 @@ if (s0[but_id] > MIN_PRES && old_s < MIN_PRES) {    \
       sysbut[1] -= 2;
     }
     else {
-    n = palReadPad(GPIOB, GPIOB_BUTTON_UP);
+    int n = palReadPad(GPIOB, GPIOB_BUTTON_UP);
     if (n != sysbut[1]) {
       msg[0] = ID_CONTROL;
       msg[1] = 1;
@@ -613,7 +526,7 @@ if (s0[but_id] > MIN_PRES && old_s < MIN_PRES) {    \
       sysbut[2] -= 2;
     }
     else {
-    n = palReadPad(GPIOB, GPIOB_BUTTON_DOWN);
+    int n = palReadPad(GPIOB, GPIOB_BUTTON_DOWN);
     if (n != sysbut[2]) {
       msg[0] = ID_CONTROL;
       msg[1] = 2;
@@ -625,5 +538,103 @@ if (s0[but_id] > MIN_PRES && old_s < MIN_PRES) {    \
     }
 
     chThdSleepMicroseconds(100);
+  }
+  return 0;
+}
+
+/*
+ * Application entry point.
+ */
+int main(void) {
+  /*
+   * System initializations.
+   * - HAL initialization, this also initializes the configured device drivers
+   *   and performs the board-specific initializations.
+   * - Kernel initialization, the main() function becomes a thread and the
+   *   RTOS is active.
+   */
+  halInit();
+  chSysInit();
+
+  /*
+   * Activates the serial driver 2 using the driver default configuration.
+   * PD5(TX) and PD6(RX) are routed to USART2.
+   */
+  sdStart(&SD2, &ser_cfg);
+  palSetPadMode(GPIOD, 5, PAL_MODE_ALTERNATE(7));
+  palSetPadMode(GPIOD, 6, PAL_MODE_ALTERNATE(7));
+
+  /*
+   * Initializes a serial-over-USB CDC driver.
+   */
+  sduObjectInit(&SDU1);
+  sduStart(&SDU1, &serusbcfg);
+
+  /*
+   * Activates the USB driver and then the USB bus pull-up on D+.
+   * Note, a delay is inserted in order to not have to disconnect the cable
+   * after a reset.
+   */
+  //usbDisconnectBus(serusbcfg.usbp);
+  //chThdSleepMilliseconds(1000);
+  usbStart(serusbcfg.usbp, &usbcfg);
+  //usbConnectBus(serusbcfg.usbp);
+
+  //chThdSleepMilliseconds(1000);
+
+  // init msg mutex
+  chMtxInit(&msg_lock);
+
+  /*
+   * Initialize output channels for the buttons as opendrain
+   */
+  for (int n=0; n<OUT_NUM_CHANNELS; n++) {
+    palSetPadMode(out_channels_port[n], out_channels_pad[n], PAL_MODE_OUTPUT_OPENDRAIN);
+  }
+
+  /*
+   * Initializes the ADC driver 1.
+   * The pin PA0,PA1,PA2 on the port GPIOC are programmed as analog input.
+   */
+  adcStart(&ADCD1, NULL);
+  palSetPadMode(GPIOA, 0, PAL_MODE_INPUT_ANALOG);
+  palSetPadMode(GPIOA, 1, PAL_MODE_INPUT_ANALOG);
+  palSetPadMode(GPIOA, 2, PAL_MODE_INPUT_ANALOG);
+
+  /*
+   * Starts I2C
+   */
+  i2cStart(&I2CD2, &i2cfg2);
+
+
+  /*
+   * Initializes the SPI driver 1. The signals
+   * are already initialized in the board file.
+   */
+  //spiStart(&SPID1, &spi1cfg);
+
+  chThdCreateStatic(waThreadSend, sizeof(waThreadSend), NORMALPRIO, ThreadSend, NULL);
+
+  /*
+   * Creates the LED flash thread.
+   */
+  chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
+
+  //chThdCreateStatic(waThreadRead, sizeof(waThreadRead), NORMALPRIO, ThreadRead, NULL);
+  //chThdSleepMilliseconds(500);
+
+  /*
+   * Creates the accelerometer thread.
+   */
+  //chThdCreateStatic(waThreadAccel, sizeof(waThreadAccel), NORMALPRIO, ThreadAccel, NULL);
+
+  adcStartConversion(&ADCD1, &adcgrpcfg, adc_samples, ADC_GRP1_BUF_DEPTH);
+  /*
+   * Creates the thread to process the adc samples
+   */
+  chThdCreateStatic(waThreadReadButtons, sizeof(waThreadReadButtons), NORMALPRIO, ThreadReadButtons, NULL);
+
+  while (1) {
+    chThdSleepMilliseconds(100);
   }
 }
