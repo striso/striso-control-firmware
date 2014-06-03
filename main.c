@@ -165,12 +165,12 @@ static const ADCConversionGroup adcgrpcfg = {
   NULL, /* error callback */
   /* HW dependent part.*/
   0, // CR1
-  ADC_CR2_SWSTART,
+  ADC_CR2_SWSTART, // CR2
   0, // SMPR1
-  ADC_SMPR2_SMP_AN0(ADC_SAMPLE_DEF) | ADC_SMPR2_SMP_AN1(ADC_SAMPLE_DEF) | ADC_SMPR2_SMP_AN2(ADC_SAMPLE_DEF),
-  ADC_SQR1_NUM_CH(ADC_GRP1_NUM_CHANNELS),
+  ADC_SMPR2_SMP_AN0(ADC_SAMPLE_DEF) | ADC_SMPR2_SMP_AN1(ADC_SAMPLE_DEF) | ADC_SMPR2_SMP_AN2(ADC_SAMPLE_DEF), // SMPR2
+  ADC_SQR1_NUM_CH(ADC_GRP1_NUM_CHANNELS), // SQR1
   0, // SQR2
-  ADC_SQR3_SQ1_N(ADC_CHANNEL_IN0) | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN1) | ADC_SQR3_SQ3_N(ADC_CHANNEL_IN2)
+  ADC_SQR3_SQ1_N(ADC_CHANNEL_IN0) | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN1) | ADC_SQR3_SQ3_N(ADC_CHANNEL_IN2) // SQR3
 };
 
 #define BUFFERSIZE 240
@@ -416,16 +416,14 @@ float powf_schlick(const float a, const float b) {
 }
 
 /*
- * Second order Kalman like filter with fast signal start and end conditions
+ * Second order Kalman like filter with fast signal end conditions
  */
 void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
   int32_t old_s = *s;
   *s = ((FILT-1) * (old_s + *v) + s_new) / FILT;
   if (*s < 0) {
     *s = 0;
-  }
-  if (*s > MIN_PRES && old_s <= MIN_PRES) {
-    *v = *s - old_s;
+    *v = 0
   } else {
     *v = ((FILT-1) * (*v) + (*s - old_s)) / FILT;
   }
