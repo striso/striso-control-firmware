@@ -24,6 +24,8 @@
 
 #include "usbcfg.h"
 
+#include "calib.h"
+
 /* Virtual serial port over USB.*/
 SerialUSBDriver SDU1;
 
@@ -69,9 +71,9 @@ static const I2CConfig i2cfg2 = {
 #define ID_ACCEL 3
 #define ID_SYS 4
 
+#define INTERNAL_ONE (1<<24)
 #define ADCFACT (1<<12)
 #define MSGFACT (1<<11)
-#define MIN_PRES (8<<12)
 #define FILT 8
 
 /* Total number of channels to be sampled by a single ADC operation.*/
@@ -422,11 +424,23 @@ void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
   int32_t old_s = *s;
   *s = ((FILT-1) * (old_s + *v) + s_new) / FILT;
   if (*s < 0) {
-    *s = 0;
-    *v = 0
+    *v = 0;
+  } else if (*s > INTERNAL_ONE) {
+    *s = INTERNAL_ONE;
+    *v = 0;
   } else {
     *v = ((FILT-1) * (*v) + (*s - old_s)) / FILT;
   }
+}
+
+int32_t calibrate(int32_t s, int pad_idx) {
+  s = ADCFACT * (int32_t)(4095-s) - MSGFACT * calib_offset[pad_idx];
+  if (s>0) {
+    float sf = ((float)s) * (1.0 / INTERNAL_ONE);
+    sf = powf_schlick(sf * calib_mul[pad_idx], calib_pow[pad_idx]);
+    s = (uint32_t)(sf * INTERNAL_ONE);
+  }
+  return s;
 }
 
 /*
@@ -453,30 +467,25 @@ static msg_t ThreadReadButtons(void *arg) {
          */
         for (int n = 0; n < 3; n++) {
           but_id = note_id + n * 17;
-          s_new = ADCFACT * (int32_t)(4095-samples[n][cur_conv + 0]);
+          s_new = calibrate(samples[n][cur_conv + 0], but_id * 3 + 0);
           update_and_filter(&s0[but_id], &v0[but_id], s_new);
-          s_new = ADCFACT * (int32_t)(4095-samples[n][cur_conv + 1]);
+          s_new = calibrate(samples[n][cur_conv + 1], but_id * 3 + 1);
           update_and_filter(&s1[but_id], &v1[but_id], s_new);
-          s_new = ADCFACT * (int32_t)(4095-samples[n][cur_conv + 2]);
+          s_new = calibrate(samples[n][cur_conv + 2], but_id * 3 + 2);
           update_and_filter(&s2[but_id], &v2[but_id], s_new);
 
-          if (s0[but_id] > MIN_PRES || s1[but_id] > MIN_PRES || s2[but_id] > MIN_PRES) {
+          if (s0[but_id] > 0 || s1[but_id] > 0 || s2[but_id] > 0) {
             msg[1] = but_id;
-            msg[2] = (s0[but_id] - MIN_PRES) / MSGFACT;
-            msg[3] = (s1[but_id] - MIN_PRES) / MSGFACT;
-            msg[4] = (s2[but_id] - MIN_PRES) / MSGFACT;
+            msg[2] = s0[but_id] / MSGFACT;
+            msg[3] = s1[but_id] / MSGFACT;
+            msg[4] = s2[but_id] / MSGFACT;
             if (msg[2] < 0) msg[2] = 0;
             if (msg[3] < 0) msg[3] = 0;
             if (msg[4] < 0) msg[4] = 0;
             msg[5] = v0[but_id] / MSGFACT;
             msg[6] = v1[but_id] / MSGFACT;
             msg[7] = v2[but_id] / MSGFACT;
-            while (msgSend(8, msg)) {
-              if (pressed[but_id]) {
-                break;
-              }
-              chThdSleep(1);
-            }
+            msgSend(8, msg);
             pressed[but_id] = 1;
           }
           else if (pressed[but_id]) {
