@@ -169,16 +169,20 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
 static const ADCConversionGroup adcgrpcfg = {
   TRUE,
   ADC_GRP1_NUM_CHANNELS,
-  adccallback, /* enc of conversion callback */
+  adccallback, /* end of conversion callback */
   NULL, /* error callback */
   /* HW dependent part.*/
   0, // CR1
   ADC_CR2_SWSTART, // CR2
   0, // SMPR1
-  ADC_SMPR2_SMP_AN0(ADC_SAMPLE_DEF) | ADC_SMPR2_SMP_AN1(ADC_SAMPLE_DEF) | ADC_SMPR2_SMP_AN2(ADC_SAMPLE_DEF), // SMPR2
+  ADC_SMPR2_SMP_AN0(ADC_SAMPLE_DEF)
+   | ADC_SMPR2_SMP_AN1(ADC_SAMPLE_DEF)
+   | ADC_SMPR2_SMP_AN2(ADC_SAMPLE_DEF), // SMPR2
   ADC_SQR1_NUM_CH(ADC_GRP1_NUM_CHANNELS), // SQR1
   0, // SQR2
-  ADC_SQR3_SQ1_N(ADC_CHANNEL_IN0) | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN1) | ADC_SQR3_SQ3_N(ADC_CHANNEL_IN2) // SQR3
+  ADC_SQR3_SQ1_N(ADC_CHANNEL_IN0)
+   | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN1)
+   | ADC_SQR3_SQ3_N(ADC_CHANNEL_IN2) // SQR3
 };
 
 #define BUFFERSIZE 240
@@ -629,7 +633,7 @@ int main(void) {
 
   /*
    * Initializes the ADC driver 1.
-   * The pin PA0,PA1,PA2 on the port GPIOC are programmed as analog input.
+   * The pin PA0,PA1,PA2 on the port GPIOA are programmed as analog input.
    */
   adcStart(&ADCD1, NULL);
   palSetPadMode(GPIOA, 0, PAL_MODE_INPUT_ANALOG);
