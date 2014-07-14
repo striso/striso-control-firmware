@@ -74,7 +74,8 @@ static const I2CConfig i2cfg2 = {
 #define INTERNAL_ONE (1<<24)
 #define ADCFACT (1<<12)
 #define MSGFACT (1<<11)
-#define FILT 8
+#define MSGFACT_VELO (MSGFACT/32)
+#define FILT 16
 
 /* Total number of channels to be sampled by a single ADC operation.*/
 #define ADC_GRP1_NUM_CHANNELS   3
@@ -107,14 +108,19 @@ static int cur_channel = 0;
 static int next_conversion = 0;
 static int proc_conversion = 0;
 
-// if next buffers are defined in main the contents change randomly
-static int32_t s0[51] = {0};
-static int32_t s1[51] = {0};
-static int32_t s2[51] = {0};
-static int32_t v0[51] = {0};
-static int32_t v1[51] = {0};
-static int32_t v2[51] = {0};
-static int pressed[51] = {0};
+typedef struct struct_button {
+  int32_t s0;
+  int32_t s1;
+  int32_t s2;
+  int32_t v0;
+  int32_t v1;
+  int32_t v2;
+  int pressed;
+  int timer;
+} button_t;
+
+static button_t buttons[51];
+static int buttons_pressed = 0;
 static int sysbut[3] = {-1,-1,-1};
 
 /*
@@ -146,15 +152,15 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   next_conversion = (next_conversion+1) % 102;
 }
 
-
+#define SENDFACT 4
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_3
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_15
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_28
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_56
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_84
-//#define ADC_SAMPLE_DEF ADC_SAMPLE_112
-//define ADC_SAMPLE_DEF ADC_SAMPLE_144
-#define ADC_SAMPLE_DEF ADC_SAMPLE_480
+#define ADC_SAMPLE_DEF ADC_SAMPLE_112
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_144
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_480
 /*
  * ADC conversion group.
  * Mode:        Linear buffer, 4 samples of 2 channels, SW triggered.
@@ -434,7 +440,7 @@ void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
 }
 
 int32_t calibrate(int32_t s, int pad_idx) {
-  s = ADCFACT * (int32_t)(4095-s) - MSGFACT * (calib_offset[pad_idx] + 6);
+  s = ADCFACT * (int32_t)(4095-s) - MSGFACT * (calib_offset[pad_idx] + 5);
   if (s>0) {
     float sf = ((float)s) * (1.0 / INTERNAL_ONE);
     sf = powf_schlick(sf * calib_mul[pad_idx], calib_pow[pad_idx]);
@@ -453,6 +459,7 @@ static msg_t ThreadReadButtons(void *arg) {
   int msg[8];
   int cur_conv, but_id, note_id;
   int32_t s_new;
+  button_t* but;
 
   msg[0] = ID_DIS;
   while (TRUE) {
@@ -467,36 +474,47 @@ static msg_t ThreadReadButtons(void *arg) {
          */
         for (int n = 0; n < 3; n++) {
           but_id = note_id + n * 17;
+          but = &buttons[but_id];
           s_new = calibrate(samples[n][cur_conv + 0], but_id * 3 + 0);
-          update_and_filter(&s0[but_id], &v0[but_id], s_new);
+          update_and_filter(&but->s0, &but->v0, s_new);
           s_new = calibrate(samples[n][cur_conv + 1], but_id * 3 + 1);
-          update_and_filter(&s1[but_id], &v1[but_id], s_new);
+          update_and_filter(&but->s1, &but->v1, s_new);
           s_new = calibrate(samples[n][cur_conv + 2], but_id * 3 + 2);
-          update_and_filter(&s2[but_id], &v2[but_id], s_new);
+          update_and_filter(&but->s2, &but->v2, s_new);
 
-          if (s0[but_id] > 0 || s1[but_id] > 0 || s2[but_id] > 0) {
-            msg[1] = but_id;
-            msg[2] = s0[but_id] / MSGFACT;
-            msg[3] = s1[but_id] / MSGFACT;
-            msg[4] = s2[but_id] / MSGFACT;
-            if (msg[2] < 0) msg[2] = 0;
-            if (msg[3] < 0) msg[3] = 0;
-            if (msg[4] < 0) msg[4] = 0;
-            msg[5] = v0[but_id] / MSGFACT;
-            msg[6] = v1[but_id] / MSGFACT;
-            msg[7] = v2[but_id] / MSGFACT;
-            msgSend(8, msg);
-            pressed[but_id] = 1;
+          if (but->s0 > 0 || but->s1 > 0 || but->s2 > 0) {
+            if (but->pressed == 0) {
+              but->pressed = 1;
+              buttons_pressed++;
+            }
+            if (but->timer <= 0) {
+              msg[1] = but_id;
+              msg[2] = but->s0 / MSGFACT;
+              msg[3] = but->s1 / MSGFACT;
+              msg[4] = but->s2 / MSGFACT;
+              if (msg[2] < 0) msg[2] = 0;
+              if (msg[3] < 0) msg[3] = 0;
+              if (msg[4] < 0) msg[4] = 0;
+              msg[5] = but->v0 / MSGFACT_VELO;
+              msg[6] = but->v1 / MSGFACT_VELO;
+              msg[7] = but->v2 / MSGFACT_VELO;
+              msgSend(8, msg);
+              but->timer = buttons_pressed * SENDFACT;
+            } else {
+              but->timer--;
+            }
           }
-          else if (pressed[but_id]) {
-            pressed[but_id] = 0;
+          else if (but->pressed) {
+            but->pressed = 0;
+            buttons_pressed--;
+            but->timer = 0;
             msg[1] = but_id;
             msg[2] = 0;
             msg[3] = 0;
             msg[4] = 0;
-            msg[5] = v0[but_id] / MSGFACT;
-            msg[6] = v1[but_id] / MSGFACT;
-            msg[7] = v2[but_id] / MSGFACT;
+            msg[5] = but->v0 / MSGFACT_VELO;
+            msg[6] = but->v1 / MSGFACT_VELO;
+            msg[7] = but->v2 / MSGFACT_VELO;
             while (msgSend(8, msg)) {
               chThdSleep(1);
             }
