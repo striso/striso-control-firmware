@@ -79,12 +79,12 @@ LDSCRIPT= $(PORTLD)/STM32F407xG.ld
 # setting.
 CSRC = $(PORTSRC) \
        $(KERNSRC) \
-       $(TESTSRC) \
        $(HALSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
        $(CHIBIOS)/os/various/chprintf.c \
-       usbcfg.c main.c
+       usbcfg.c \
+       main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.

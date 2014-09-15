@@ -57,7 +57,7 @@
 /*
  * IO pins assignments.
  */
-#define GPIOA_LED1              10
+#define GPIOC_LED1              2
 #define GPIOA_OTG_FS_DM         11
 #define GPIOA_OTG_FS_DP         12
 #define GPIOD_UART2_TX          5
@@ -97,7 +97,6 @@
 /*
  * Port A setup.
  * All input with pull-up except:
- * PA10 - GPIOA_LED1            (input floating).
  * PA11 - GPIOA_OTG_FS_DM       (alternate 10).
  * PA12 - GPIOA_OTG_FS_DP       (alternate 10).
  */
@@ -111,7 +110,7 @@
                                      PIN_MODE_INPUT(7) |                    \
                                      PIN_MODE_INPUT(8) |                    \
                                      PIN_MODE_INPUT(9) |                    \
-                                     PIN_MODE_OUTPUT(GPIOA_LED1) |          \
+                                     PIN_MODE_INPUT(10) |          \
                                      PIN_MODE_ALTERNATE(GPIOA_OTG_FS_DM) |  \
                                      PIN_MODE_ALTERNATE(GPIOA_OTG_FS_DP) |  \
                                      PIN_MODE_INPUT(13) |                   \
@@ -129,7 +128,7 @@
                                      PIN_PUDR_PULLUP(7) |                   \
                                      PIN_PUDR_PULLUP(8) |                   \
                                      PIN_PUDR_PULLUP(9) |                   \
-                                     PIN_PUDR_FLOATING(GPIOA_LED1) |        \
+                                     PIN_PUDR_PULLUP(10) |                   \
                                      PIN_PUDR_FLOATING(GPIOA_OTG_FS_DM) |   \
                                      PIN_PUDR_FLOATING(GPIOA_OTG_FS_DP) |   \
                                      PIN_PUDR_PULLUP(13) |                   \

@@ -93,7 +93,7 @@ static const ioportid_t out_channels_port[51] = {
   GPIOE, GPIOE, GPIOE, GPIOE, GPIOE, GPIOE, GPIOB, GPIOB,
   GPIOB, GPIOB, GPIOB, GPIOB, GPIOD, GPIOD, GPIOD, GPIOD, GPIOD, GPIOD,
   GPIOD, GPIOD, GPIOG, GPIOG, GPIOG, GPIOG, GPIOG, GPIOG, GPIOG,
-  GPIOC, GPIOC, GPIOC, GPIOC, GPIOA, GPIOE
+  GPIOC, GPIOC, GPIOC, GPIOC, GPIOA, GPIOA
 };
 static const int out_channels_pad[51] = {
    4,  5,  6,  7,  4,  5,  0,  1, 11, 12,
@@ -101,7 +101,7 @@ static const int out_channels_pad[51] = {
   10, 11, 12, 13, 14, 15, 10, 11,
   12, 13, 14, 15,  8,  9, 10, 11, 12, 13,
   14, 15,  2,  3,  4,  5,  6,  7,  8, 
-   6,  7,  8,  9,  8,  4
+   6,  7,  8,  9,  8, 10
 };
 
 static int cur_channel = 0;
@@ -327,12 +327,12 @@ static msg_t Thread1(void *arg) {
   msg[0] = ID_SYS;
   msg[1] = 1;
   while (TRUE) {
-    chThdSleepMilliseconds(50);
-    palSetPad(GPIOA, GPIOA_LED1);       /* Orange.  */
-    chThdSleepMilliseconds(50);
+    chThdSleepMilliseconds(250);
+    palSetPad(GPIOC, GPIOC_LED1);
+    chThdSleepMilliseconds(250);
     msg[2] = underruns;
-    if (!msgSend(3,msg))
-      palClearPad(GPIOA, GPIOA_LED1);     /* Orange.  */
+    //if (!msgSend(3,msg))
+      palClearPad(GPIOC, GPIOC_LED1);
   }
 
   return 0;
@@ -371,7 +371,7 @@ static msg_t ThreadSend(void *arg) {
       cmsg[0] = 0x80 | ((uint8_t)msg[0])<<3 | ((uint8_t)(size-2));
       cmsg[1] = 0x7f & (uint8_t)msg[1];
       pack(&msg[2], &cmsg[2], size - 2);
-      size = chSequentialStreamWrite((BaseSequentialStream *)&SD2, cmsg, 2+(size-2)*2);
+      size = chSequentialStreamWrite((BaseSequentialStream *)&SD3, cmsg, 2+(size-2)*2);
     }
     else if (size == 0) {
       chThdSleep(1);
@@ -595,13 +595,15 @@ int main(void) {
   halInit();
   chSysInit();
 
+  palSetPadMode(GPIOC, GPIOC_LED1, PAL_MODE_OUTPUT_PUSHPULL);
+
   /*
    * Activates the serial driver 2 using the driver default configuration.
    * PD5(TX) and PD6(RX) are routed to USART2.
    */
-  sdStart(&SD2, &ser_cfg);
-  palSetPadMode(GPIOD, 5, PAL_MODE_ALTERNATE(7));
-  palSetPadMode(GPIOD, 6, PAL_MODE_ALTERNATE(7));
+  sdStart(&SD3, &ser_cfg);
+  palSetPadMode(GPIOC, 10, PAL_MODE_ALTERNATE(7));
+  palSetPadMode(GPIOC, 11, PAL_MODE_ALTERNATE(7));
 
   /*
    * Initializes a serial-over-USB CDC driver.
@@ -673,7 +675,8 @@ int main(void) {
    */
   chThdCreateStatic(waThreadReadButtons, sizeof(waThreadReadButtons), NORMALPRIO, ThreadReadButtons, NULL);
 
+
   while (1) {
-    chThdSleepMilliseconds(100);
+    chThdSleepMilliseconds(500);
   }
 }
