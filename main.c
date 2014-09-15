@@ -30,38 +30,6 @@
 SerialUSBDriver SDU1;
 
 /*
- * Accelerometer part
- */
-/* buffers depth */
-#define ACCEL_RX_DEPTH 6
-#define ACCEL_TX_DEPTH 4
-
-/* mma8451q specific addresses */
-#define ACCEL_OUT_DATA    0x00
-#define ACCEL_CTRL_REG1   0x16
-
-static uint8_t rxbuf[ACCEL_RX_DEPTH];
-static uint8_t txbuf[ACCEL_TX_DEPTH];
-static i2cflags_t errors = 0;
-#define mma7455_addr 0b0011101
-
-/**
- * Converts accelerometer data from 2 bytes 10 bits to 14 bits signed integer
- */
-int16_t accel2int14(uint8_t lsb, uint8_t msb){
-  int16_t word = msb << 8 | lsb;
-  word = word << 4;
-  return word;
-}
-
-/* I2C interface #2 */
-static const I2CConfig i2cfg2 = {
-    OPMODE_I2C,
-    400000,
-    FAST_DUTY_CYCLE_2,
-};
-
-/*
  * end accelerometer
  */
 
@@ -253,69 +221,6 @@ static SerialConfig ser_cfg = {
 };
 
 /*
- * SPI1 configuration structure.
- * Speed 5.25MHz, CPHA=1, CPOL=1, 8bits frames, MSb transmitted first.
- * The slave select line is the pin GPIOE_CS_SPI on the port GPIOE.
- */
-static const SPIConfig spi1cfg = {
-  NULL,
-  /* HW dependent part.*/
-  GPIOG,
-  13,
-  SPI_CR1_BR_0 | SPI_CR1_BR_1 | SPI_CR1_CPOL | SPI_CR1_CPHA
-};
-
-/*
- * Accelerometer thread.
- */
-static WORKING_AREA(waThreadAccel, 128);
-static msg_t ThreadAccel(void *arg) {
-
-  (void)arg;
-  chRegSetThreadName("accelerometer");
-  msg_t status = RDY_OK;
-  systime_t tmo = MS2ST(4);
-
-  /**
-   * Prepares the accelerometer
-   */
-  txbuf[0] = ACCEL_CTRL_REG1; /* register address */
-  txbuf[1] = 0x1; // Set to measurement mode
-  i2cAcquireBus(&I2CD2);
-  status = i2cMasterTransmitTimeout(&I2CD2, mma7455_addr, txbuf, 2, rxbuf, 0, tmo);
-  i2cReleaseBus(&I2CD2);
-
-  if (status != RDY_OK){
-    errors = i2cGetErrors(&I2CD2);
-  }
-
-  int msg[8];
-  msg[0] = ID_ACCEL;
-  msg[1] = 3; // size
-  while (TRUE) {
-    chThdSleepMilliseconds(20);
-
-    txbuf[0] = ACCEL_OUT_DATA; /* register address */
-    i2cAcquireBus(&I2CD2);
-    status = i2cMasterTransmitTimeout(&I2CD2, mma7455_addr, txbuf, 1, rxbuf, 6, tmo);
-    i2cReleaseBus(&I2CD2);
-
-    if (status != RDY_OK){
-      errors = i2cGetErrors(&I2CD2);
-    }
-    else {
-      // TODO: calibration is hardcoded here
-      msg[2] = accel2int14(rxbuf[0], rxbuf[1]) + 300;
-      msg[3] = accel2int14(rxbuf[2], rxbuf[3]) + 650;
-      msg[4] = accel2int14(rxbuf[4], rxbuf[5]);
-      msgSend(5,msg);
-    }
-  }
-
-  return 0;
-}
-
-/*
  * LED flash thread.
  */
 static WORKING_AREA(waThread1, 128);
@@ -378,47 +283,6 @@ static msg_t ThreadSend(void *arg) {
     }
   }
 
-  return 0;
-}
-
-/*
- * Message read thread
- */
-static WORKING_AREA(waThreadRead, 128);
-static msg_t ThreadRead(void *arg) {
-
-  (void)arg;
-  chRegSetThreadName("read messages over UART");
-  int msg[8];
-  uint8_t cmsg[16];
-  int size, rsize, n;
-  while (TRUE) {
-    size = chSequentialStreamRead((BaseSequentialStream *)&SD2, cmsg, 1);
-    if (size && (cmsg[0] & 0x80)) {
-      rsize = ((cmsg[0] & 0x7)+1) * 4;
-      if (rsize > 16) { continue; }
-      size += chSequentialStreamRead((BaseSequentialStream *)&SD2, &cmsg[1], rsize-1);
-      if (size != rsize) { continue; }
-      for (n=1; n < size; n++) {
-        if (cmsg[n] & 0x80) { break; }
-      }
-      if (n<size) { continue; }
-
-      // message OK
-      if (rsize == 8) {
-        msg[0] = (cmsg[0] & 0x7f)>>3;
-        msg[1] = cmsg[1];
-        unpack(&cmsg[2], &msg[2], 3);
-        while (msgSend(5, msg)) {
-		  // if it is a note-off message keep retrying
-          if (msg[2] > 0 || msg[3] > 0 || msg[4] > 0) {
-            break;
-          }
-          chThdSleep(1);
-        }
-      }
-    }
-  }
   return 0;
 }
 
@@ -598,8 +462,7 @@ int main(void) {
   palSetPadMode(GPIOC, GPIOC_LED1, PAL_MODE_OUTPUT_PUSHPULL);
 
   /*
-   * Activates the serial driver 2 using the driver default configuration.
-   * PD5(TX) and PD6(RX) are routed to USART2.
+   * Activates the serial driver using the driver default configuration.
    */
   sdStart(&SD3, &ser_cfg);
   palSetPadMode(GPIOC, 10, PAL_MODE_ALTERNATE(7));
@@ -643,17 +506,8 @@ int main(void) {
   palSetPadMode(GPIOA, 2, PAL_MODE_INPUT_ANALOG);
 
   /*
-   * Starts I2C
+   * Creates the message send thread.
    */
-  i2cStart(&I2CD2, &i2cfg2);
-
-
-  /*
-   * Initializes the SPI driver 1. The signals
-   * are already initialized in the board file.
-   */
-  //spiStart(&SPID1, &spi1cfg);
-
   chThdCreateStatic(waThreadSend, sizeof(waThreadSend), NORMALPRIO, ThreadSend, NULL);
 
   /*
@@ -661,20 +515,11 @@ int main(void) {
    */
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
 
-  //chThdCreateStatic(waThreadRead, sizeof(waThreadRead), NORMALPRIO, ThreadRead, NULL);
-  //chThdSleepMilliseconds(500);
-
-  /*
-   * Creates the accelerometer thread.
-   */
-  //chThdCreateStatic(waThreadAccel, sizeof(waThreadAccel), NORMALPRIO, ThreadAccel, NULL);
-
   adcStartConversion(&ADCD1, &adcgrpcfg, adc_samples, ADC_GRP1_BUF_DEPTH);
   /*
    * Creates the thread to process the adc samples
    */
   chThdCreateStatic(waThreadReadButtons, sizeof(waThreadReadButtons), NORMALPRIO, ThreadReadButtons, NULL);
-
 
   while (1) {
     chThdSleepMilliseconds(500);
