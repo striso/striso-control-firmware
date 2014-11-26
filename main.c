@@ -214,7 +214,7 @@ static int msgGet(int maxsize, int* msg) {
 }
 
 static SerialConfig ser_cfg = {
-    576000,
+    500000,
     0,
     0,
     0,
