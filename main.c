@@ -43,7 +43,7 @@ SerialUSBDriver SDU1;
 #define ADCFACT (1<<12)
 #define MSGFACT (1<<11)
 #define MSGFACT_VELO (MSGFACT/32)
-#define FILT 16
+#define FILT 8
 
 /* Total number of channels to be sampled by a single ADC operation.*/
 #define ADC_GRP1_NUM_CHANNELS   3
@@ -120,15 +120,15 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   next_conversion = (next_conversion+1) % 102;
 }
 
-#define SENDFACT 4
+#define SENDFACT 1
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_3
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_15
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_28
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_56
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_84
-#define ADC_SAMPLE_DEF ADC_SAMPLE_112
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_112
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_144
-//#define ADC_SAMPLE_DEF ADC_SAMPLE_480
+#define ADC_SAMPLE_DEF ADC_SAMPLE_480
 /*
  * ADC conversion group.
  * Mode:        Linear buffer, 4 samples of 2 channels, SW triggered.
