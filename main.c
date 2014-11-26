@@ -308,7 +308,8 @@ void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
 }
 
 int32_t calibrate(int32_t s, int pad_idx) {
-  s = ADCFACT * (int32_t)(4095-s) - MSGFACT * (calib_offset[pad_idx] + 5);
+  s = ADCFACT * (int32_t)(4095-s) - MSGFACT * 8;
+  return s;
   if (s>0) {
     float sf = ((float)s) * (1.0 / INTERNAL_ONE);
     sf = powf_schlick(sf * calib_mul[pad_idx], calib_pow[pad_idx]);
