@@ -56,20 +56,17 @@ SerialUSBDriver SDU1;
 #define OUT_NUM_CHANNELS        51
 
 static const ioportid_t out_channels_port[51] = {
-  GPIOA, GPIOA, GPIOA, GPIOA, GPIOC, GPIOC, GPIOB, GPIOB, GPIOF, GPIOF,
-  GPIOF, GPIOF, GPIOF, GPIOG, GPIOG, GPIOE, GPIOE, GPIOE,
-  GPIOE, GPIOE, GPIOE, GPIOE, GPIOE, GPIOE, GPIOB, GPIOB,
-  GPIOB, GPIOB, GPIOB, GPIOB, GPIOD, GPIOD, GPIOD, GPIOD, GPIOD, GPIOD,
-  GPIOD, GPIOD, GPIOG, GPIOG, GPIOG, GPIOG, GPIOG, GPIOG, GPIOG,
-  GPIOC, GPIOC, GPIOC, GPIOC, GPIOA, GPIOA
+  GPIOA, GPIOC, GPIOC, GPIOB, GPIOB, GPIOF, GPIOF, GPIOF, GPIOF,
+  GPIOF, GPIOG, GPIOG, GPIOE, GPIOE, GPIOE, GPIOE, GPIOE,
+  GPIOE, GPIOE, GPIOE, GPIOE, GPIOB, GPIOB, GPIOH, GPIOH, GPIOH,
+  GPIOH, GPIOH, GPIOH, GPIOH, GPIOB, GPIOB, GPIOB, GPIOD,
+  GPIOD, GPIOD, GPIOD, GPIOD, GPIOD, GPIOD, GPIOD, GPIOG, GPIOG,
+  GPIOG, GPIOG, GPIOG, GPIOG, GPIOG, GPIOC, GPIOC, GPIOC,
 };
 static const int out_channels_pad[51] = {
-   4,  5,  6,  7,  4,  5,  0,  1, 11, 12,
-  13, 14, 15,  0,  1,  7,  8,  9,
-  10, 11, 12, 13, 14, 15, 10, 11,
-  12, 13, 14, 15,  8,  9, 10, 11, 12, 13,
-  14, 15,  2,  3,  4,  5,  6,  7,  8, 
-   6,  7,  8,  9,  8, 10
+   7, 4, 5, 0, 1,11,12,13,14,15, 0, 1, 7, 8, 9,10,11,
+  12,13,14,15,10,11, 6, 7, 8, 9,10,11,12,13,14,15, 8,
+   9,10,11,12,13,14,15, 2, 3, 4, 5, 6, 7, 8, 6, 7, 8,
 };
 
 static int cur_channel = 0;
@@ -116,7 +113,7 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   samples0[next_conversion] = buffer[0];
   samples1[next_conversion] = buffer[1];
   samples2[next_conversion] = buffer[2];
-  
+
   next_conversion = (next_conversion+1) % 102;
 }
 
@@ -198,7 +195,7 @@ static int msgGet(int maxsize, int* msg) {
     return -10;
   }
   msg_read = (msg_read + 1) % BUFFERSIZE;
-  
+
   int n;
   for (n = 0; n < size; n++) {
     if (msg_read == msg_write) {
@@ -233,11 +230,11 @@ static msg_t Thread1(void *arg) {
   msg[1] = 1;
   while (TRUE) {
     chThdSleepMilliseconds(250);
-    palSetPad(GPIOC, GPIOC_LED1);
+    palSetPad(GPIOH, GPIOH_LED1);
     chThdSleepMilliseconds(250);
     msg[2] = underruns;
     //if (!msgSend(3,msg))
-      palClearPad(GPIOC, GPIOC_LED1);
+      palClearPad(GPIOH, GPIOH_LED1);
   }
 
   return 0;
@@ -276,7 +273,7 @@ static msg_t ThreadSend(void *arg) {
       cmsg[0] = 0x80 | ((uint8_t)msg[0])<<3 | ((uint8_t)(size-2));
       cmsg[1] = 0x7f & (uint8_t)msg[1];
       pack(&msg[2], &cmsg[2], size - 2);
-      size = chSequentialStreamWrite((BaseSequentialStream *)&SD3, cmsg, 2+(size-2)*2);
+      size = chSequentialStreamWrite((BaseSequentialStream *)&SDU1, cmsg, 2+(size-2)*2);
     }
     else if (size == 0) {
       chThdSleep(1);
@@ -394,53 +391,6 @@ static msg_t ThreadReadButtons(void *arg) {
       proc_conversion = (proc_conversion+1) % 102;
     }
 
-    /*
-     * Check system buttons
-     * Use a counter to remove quick toggling
-     */
-    if (sysbut[0] > 1) {
-      sysbut[0] -= 2;
-    }
-    else {
-    int n = palReadPad(GPIOG, GPIOG_BUTTON);
-    if (n != sysbut[0]) {
-      msg[0] = ID_CONTROL;
-      msg[1] = 0;
-      msg[2] = n;
-      if (!msgSend(3, msg))
-        sysbut[0] = n + 50;
-      msg[0] = ID_DIS;
-    }
-    }
-    if (sysbut[1] > 1) {
-      sysbut[1] -= 2;
-    }
-    else {
-    int n = palReadPad(GPIOB, GPIOB_BUTTON_UP);
-    if (n != sysbut[1]) {
-      msg[0] = ID_CONTROL;
-      msg[1] = 1;
-      msg[2] = n;
-      if (!msgSend(3, msg))
-        sysbut[1] = n + 50;
-      msg[0] = ID_DIS;
-    }
-    }
-    if (sysbut[2] > 1) {
-      sysbut[2] -= 2;
-    }
-    else {
-    int n = palReadPad(GPIOB, GPIOB_BUTTON_DOWN);
-    if (n != sysbut[2]) {
-      msg[0] = ID_CONTROL;
-      msg[1] = 2;
-      msg[2] = n;
-      if (!msgSend(3, msg))
-        sysbut[2] = n + 50;
-      msg[0] = ID_DIS;
-    }
-    }
-
     chThdSleepMicroseconds(100);
   }
   return 0;
@@ -460,14 +410,14 @@ int main(void) {
   halInit();
   chSysInit();
 
-  palSetPadMode(GPIOC, GPIOC_LED1, PAL_MODE_OUTPUT_PUSHPULL);
+  palSetPadMode(GPIOH, GPIOH_LED1, PAL_MODE_OUTPUT_PUSHPULL);
 
   /*
    * Activates the serial driver using the driver default configuration.
    */
-  sdStart(&SD3, &ser_cfg);
-  palSetPadMode(GPIOC, 10, PAL_MODE_ALTERNATE(7));
-  palSetPadMode(GPIOC, 11, PAL_MODE_ALTERNATE(7));
+  sdStart(&SD1, &ser_cfg);
+  palSetPadMode(GPIOA, GPIOA_UART1_TX, PAL_MODE_ALTERNATE(7));
+  palSetPadMode(GPIOA, GPIOA_UART1_RX, PAL_MODE_ALTERNATE(7));
 
   /*
    * Initializes a serial-over-USB CDC driver.
