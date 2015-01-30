@@ -26,6 +26,8 @@
 
 #include "calib.h"
 
+#include "adc_multi.h"
+
 /* Virtual serial port over USB.*/
 SerialUSBDriver SDU1;
 
@@ -45,13 +47,14 @@ SerialUSBDriver SDU1;
 #define MSGFACT_VELO (MSGFACT/32)
 #define FILT 8
 
+/* Number of ADCs used in multi ADC mode (2 or 3) */
+#define ADC_N_ADCS 3
+
 /* Total number of channels to be sampled by a single ADC operation.*/
-#define ADC_GRP1_NUM_CHANNELS   3
+#define ADC_GRP1_NUM_CHANNELS_PER_ADC   1
 
 /* Depth of the conversion buffer, channels are sampled one time each.*/
-#define ADC_GRP1_BUF_DEPTH      2 // must be 1 or even
-
-#define ADC_GRP1_BUF_COUNT      (17*ADC_GRP1_NUM_CHANNELS)
+#define ADC_GRP1_BUF_DEPTH      (2*ADC_N_ADCS) // must be 1 or even
 
 #define OUT_NUM_CHANNELS        51
 
@@ -91,13 +94,11 @@ static int sysbut[3] = {-1,-1,-1};
 /*
  * ADC samples buffer.
  */
-static adcsample_t adc_samples[ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH]; // 6
+static adcsample_t adc_samples[ADC_GRP1_NUM_CHANNELS_PER_ADC * ADC_N_ADCS * ADC_GRP1_BUF_DEPTH];
 static adcsample_t samples0[102] = {0};
 static adcsample_t samples1[102] = {0};
 static adcsample_t samples2[102] = {0};
 static adcsample_t* samples[3] = {samples0, samples1, samples2};
-
-static const ADCConversionGroup adcgrpcfg;
 
 static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   (void)adcp;
@@ -115,6 +116,9 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   samples2[next_conversion] = buffer[2];
 
   next_conversion = (next_conversion+1) % 102;
+
+  // start new conversion
+  adcp->adc->CR2 |= ADC_CR2_SWSTART;
 }
 
 #define SENDFACT 1
@@ -126,14 +130,15 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_112
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_144
 #define ADC_SAMPLE_DEF ADC_SAMPLE_480
+
 /*
- * ADC conversion group.
- * Mode:        Linear buffer, 4 samples of 2 channels, SW triggered.
- * Channels:    IN11   (48 cycles sample time)
+ * ADC conversion group for ADC0 as multi ADC mode master.
+ * Mode:        Circular buffer, triple ADC mode master, SW triggered.
+ * Channels:    PA0, PA3
  */
-static const ADCConversionGroup adcgrpcfg = {
-  TRUE,
-  ADC_GRP1_NUM_CHANNELS,
+static const ADCConversionGroup adcgrpcfg1 = {
+  TRUE, // Circular conversion
+  ADC_GRP1_NUM_CHANNELS_PER_ADC,
   adccallback, /* end of conversion callback */
   NULL, /* error callback */
   /* HW dependent part.*/
@@ -141,13 +146,53 @@ static const ADCConversionGroup adcgrpcfg = {
   ADC_CR2_SWSTART, // CR2
   0, // SMPR1
   ADC_SMPR2_SMP_AN0(ADC_SAMPLE_DEF)
-   | ADC_SMPR2_SMP_AN1(ADC_SAMPLE_DEF)
-   | ADC_SMPR2_SMP_AN2(ADC_SAMPLE_DEF), // SMPR2
-  ADC_SQR1_NUM_CH(ADC_GRP1_NUM_CHANNELS), // SQR1
+   | ADC_SMPR2_SMP_AN3(ADC_SAMPLE_DEF), // SMPR2
+  ADC_SQR1_NUM_CH(ADC_GRP1_NUM_CHANNELS_PER_ADC), // SQR1
   0, // SQR2
   ADC_SQR3_SQ1_N(ADC_CHANNEL_IN0)
-   | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN1)
-   | ADC_SQR3_SQ3_N(ADC_CHANNEL_IN2) // SQR3
+   | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN3) // SQR3
+};
+
+/*
+ * ADC conversion group for ADC2.
+ * Mode:        triple ADC mode slave.
+ * Channels:    PA1, PC0
+ */
+static const ADCConversionGroup adcgrpcfg2 = {
+  TRUE,
+  0,
+  NULL, /* end of conversion callback */
+  NULL, /* error callback */
+  /* HW dependent part.*/
+  0, // CR1
+  0, // CR2
+  ADC_SMPR1_SMP_AN10(ADC_SAMPLE_DEF), // SMPR1
+  ADC_SMPR2_SMP_AN1(ADC_SAMPLE_DEF), // SMPR2
+  ADC_SQR1_NUM_CH(ADC_GRP1_NUM_CHANNELS_PER_ADC), // SQR1
+  0, // SQR2
+  ADC_SQR3_SQ1_N(ADC_CHANNEL_IN1)
+   | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN10) // SQR3
+};
+
+/*
+ * ADC conversion group for ADC3.
+ * Mode:        triple ADC mode slave.
+ * Channels:    PA2, PC2
+ */
+static const ADCConversionGroup adcgrpcfg3 = {
+  TRUE,
+  0,
+  NULL, /* end of conversion callback */
+  NULL, /* error callback */
+  /* HW dependent part.*/
+  0, // CR1
+  0, // CR2
+  ADC_SMPR1_SMP_AN12(ADC_SAMPLE_DEF), // SMPR1
+  ADC_SMPR2_SMP_AN2(ADC_SAMPLE_DEF), // SMPR2
+  ADC_SQR1_NUM_CH(ADC_GRP1_NUM_CHANNELS_PER_ADC), // SQR1
+  0, // SQR2
+  ADC_SQR3_SQ1_N(ADC_CHANNEL_IN2)
+   | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN12) // SQR3
 };
 
 #define BUFFERSIZE 240
@@ -451,10 +496,13 @@ int main(void) {
    * Initializes the ADC driver 1.
    * The pin PA0,PA1,PA2 on the port GPIOA are programmed as analog input.
    */
-  adcStart(&ADCD1, NULL);
+  adcMultiStart();
   palSetPadMode(GPIOA, 0, PAL_MODE_INPUT_ANALOG);
   palSetPadMode(GPIOA, 1, PAL_MODE_INPUT_ANALOG);
   palSetPadMode(GPIOA, 2, PAL_MODE_INPUT_ANALOG);
+  palSetPadMode(GPIOA, 3, PAL_MODE_INPUT_ANALOG);
+  palSetPadMode(GPIOC, 0, PAL_MODE_INPUT_ANALOG);
+  palSetPadMode(GPIOC, 2, PAL_MODE_INPUT_ANALOG);
 
   /*
    * Creates the message send thread.
@@ -466,7 +514,7 @@ int main(void) {
    */
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
 
-  adcStartConversion(&ADCD1, &adcgrpcfg, adc_samples, ADC_GRP1_BUF_DEPTH);
+  adcMultiStartConversion(&adcgrpcfg1, &adcgrpcfg2, &adcgrpcfg3, adc_samples, ADC_GRP1_BUF_DEPTH);
   /*
    * Creates the thread to process the adc samples
    */
