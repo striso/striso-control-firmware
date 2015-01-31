@@ -51,7 +51,7 @@ SerialUSBDriver SDU1;
 #define ADC_N_ADCS 3
 
 /* Total number of channels to be sampled by a single ADC operation.*/
-#define ADC_GRP1_NUM_CHANNELS_PER_ADC   1
+#define ADC_GRP1_NUM_CHANNELS_PER_ADC   2
 
 /* Depth of the conversion buffer, channels are sampled one time each.*/
 #define ADC_GRP1_BUF_DEPTH      (2*ADC_N_ADCS) // must be 1 or even
@@ -70,6 +70,20 @@ static const int out_channels_pad[51] = {
    7, 4, 5, 0, 1,11,12,13,14,15, 0, 1, 7, 8, 9,10,11,
   12,13,14,15,10,11, 6, 7, 8, 9,10,11,12,13,14,15, 8,
    9,10,11,12,13,14,15, 2, 3, 4, 5, 6, 7, 8, 6, 7, 8,
+};
+
+static const ioportid_t out_channels_bas_port[51] = {
+  GPIOA, GPIOC, GPIOC, GPIOC, GPIOD, GPIOD, GPIOD, GPIOD, GPIOD,
+  GPIOD, GPIOD, GPIOD, GPIOG, GPIOG, GPIOG, GPIOG, GPIOG,
+  GPIOG, GPIOG, GPIOB, GPIOB, GPIOB, GPIOB, GPIOB, GPIOB, GPIOB,
+  GPIOE, GPIOE, GPIOI, GPIOI, GPIOI, GPIOI, GPIOE, GPIOE,
+  GPIOE, GPIOE, GPIOE, GPIOI, GPIOI, GPIOI, GPIOF, GPIOF, GPIOF,
+  GPIOF, GPIOF, GPIOF, GPIOF, GPIOF, GPIOF, GPIOF, GPIOF,
+};
+static const int out_channels_bas_pad[51] = {
+  15,10,11,12, 0, 1, 2, 3, 4, 5, 6, 7, 9,10,11,12,13,
+  14,15, 3, 4, 5, 6, 7, 8, 9, 0, 1, 4, 5, 6, 7, 2, 3,
+   4, 5, 6, 9,10,11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,
 };
 
 static int cur_channel = 0;
@@ -100,24 +114,33 @@ static adcsample_t samples1[102] = {0};
 static adcsample_t samples2[102] = {0};
 static adcsample_t* samples[3] = {samples0, samples1, samples2};
 
+static adcsample_t samples_bas0[102] = {0};
+static adcsample_t samples_bas1[102] = {0};
+
 static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   (void)adcp;
   (void)n;
 
   /* Open old channel */
   palSetPad(out_channels_port[cur_channel], out_channels_pad[cur_channel]);
+  palSetPad(out_channels_bas_port[cur_channel], out_channels_bas_pad[cur_channel]);
   cur_channel = (next_conversion+1) % OUT_NUM_CHANNELS;
   /* Drain new channel */
   palClearPad(out_channels_port[cur_channel], out_channels_pad[cur_channel]);
+  palClearPad(out_channels_bas_port[cur_channel], out_channels_bas_pad[cur_channel]);
 
   /* copy adc_samples */
   samples0[next_conversion] = buffer[0];
   samples1[next_conversion] = buffer[1];
   samples2[next_conversion] = buffer[2];
+  //samples3[next_conversion] = buffer[3];
+
+  samples_bas0[next_conversion] = buffer[4];
+  samples_bas1[next_conversion] = buffer[5];
 
   next_conversion = (next_conversion+1) % 102;
 
-  // start new conversion
+  // start next ADC conversion
   adcp->adc->CR2 |= ADC_CR2_SWSTART;
 }
 
