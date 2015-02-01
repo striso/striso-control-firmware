@@ -99,11 +99,19 @@ typedef struct struct_button {
   int32_t v2;
   int pressed;
   int timer;
+  int but_id;
+  int src_id;
 } button_t;
 
+typedef struct struct_slider {
+  int32_t s[27];
+  int32_t v[27];
+  int timer;
+} slider_t;
+
 static button_t buttons[51];
+static button_t buttons_bas[51];
 static int buttons_pressed = 0;
-static int sysbut[3] = {-1,-1,-1};
 
 /*
  * ADC samples buffer.
@@ -116,6 +124,7 @@ static adcsample_t* samples[3] = {samples0, samples1, samples2};
 
 static adcsample_t samples_bas0[102] = {0};
 static adcsample_t samples_bas1[102] = {0};
+static adcsample_t* samples_bas[2] = {samples_bas0, samples_bas1};
 
 static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   (void)adcp;
@@ -189,12 +198,12 @@ static const ADCConversionGroup adcgrpcfg2 = {
   /* HW dependent part.*/
   0, // CR1
   0, // CR2
-  ADC_SMPR1_SMP_AN10(ADC_SAMPLE_DEF), // SMPR1
+  ADC_SMPR1_SMP_AN12(ADC_SAMPLE_DEF), // SMPR1
   ADC_SMPR2_SMP_AN1(ADC_SAMPLE_DEF), // SMPR2
   ADC_SQR1_NUM_CH(ADC_GRP1_NUM_CHANNELS_PER_ADC), // SQR1
   0, // SQR2
   ADC_SQR3_SQ1_N(ADC_CHANNEL_IN1)
-   | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN10) // SQR3
+   | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN12) // SQR3
 };
 
 /*
@@ -210,12 +219,12 @@ static const ADCConversionGroup adcgrpcfg3 = {
   /* HW dependent part.*/
   0, // CR1
   0, // CR2
-  ADC_SMPR1_SMP_AN12(ADC_SAMPLE_DEF), // SMPR1
+  ADC_SMPR1_SMP_AN10(ADC_SAMPLE_DEF), // SMPR1
   ADC_SMPR2_SMP_AN2(ADC_SAMPLE_DEF), // SMPR2
   ADC_SQR1_NUM_CH(ADC_GRP1_NUM_CHANNELS_PER_ADC), // SQR1
   0, // SQR2
   ADC_SQR3_SQ1_N(ADC_CHANNEL_IN2)
-   | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN12) // SQR3
+   | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN10) // SQR3
 };
 
 #define BUFFERSIZE 240
@@ -373,7 +382,7 @@ void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
 }
 
 int32_t calibrate(int32_t s, int pad_idx) {
-  s = ADCFACT * (int32_t)(4095-s) - MSGFACT * 8;
+  s = ADCFACT * (int32_t)(4095-s) - MSGFACT * 128;
   return s;
   if (s>0) {
     float sf = ((float)s) * (1.0 / INTERNAL_ONE);
@@ -381,6 +390,58 @@ int32_t calibrate(int32_t s, int pad_idx) {
     s = (uint32_t)(sf * INTERNAL_ONE);
   }
   return s;
+}
+
+void update_button(button_t* but, adcsample_t* inp) {
+  int but_id = but->but_id;
+  int32_t s_new;
+  int msg[8];
+  msg[0] = but->src_id;
+
+  s_new = calibrate(inp[0], but_id * 3 + 0);
+  update_and_filter(&but->s0, &but->v0, s_new);
+  s_new = calibrate(inp[1], but_id * 3 + 1);
+  update_and_filter(&but->s1, &but->v1, s_new);
+  s_new = calibrate(inp[2], but_id * 3 + 2);
+  update_and_filter(&but->s2, &but->v2, s_new);
+
+  if (but->s0 > 0 || but->s1 > 0 || but->s2 > 0) {
+    if (but->pressed == 0) {
+      but->pressed = 1;
+      buttons_pressed++;
+    }
+    if (but->timer <= 0) {
+      msg[1] = but_id;
+      msg[2] = but->s0 / MSGFACT;
+      msg[3] = but->s1 / MSGFACT;
+      msg[4] = but->s2 / MSGFACT;
+      if (msg[2] < 0) msg[2] = 0;
+      if (msg[3] < 0) msg[3] = 0;
+      if (msg[4] < 0) msg[4] = 0;
+      msg[5] = but->v0 / MSGFACT_VELO;
+      msg[6] = but->v1 / MSGFACT_VELO;
+      msg[7] = but->v2 / MSGFACT_VELO;
+      msgSend(8, msg);
+      but->timer = buttons_pressed * SENDFACT;
+    } else {
+      but->timer--;
+    }
+  }
+  else if (but->pressed) {
+    but->pressed = 0;
+    buttons_pressed--;
+    but->timer = 0;
+    msg[1] = but_id;
+    msg[2] = 0;
+    msg[3] = 0;
+    msg[4] = 0;
+    msg[5] = but->v0 / MSGFACT_VELO;
+    msg[6] = but->v1 / MSGFACT_VELO;
+    msg[7] = but->v2 / MSGFACT_VELO;
+    while (msgSend(8, msg)) {
+      chThdSleep(1);
+    }
+  }
 }
 
 /*
@@ -409,50 +470,20 @@ static msg_t ThreadReadButtons(void *arg) {
         for (int n = 0; n < 3; n++) {
           but_id = note_id + n * 17;
           but = &buttons[but_id];
-          s_new = calibrate(samples[n][cur_conv + 0], but_id * 3 + 0);
-          update_and_filter(&but->s0, &but->v0, s_new);
-          s_new = calibrate(samples[n][cur_conv + 1], but_id * 3 + 1);
-          update_and_filter(&but->s1, &but->v1, s_new);
-          s_new = calibrate(samples[n][cur_conv + 2], but_id * 3 + 2);
-          update_and_filter(&but->s2, &but->v2, s_new);
-
-          if (but->s0 > 0 || but->s1 > 0 || but->s2 > 0) {
-            if (but->pressed == 0) {
-              but->pressed = 1;
-              buttons_pressed++;
-            }
-            if (but->timer <= 0) {
-              msg[1] = but_id;
-              msg[2] = but->s0 / MSGFACT;
-              msg[3] = but->s1 / MSGFACT;
-              msg[4] = but->s2 / MSGFACT;
-              if (msg[2] < 0) msg[2] = 0;
-              if (msg[3] < 0) msg[3] = 0;
-              if (msg[4] < 0) msg[4] = 0;
-              msg[5] = but->v0 / MSGFACT_VELO;
-              msg[6] = but->v1 / MSGFACT_VELO;
-              msg[7] = but->v2 / MSGFACT_VELO;
-              msgSend(8, msg);
-              but->timer = buttons_pressed * SENDFACT;
-            } else {
-              but->timer--;
-            }
-          }
-          else if (but->pressed) {
-            but->pressed = 0;
-            buttons_pressed--;
-            but->timer = 0;
-            msg[1] = but_id;
-            msg[2] = 0;
-            msg[3] = 0;
-            msg[4] = 0;
-            msg[5] = but->v0 / MSGFACT_VELO;
-            msg[6] = but->v1 / MSGFACT_VELO;
-            msg[7] = but->v2 / MSGFACT_VELO;
-            while (msgSend(8, msg)) {
-              chThdSleep(1);
-            }
-          }
+          update_button(but, &samples[n][cur_conv]);
+        }
+        but_id = note_id;
+        but = &buttons_bas[but_id];
+        update_button(but, &samples_bas[0][cur_conv]);
+        if (note_id % 2) {
+          but_id = note_id + 17;
+          but = &buttons_bas[but_id];
+          update_button(but, &samples_bas[1][cur_conv]);
+        } else {
+          // slider
+          but_id = note_id + 2*17;
+          but = &buttons_bas[but_id];
+          update_button(but, &samples_bas[1][cur_conv]);
         }
 
       }
@@ -508,11 +539,22 @@ int main(void) {
   // init msg mutex
   chMtxInit(&msg_lock);
 
+  // Initialize buttons
+  for (int n=0; n<51; n++) {
+    buttons[n].but_id = n;
+    buttons[n].src_id = ID_DIS;
+  }
+  for (int n=0; n<51; n++) {
+    buttons_bas[n].but_id = n;
+    buttons_bas[n].src_id = ID_BAS;
+  }
+
   /*
    * Initialize output channels for the buttons as opendrain
    */
   for (int n=0; n<OUT_NUM_CHANNELS; n++) {
     palSetPadMode(out_channels_port[n], out_channels_pad[n], PAL_MODE_OUTPUT_OPENDRAIN);
+    palSetPadMode(out_channels_bas_port[n], out_channels_bas_pad[n], PAL_MODE_OUTPUT_OPENDRAIN);
   }
 
   /*
