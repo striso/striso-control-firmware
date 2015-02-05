@@ -99,6 +99,7 @@ typedef struct struct_button {
   int32_t v0;
   int32_t v1;
   int32_t v2;
+  float c_force;
   int pressed;
   int timer;
   int but_id;
@@ -383,14 +384,12 @@ void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
   }
 }
 
-int32_t calibrate(int32_t s, int pad_idx) {
+int32_t calibrate(int32_t s, float c) {
+  // c is the normalisation value for the force
   s = ADCFACT * (int32_t)(4095-s) - MSGFACT * ADC_OFFSET;
-  return s;
-  if (s>0) {
-    float sf = ((float)s) * (1.0 / INTERNAL_ONE);
-    sf = powf_schlick(sf * calib_mul[pad_idx], calib_pow[pad_idx]);
-    s = (uint32_t)(sf * INTERNAL_ONE);
-  }
+  float sf = ((float)s) * (1.0 / INTERNAL_ONE);
+  sf = c * sf/(1-sf); // calculate force from voltage
+  s = (uint32_t)(sf * INTERNAL_ONE);
   return s;
 }
 
@@ -400,11 +399,11 @@ void update_button(button_t* but, adcsample_t* inp) {
   int msg[8];
   msg[0] = but->src_id;
 
-  s_new = calibrate(inp[0], but_id * 3 + 0);
+  s_new = calibrate(inp[0], but->c_force);
   update_and_filter(&but->s0, &but->v0, s_new);
-  s_new = calibrate(inp[1], but_id * 3 + 1);
+  s_new = calibrate(inp[1], but->c_force);
   update_and_filter(&but->s1, &but->v1, s_new);
-  s_new = calibrate(inp[2], but_id * 3 + 2);
+  s_new = calibrate(inp[2], but->c_force);
   update_and_filter(&but->s2, &but->v2, s_new);
 
   if (but->s0 > 0 || but->s1 > 0 || but->s2 > 0) {
@@ -542,10 +541,12 @@ int main(void) {
   for (int n=0; n<51; n++) {
     buttons[n].but_id = n;
     buttons[n].src_id = ID_DIS;
+    buttons[n].c_force = 1./8.;
   }
   for (int n=0; n<51; n++) {
     buttons_bas[n].but_id = n;
     buttons_bas[n].src_id = ID_BAS;
+    buttons_bas[n].c_force = 1./5.;
   }
 
   /*
