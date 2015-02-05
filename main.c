@@ -47,7 +47,7 @@ SerialUSBDriver SDU1;
 #define MSGFACT_VELO (MSGFACT/32)
 #define FILT 8
 
-#define ADC_OFFSET 128
+#define ADC_OFFSET 512
 
 /* Number of ADCs used in multi ADC mode (2 or 3) */
 #define ADC_N_ADCS 3
@@ -352,7 +352,7 @@ static msg_t ThreadSend(void *arg) {
       cmsg[0] = 0x80 | ((uint8_t)msg[0])<<3 | ((uint8_t)(size-2));
       cmsg[1] = 0x7f & (uint8_t)msg[1];
       pack(&msg[2], &cmsg[2], size - 2);
-      size = chSequentialStreamWrite((BaseSequentialStream *)&SDU1, cmsg, 2+(size-2)*2);
+      size = chSequentialStreamWrite((BaseSequentialStream *)&SD1, cmsg, 2+(size-2)*2);
     }
     else if (size == 0) {
       chThdSleep(1);
@@ -480,9 +480,9 @@ static msg_t ThreadReadButtons(void *arg) {
           update_button(but, &samples_bas[1][cur_conv]);
         } else {
           // slider
-          but_id = note_id + 2*17;
-          but = &buttons_bas[but_id];
-          update_button(but, &samples_bas[1][cur_conv]);
+          //but_id = note_id + 2*17;
+          //but = &buttons_bas[but_id];
+          //update_button(but, &samples_bas[1][cur_conv]);
         }
 
       }
