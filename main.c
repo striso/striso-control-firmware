@@ -47,6 +47,8 @@ SerialUSBDriver SDU1;
 #define MSGFACT_VELO (MSGFACT/32)
 #define FILT 8
 
+#define ADC_OFFSET 128
+
 /* Number of ADCs used in multi ADC mode (2 or 3) */
 #define ADC_N_ADCS 3
 
@@ -138,6 +140,9 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   palClearPad(out_channels_port[cur_channel], out_channels_pad[cur_channel]);
   palClearPad(out_channels_bas_port[cur_channel], out_channels_bas_pad[cur_channel]);
 
+  // start next ADC conversion
+  adcp->adc->CR2 |= ADC_CR2_SWSTART;
+
   /* copy adc_samples */
   samples0[next_conversion] = buffer[0];
   samples1[next_conversion] = buffer[1];
@@ -148,9 +153,6 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   samples_bas1[next_conversion] = buffer[5];
 
   next_conversion = (next_conversion+1) % 102;
-
-  // start next ADC conversion
-  adcp->adc->CR2 |= ADC_CR2_SWSTART;
 }
 
 #define SENDFACT 1
@@ -160,8 +162,8 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_56
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_84
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_112
-//#define ADC_SAMPLE_DEF ADC_SAMPLE_144
-#define ADC_SAMPLE_DEF ADC_SAMPLE_480
+#define ADC_SAMPLE_DEF ADC_SAMPLE_144 // 0.83 ms per cycle
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_480 // 2.7 ms per cycle
 
 /*
  * ADC conversion group for ADC0 as multi ADC mode master.
@@ -382,7 +384,7 @@ void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
 }
 
 int32_t calibrate(int32_t s, int pad_idx) {
-  s = ADCFACT * (int32_t)(4095-s) - MSGFACT * 128;
+  s = ADCFACT * (int32_t)(4095-s) - MSGFACT * ADC_OFFSET;
   return s;
   if (s>0) {
     float sf = ((float)s) * (1.0 / INTERNAL_ONE);
@@ -451,12 +453,9 @@ static WORKING_AREA(waThreadReadButtons, 128);
 static msg_t ThreadReadButtons(void *arg) {
   (void)arg;
 
-  int msg[8];
   int cur_conv, but_id, note_id;
-  int32_t s_new;
   button_t* but;
 
-  msg[0] = ID_DIS;
   while (TRUE) {
     while (proc_conversion != next_conversion) {
       // process 3 buttons if all 3 values * 3 buttons are available
