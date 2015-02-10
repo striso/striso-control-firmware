@@ -43,8 +43,9 @@ SerialUSBDriver SDU1;
 
 #define INTERNAL_ONE (1<<24)
 #define ADCFACT (1<<12)
+#define VELOFACT 32
 #define MSGFACT (1<<11)
-#define MSGFACT_VELO (MSGFACT/32)
+#define MSGFACT_VELO (MSGFACT/VELOFACT)
 #define FILT 8
 
 #define ADC_OFFSET 512
@@ -381,12 +382,21 @@ void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
     *v = 0;
   } else {
     *v = ((FILT-1) * (*v) + (*s - old_s)) / FILT;
+    if (*v > (INTERNAL_ONE/VELOFACT)) {
+      *v = (INTERNAL_ONE/VELOFACT);
+    } else if (*v < -(INTERNAL_ONE/VELOFACT)) {
+      *v = -(INTERNAL_ONE/VELOFACT);
+    }
   }
 }
 
-int32_t calibrate(int32_t s, float c) {
-  // c is the normalisation value for the force
+int32_t calibrate(int32_t s) {
   s = ADCFACT * (int32_t)(4095-s) - MSGFACT * ADC_OFFSET;
+  return s;
+}
+
+int32_t to_force(int32_t s, float c) {
+  // c is the normalisation value for the force
   float sf = ((float)s) * (1.0 / INTERNAL_ONE);
   sf = c * sf/(1-sf); // calculate force from voltage
   s = (uint32_t)(sf * INTERNAL_ONE);
@@ -399,11 +409,11 @@ void update_button(button_t* but, adcsample_t* inp) {
   int msg[8];
   msg[0] = but->src_id;
 
-  s_new = calibrate(inp[0], but->c_force);
+  s_new = calibrate(inp[0]);
   update_and_filter(&but->s0, &but->v0, s_new);
-  s_new = calibrate(inp[1], but->c_force);
+  s_new = calibrate(inp[1]);
   update_and_filter(&but->s1, &but->v1, s_new);
-  s_new = calibrate(inp[2], but->c_force);
+  s_new = calibrate(inp[2]);
   update_and_filter(&but->s2, &but->v2, s_new);
 
   if (but->s0 > 0 || but->s1 > 0 || but->s2 > 0) {
@@ -413,9 +423,9 @@ void update_button(button_t* but, adcsample_t* inp) {
     }
     if (but->timer <= 0) {
       msg[1] = but_id;
-      msg[2] = but->s0 / MSGFACT;
-      msg[3] = but->s1 / MSGFACT;
-      msg[4] = but->s2 / MSGFACT;
+      msg[2] = to_force(but->s0, but->c_force) / MSGFACT;
+      msg[3] = to_force(but->s1, but->c_force) / MSGFACT;
+      msg[4] = to_force(but->s2, but->c_force) / MSGFACT;
       if (msg[2] < 0) msg[2] = 0;
       if (msg[3] < 0) msg[3] = 0;
       if (msg[4] < 0) msg[4] = 0;
