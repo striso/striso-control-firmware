@@ -551,7 +551,7 @@ int main(void) {
   for (int n=0; n<51; n++) {
     buttons[n].but_id = n;
     buttons[n].src_id = ID_DIS;
-    buttons[n].c_force = 1./8.;
+    buttons[n].c_force = calib_dis[n];
   }
   for (int n=0; n<51; n++) {
     buttons_bas[n].but_id = n;
