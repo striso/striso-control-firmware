@@ -48,7 +48,7 @@ SerialUSBDriver SDU1;
 #define MSGFACT_VELO (MSGFACT/VELOFACT)
 #define FILT 8
 
-#define ADC_OFFSET 512
+#define ADC_OFFSET 128
 
 /* Number of ADCs used in multi ADC mode (2 or 3) */
 #define ADC_N_ADCS 3
@@ -390,16 +390,15 @@ void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
   }
 }
 
-int32_t calibrate(int32_t s) {
-  s = ADCFACT * (int32_t)(4095-s) - MSGFACT * ADC_OFFSET;
-  return s;
-}
 
-int32_t to_force(int32_t s, float c) {
+int32_t calibrate(int32_t s, float c) {
   // c is the normalisation value for the force
-  float sf = ((float)s) * (1.0 / INTERNAL_ONE);
-  sf = c * sf/(1-sf); // calculate force from voltage
-  s = (uint32_t)(sf * INTERNAL_ONE);
+  s = ADCFACT * (int32_t)(4095-s) - MSGFACT * ADC_OFFSET;
+  if (s > 0) {
+    float sf = ((float)s) * (1.0 / INTERNAL_ONE);
+    sf = c * sf/(1-sf); // calculate force from voltage
+    s = (uint32_t)(sf * INTERNAL_ONE);
+  }
   return s;
 }
 
@@ -409,11 +408,11 @@ void update_button(button_t* but, adcsample_t* inp) {
   int msg[8];
   msg[0] = but->src_id;
 
-  s_new = calibrate(inp[0]);
+  s_new = calibrate(inp[0], but->c_force);
   update_and_filter(&but->s0, &but->v0, s_new);
-  s_new = calibrate(inp[1]);
+  s_new = calibrate(inp[1], but->c_force);
   update_and_filter(&but->s1, &but->v1, s_new);
-  s_new = calibrate(inp[2]);
+  s_new = calibrate(inp[2], but->c_force);
   update_and_filter(&but->s2, &but->v2, s_new);
 
   if (but->s0 > 0 || but->s1 > 0 || but->s2 > 0) {
@@ -423,9 +422,9 @@ void update_button(button_t* but, adcsample_t* inp) {
     }
     if (but->timer <= 0) {
       msg[1] = but_id;
-      msg[2] = to_force(but->s0, but->c_force) / MSGFACT;
-      msg[3] = to_force(but->s1, but->c_force) / MSGFACT;
-      msg[4] = to_force(but->s2, but->c_force) / MSGFACT;
+      msg[2] = but->s0 / MSGFACT;
+      msg[3] = but->s1 / MSGFACT;
+      msg[4] = but->s2 / MSGFACT;
       if (msg[2] < 0) msg[2] = 0;
       if (msg[3] < 0) msg[3] = 0;
       if (msg[4] < 0) msg[4] = 0;
