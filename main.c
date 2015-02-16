@@ -522,14 +522,10 @@ int main(void) {
   halInit();
   chSysInit();
 
-  palSetPadMode(GPIOH, GPIOH_LED1, PAL_MODE_OUTPUT_PUSHPULL);
-
   /*
    * Activates the serial driver using the driver default configuration.
    */
   sdStart(&SD1, &ser_cfg);
-  palSetPadMode(GPIOA, GPIOA_UART1_TX, PAL_MODE_ALTERNATE(7));
-  palSetPadMode(GPIOA, GPIOA_UART1_RX, PAL_MODE_ALTERNATE(7));
 
   /*
    * Initializes a serial-over-USB CDC driver.
@@ -565,24 +561,9 @@ int main(void) {
   }
 
   /*
-   * Initialize output channels for the buttons as opendrain
-   */
-  for (int n=0; n<OUT_NUM_CHANNELS; n++) {
-    palSetGroupMode(out_channels_port[n], out_channels_pad[n], 0, PAL_MODE_OUTPUT_OPENDRAIN);
-    palSetGroupMode(out_channels_bas_port[n], out_channels_bas_pad[n], 0, PAL_MODE_OUTPUT_OPENDRAIN);
-  }
-
-  /*
-   * Initializes the ADC driver 1.
-   * The pin PA0,PA1,PA2 on the port GPIOA are programmed as analog input.
+   * Initializes the ADC driver.
    */
   adcMultiStart();
-  palSetPadMode(GPIOA, 0, PAL_MODE_INPUT_ANALOG);
-  palSetPadMode(GPIOA, 1, PAL_MODE_INPUT_ANALOG);
-  palSetPadMode(GPIOA, 2, PAL_MODE_INPUT_ANALOG);
-  palSetPadMode(GPIOA, 3, PAL_MODE_INPUT_ANALOG);
-  palSetPadMode(GPIOC, 0, PAL_MODE_INPUT_ANALOG);
-  palSetPadMode(GPIOC, 2, PAL_MODE_INPUT_ANALOG);
 
   /*
    * Creates the message send thread.
@@ -594,7 +575,11 @@ int main(void) {
    */
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
 
+  /*
+   * Start first ADC conversion. Next conversions are triggered from the adc callback.
+   */
   adcMultiStartConversion(&adcgrpcfg1, &adcgrpcfg2, &adcgrpcfg3, adc_samples, ADC_GRP1_BUF_DEPTH);
+
   /*
    * Creates the thread to process the adc samples
    */
