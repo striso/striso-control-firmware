@@ -412,15 +412,15 @@ void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
   *s = ((FILT-1) * (old_s + *v) + s_new) / FILT;
   if (*s < 0) {
     *v = 0;
-  } else if (*s > INTERNAL_ONE) {
-    *s = INTERNAL_ONE;
+  } else if (*s >= INTERNAL_ONE) {
+    *s = INTERNAL_ONE - 1;
     *v = 0;
   } else {
     *v = ((FILT-1) * (*v) + (*s - old_s)) / FILT;
-    if (*v > (INTERNAL_ONE/VELOFACT)) {
-      *v = (INTERNAL_ONE/VELOFACT);
-    } else if (*v < -(INTERNAL_ONE/VELOFACT)) {
-      *v = -(INTERNAL_ONE/VELOFACT);
+    if (*v >= (INTERNAL_ONE/VELOFACT)) {
+      *v = (INTERNAL_ONE/VELOFACT) - 1;
+    } else if (*v <= -(INTERNAL_ONE/VELOFACT)) {
+      *v = -(INTERNAL_ONE/VELOFACT) + 1;
     }
   }
 }
