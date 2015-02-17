@@ -450,7 +450,7 @@ void update_button(button_t* but, adcsample_t* inp) {
   s_new = calibrate(inp[2], but->c_force);
   update_and_filter(&but->s2, &but->v2, s_new);
 
-  if (but->s0 > 0 || but->s1 > 0 || but->s2 > 0) {
+  if (but->s0 > (INTERNAL_ONE/32) || but->s1 > 0 || but->s2 > 0) {
     if (but->pressed == 0) {
       but->pressed = 1;
       buttons_pressed++;
