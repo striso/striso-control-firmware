@@ -527,7 +527,7 @@
 /*===========================================================================*/
 /* NOTE: When changing this option you also have to enable or disable the FPU
    in the project options.*/
-#define CORTEX_USE_FPU                  FALSE
+#define CORTEX_USE_FPU                  TRUE
 
 #endif  /* _CHCONF_H_ */
 

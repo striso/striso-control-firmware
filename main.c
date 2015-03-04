@@ -24,9 +24,14 @@
 
 #include "usbcfg.h"
 
-#include "calib.h"
-
 #include "adc_multi.h"
+
+// force sqrtf too use FPU, the standard one apparently doesn't
+float vsqrtf(float op1) {
+  float result;
+  __ASM volatile ("vsqrt.f32 %0, %1" : "=w" (result) : "w" (op1) );
+  return (result);
+}
 
 /* Virtual serial port over USB.*/
 SerialUSBDriver SDU1;
@@ -48,7 +53,7 @@ SerialUSBDriver SDU1;
 #define MSGFACT_VELO (MSGFACT/VELOFACT)
 #define FILT 8
 
-#define ADC_OFFSET 128
+#define ADC_OFFSET (128>>1)
 
 /* Number of ADCs used in multi ADC mode (2 or 3) */
 #define ADC_N_ADCS 3
@@ -106,7 +111,7 @@ typedef struct struct_button {
   int32_t v0;
   int32_t v1;
   int32_t v2;
-  float c_force;
+  int32_t c_force;
   int pressed;
   int timer;
   int but_id;
@@ -426,14 +431,12 @@ void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
 }
 
 
-int32_t calibrate(int32_t s, float c) {
+int32_t calibrate(int32_t s, int32_t c) {
+  /* convert adc value to force */
+  s = s + ADC_OFFSET;
   // c is the normalisation value for the force
-  s = ADCFACT * (int32_t)(4095-s) - MSGFACT * ADC_OFFSET;
-  if (s > 0) {
-    float sf = ((float)s) * (1.0 / INTERNAL_ONE);
-    sf = c * sf/(1-sf); // calculate force from voltage
-    s = (uint32_t)(sf * INTERNAL_ONE);
-  }
+  //    2^18   * 2^12 / 2^12 * ADCFACT/2^6 / c
+  s = ((1<<18) * (4095-s)/s) * c;
   return s;
 }
 
@@ -457,12 +460,21 @@ void update_button(button_t* but, adcsample_t* inp) {
     }
     if (but->timer <= 0) {
       msg[1] = but_id;
-      msg[2] = but->s0 / MSGFACT;
-      msg[3] = but->s1 / MSGFACT;
-      msg[4] = but->s2 / MSGFACT;
-      if (msg[2] < 0) msg[2] = 0;
-      if (msg[3] < 0) msg[3] = 0;
-      if (msg[4] < 0) msg[4] = 0;
+      if (but->s0 <= 0)
+        msg[2] = 0;
+      else
+        msg[2] = but->s0 / MSGFACT;
+        //msg[2] = (int32_t)(vsqrtf((float)but->s0 / INTERNAL_ONE) * (INTERNAL_ONE / MSGFACT));
+      if (but->s1 <= 0)
+        msg[3] = 0;
+      else
+        msg[3] = but->s1 / MSGFACT;
+        //msg[3] = (int32_t)(vsqrtf((float)but->s1 / INTERNAL_ONE) * (INTERNAL_ONE / MSGFACT));
+      if (but->s2 <= 0)
+        msg[4] = 0;
+      else
+        msg[4] = but->s2 / MSGFACT;
+        //msg[4] = (int32_t)(vsqrtf((float)but->s2 / INTERNAL_ONE) * (INTERNAL_ONE / MSGFACT));
       msg[5] = but->v0 / MSGFACT_VELO;
       msg[6] = but->v1 / MSGFACT_VELO;
       msg[7] = but->v2 / MSGFACT_VELO;
@@ -581,12 +593,12 @@ int main(void) {
   for (int n=0; n<51; n++) {
     buttons[n].but_id = n;
     buttons[n].src_id = ID_DIS;
-    buttons[n].c_force = calib_dis[n];
+    buttons[n].c_force = (ADCFACT>>6) / 6;
   }
   for (int n=0; n<51; n++) {
     buttons_bas[n].but_id = n;
     buttons_bas[n].src_id = ID_BAS;
-    buttons_bas[n].c_force = 1./5.;
+    buttons_bas[n].c_force = (ADCFACT>>6) / 6 ;
   }
 
   /*
