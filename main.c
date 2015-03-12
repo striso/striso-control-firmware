@@ -122,7 +122,16 @@ typedef struct struct_slider {
   int32_t s[27];
   int32_t v[27];
   int timer;
+  int pres[4];
+  int pos[4];
+  int velo[4];
+  int sort[4];
+  int n_press;
+  int move;
+  int zoom;
 } slider_t;
+
+static slider_t sld;
 
 static button_t buttons[51];
 static button_t buttons_bas[51];
@@ -500,6 +509,80 @@ void update_button(button_t* but, adcsample_t* inp) {
     }
   }
 }
+/*
+typedef struct struct_slider {
+  int32_t s[27];
+  int32_t v[27];
+  int timer;
+  int pres[4];
+  int pos[4];
+  int velo[4];
+  int sort[4];
+  int n_press;
+  int move;
+  int zoom;
+} slider_t;
+*/
+#define SLD_MAX_DIST 2
+#define N_PEAKS 8
+#define N_PRESS 4
+#define N_SENS 27
+void update_slider(void) {
+  int n, k, d;
+  int np = 0;
+  int peaks[8];
+  int pp[8] = {-1};
+  int dists[4] = {INTERNAL_ONE};
+
+  // find peaks
+  for (n=1; n<27-1; n++) {
+    if (sld.s[n] > 0 && sld.s[n-1] <= sld.s[n] && sld.s[n] < sld.s[n+1]) {
+      peaks[np++] = n;
+    }
+  }
+  // match to presses
+  for (n = 0; n<np; n++) {
+    int dp = INTERNAL_ONE;
+    for (k = 0; k<4; k++) {
+      if (sld.pres[k] > 0) {
+        d = abs(sld.pos[k] - peaks[n]);
+        if (d < SLD_MAX_DIST && d < dp && dists[k] == INTERNAL_ONE) {
+          dp = d;
+          pp[n] = k;
+        }
+      }
+    }
+    if (dp != INTERNAL_ONE) {
+      dists[pp[n]] = dp;
+    }
+  }
+  // add new presses
+  for (n = 0; n<np; n++) {
+    if (pp[n] == -1) {
+      for (k = 0; k<4; k++) {
+        if (sld.pres[k] == 0) {
+          pp[n] = k;
+          dists[k] = 0;
+          break;
+        }
+      }
+    }
+  }
+  // delete ended presses
+  for (k = 0; k<4; k++) {
+    if (sld.pres[k] > 0 && dists[k]== INTERNAL_ONE) {
+      sld.pres[k] = 0;
+    }
+  }
+
+  // update
+  for (n = 0; n<4; n++) {
+    if (sld.pres[n] > 0) {
+      update_peak(n);
+      // remove doubles
+    }
+  }
+}
 
 /*
  * Read out buttons and create messages.
@@ -538,6 +621,15 @@ static msg_t ThreadReadButtons(void *arg) {
           //but_id = note_id + 2*17;
           //but = &buttons_bas[but_id];
           //update_button(but, &samples_bas[1][cur_conv]);
+          but_id = (note_id / 2) * 3;
+
+          sld.s[but_id + 0] = calibrate(samples_bas[1][cur_conv + 0], (ADCFACT>>6) / 6);
+          sld.s[but_id + 1] = calibrate(samples_bas[1][cur_conv + 1], (ADCFACT>>6) / 6);
+          sld.s[but_id + 2] = calibrate(samples_bas[1][cur_conv + 2], (ADCFACT>>6) / 6);
+
+          if (note_id == 16) {
+            update_slider();
+          }
         }
 
       }
