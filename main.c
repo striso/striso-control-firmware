@@ -26,7 +26,7 @@
 
 #include "adc_multi.h"
 
-// force sqrtf too use FPU, the standard one apparently doesn't
+// force sqrtf to use FPU, the standard one apparently doesn't
 float vsqrtf(float op1) {
   float result;
   __ASM volatile ("vsqrt.f32 %0, %1" : "=w" (result) : "w" (op1) );
@@ -53,7 +53,8 @@ SerialUSBDriver SDU1;
 #define MSGFACT_VELO (MSGFACT/VELOFACT)
 #define FILT 8
 
-#define ADC_OFFSET (128>>1)
+#define ADC_OFFSET (16>>1)
+//#define CALIBRATION_MODE TRUE
 
 /* Number of ADCs used in multi ADC mode (2 or 3) */
 #define ADC_N_ADCS 3
@@ -112,6 +113,7 @@ typedef struct struct_button {
   int32_t v1;
   int32_t v2;
   int32_t c_force;
+  int32_t c_offset;
   int pressed;
   int timer;
   int but_id;
@@ -430,13 +432,17 @@ void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
   }
 }
 
-
-int32_t calibrate(int32_t s, int32_t c) {
+int32_t calibrate(int32_t s, int32_t c, int32_t offset) {
+  s = s + offset;
+  #ifdef CALIBRATION_MODE
+  /* keep linear voltage for calibration */
+  s = ADCFACT * (4095-s);
+  #else
   /* convert adc value to force */
-  s = s + ADC_OFFSET;
   // c is the normalisation value for the force
   //    2^18   * 2^12 / 2^12 * ADCFACT/2^6 / c
   s = ((1<<18) * (4095-s)/s) * c;
+  #endif
   return s;
 }
 
@@ -446,11 +452,11 @@ void update_button(button_t* but, adcsample_t* inp) {
   int msg[8];
   msg[0] = but->src_id;
 
-  s_new = calibrate(inp[0], but->c_force);
+  s_new = calibrate(inp[0], but->c_force, but->c_offset);
   update_and_filter(&but->s0, &but->v0, s_new);
-  s_new = calibrate(inp[1], but->c_force);
+  s_new = calibrate(inp[1], but->c_force, but->c_offset);
   update_and_filter(&but->s1, &but->v1, s_new);
-  s_new = calibrate(inp[2], but->c_force);
+  s_new = calibrate(inp[2], but->c_force, but->c_offset);
   update_and_filter(&but->s2, &but->v2, s_new);
 
   if (but->s0 > (INTERNAL_ONE/32) || but->s1 > 0 || but->s2 > 0) {
@@ -594,11 +600,13 @@ int main(void) {
     buttons[n].but_id = n;
     buttons[n].src_id = ID_DIS;
     buttons[n].c_force = (ADCFACT>>6) / 6;
+    buttons[n].c_offset = ADC_OFFSET;
   }
   for (int n=0; n<51; n++) {
     buttons_bas[n].but_id = n;
     buttons_bas[n].src_id = ID_BAS;
-    buttons_bas[n].c_force = (ADCFACT>>6) / 6 ;
+    buttons_bas[n].c_force = (ADCFACT>>6) / 6;
+    buttons_bas[n].c_offset = (128>>1);
   }
 
   /*
