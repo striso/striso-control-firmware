@@ -525,13 +525,59 @@ static msg_t ThreadReadButtons(void *arg) {
         cur_conv = (proc_conversion - 2);
 
         /*
-         * Check button in each octave/adc-channel
+         * Update button in each octave/adc-channel
+         */
+        // dis side
+        /* TODO: reduce crosstalk
+if self is weak and note in other octave is on or just off:
+  subtract a bit
+if note in other octave is stronger:
+  if self is weak:
+    subtract a bit
+  if other button in same octave played:
+    subtract something based on (self, other octave, other note, 4th note)
+    if other octave is almost the same:
+      subtract almost nothing
+    if other note and/or 4th note are stronger:
+    if 4th button is stronger:
+      subtract something
+
+ 1 6       6
+ 6 1     6
+
+ 2 6       6
+ 6 6     6 6
+
+ 2 6       6
+ 6 4     6 2
+
+ 2 4
+ 6 4
+
+ 2 2
+ 6 2
+
+ 3 2
+ 6 3
+
+ 0
+ 1       1
+
+m, id = max(octaves)
+if m > self:
+  mn, idn = max(othernotes)
+  if mn:
+    self -= ...(self, m, mn, note(id, idn))
+  else:
+    self -= ...(self, m)
+
          */
         for (int n = 0; n < 3; n++) {
           but_id = note_id + n * 17;
           but = &buttons[but_id];
           update_button(but, &samples[n][cur_conv]);
         }
+        // bas side
         but_id = note_id;
         but = &buttons_bas[but_id];
         update_button(but, &samples_bas[0][cur_conv]);
