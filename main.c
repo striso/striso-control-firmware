@@ -46,6 +46,10 @@ SerialUSBDriver SDU1;
 #define ID_ACCEL 3
 #define ID_SYS 4
 
+#define IDC_SLD_NPRESS 8
+#define IDC_SLD_SLIDE 9
+#define IDC_SLD_SLIDEZOOM 10
+
 #define INTERNAL_ONE (1<<24)
 #define ADCFACT (1<<12)
 #define VELOFACT 32
@@ -124,6 +128,7 @@ typedef struct struct_slider {
   int32_t s[27];
   int32_t v[27];
   int timer;
+  int dbtimer;
   int pres[4];
   int pos[4];
   int velo[4];
@@ -137,7 +142,7 @@ static slider_t sld;
 
 static button_t buttons[51];
 static button_t buttons_bas[51];
-static int buttons_pressed = 0;
+static int buttons_pressed[2] = {0};
 
 /*
  * ADC samples buffer.
@@ -468,10 +473,10 @@ void update_button(button_t* but, adcsample_t* inp) {
   s_new = calibrate(inp[2], but->c_force, but->c_offset);
   update_and_filter(&but->s2, &but->v2, s_new);
 
-  if (but->s0 > (INTERNAL_ONE/32) || but->s1 > 0 || but->s2 > 0) {
+  if (but->s0 > (INTERNAL_ONE/64) || but->s1 > 0 || but->s2 > 0) {
     if (but->pressed == 0) {
       but->pressed = 1;
-      buttons_pressed++;
+      buttons_pressed[but->src_id]++;
     }
     if (but->timer <= 0) {
       msg[1] = but_id;
@@ -494,14 +499,14 @@ void update_button(button_t* but, adcsample_t* inp) {
       msg[6] = but->v1 / MSGFACT_VELO;
       msg[7] = but->v2 / MSGFACT_VELO;
       msgSend(8, msg);
-      but->timer = buttons_pressed * SENDFACT;
+      but->timer = (buttons_pressed[0] + buttons_pressed[1]) * SENDFACT;
     } else {
       but->timer--;
     }
   }
   else if (but->pressed) {
     but->pressed = 0;
-    buttons_pressed--;
+    buttons_pressed[but->src_id]--;
     but->timer = 0;
     msg[1] = but_id;
     msg[2] = 0;
@@ -533,28 +538,131 @@ typedef struct struct_slider {
 #define N_PEAKS 8
 #define N_PRESS 4
 #define N_SENS 27
+#define SLD_STEP (1<<8)
+int slider_interp(int n) {
+  int a = sld.s[n-1];
+  int b = sld.s[n];
+  int c = sld.s[n+1];
+  if (a > c) {
+    return n * SLD_STEP + (c-a) / ((b-c)/SLD_STEP) / 2;
+  } else {
+    return n * SLD_STEP + (c-a) / ((b-a)/SLD_STEP) / 2;
+  }
+}
+
 void update_slider(void) {
-  int n, k, d;
+  int n;
   int np = 0;
-  int peaks[8];
-  int pp[8] = {-1};
-  int dists[4] = {INTERNAL_ONE};
+  int peaks[N_PEAKS];
+  int msg[8];
+  msg[0] = ID_CONTROL;
 
   // find peaks
   for (n=1; n<27-1; n++) {
-    if (sld.s[n] > 0 && sld.s[n-1] <= sld.s[n] && sld.s[n] < sld.s[n+1]) {
+    if (sld.s[n] > 0 && sld.s[n-1] <= sld.s[n] && sld.s[n] > sld.s[n+1]) {
       peaks[np++] = n;
     }
   }
+
+  // debug output
+  #ifdef DEBUG_SDU1
+  if (SDU1.state == SDU_READY) {
+    if (sld.dbtimer <= 0) {
+      for (n=0; n<27; n++) {
+        chprintf((BaseSequentialStream *)&SDU1, " %4d", sld.s[n]>>10);
+      }
+      chprintf((BaseSequentialStream *)&SDU1, "\r\n    ");
+      for (n=1; n<27-1; n++) {
+        chprintf((BaseSequentialStream *)&SDU1, " %4d", sld.s[n] > 0 && sld.s[n-1] <= sld.s[n] && sld.s[n] > sld.s[n+1]);
+      }
+      chprintf((BaseSequentialStream *)&SDU1, "     npeaks: %d\r\n",np);
+      sld.dbtimer = 100;
+    } else {
+      sld.dbtimer--;
+    }
+  }
+  #endif
+
+  if (buttons_pressed[1]) {
+    np = 0;
+  }
+  /*
+  signals:
+  slide
+  zoom
+  2up
+  2down
+
+   */
+  if (np != sld.n_press) {
+    msg[1] = IDC_SLD_NPRESS;
+    msg[2] = np;
+    msgSend(3, msg);
+  }
+
+  // single slide (volume)
+  if (np == 1) {
+    int pos = slider_interp(peaks[0]);
+    if (sld.n_press == 1) {
+      if (sld.timer <= 0) {
+        msg[1] = IDC_SLD_SLIDE;
+        msg[2] = pos - sld.pos[0];
+        msgSend(3, msg);
+        sld.timer = 16 * SENDFACT;
+        sld.pos[0] = pos;
+      } else {
+        sld.timer--;
+      }
+    } else {
+      // new press
+      sld.pos[0] = pos;
+      sld.timer = 16 * SENDFACT;
+    }
+  }
+  // slide/zoom (tuning)
+  else if (np == 2) {
+    int pos0 = slider_interp(peaks[0]);
+    int pos1 = slider_interp(peaks[1]);
+    if (sld.n_press == 2) {
+      if (sld.timer <= 0) {
+        msg[1] = IDC_SLD_SLIDEZOOM;
+        msg[2] = ((pos0 + pos1) - (sld.pos[0] + sld.pos[1]))/2;
+        msg[3] = (pos1 - pos0) - (sld.pos[1] - sld.pos[0]);
+        msgSend(4, msg);
+        sld.timer = 16 * SENDFACT;
+        sld.pos[0] = pos0;
+        sld.pos[1] = pos1;
+      } else {
+        sld.timer--;
+      }
+    } else {
+      // new press
+      sld.pos[0] = pos0;
+      sld.pos[1] = pos1;
+      sld.timer = 16 * SENDFACT;
+    }
+  }
+  sld.n_press = np;
+  // 1 up/down
+  // 2 up/down/middle
+  // n press
+
+
+/*
   // match to presses
   for (n = 0; n<np; n++) {
     int dp = INTERNAL_ONE;
-    for (k = 0; k<4; k++) {
+    for (k = 0; k<N_PRESS; k++) {
       if (sld.pres[k] > 0) {
         d = abs(sld.pos[k] - peaks[n]);
         if (d < SLD_MAX_DIST && d < dp && dists[k] == INTERNAL_ONE) {
           dp = d;
           pp[n] = k;
+          //if (dists[k] < INTERNAL_ONE) {
+          //  dists[k] = INTERNAL_ONE;
+          //  for (m = 0; m<n; m++)
+          //    if pp[m]
+          //}
         }
       }
     }
@@ -565,7 +673,7 @@ void update_slider(void) {
   // add new presses
   for (n = 0; n<np; n++) {
     if (pp[n] == -1) {
-      for (k = 0; k<4; k++) {
+      for (k = 0; k<N_PRESS; k++) {
         if (sld.pres[k] == 0) {
           pp[n] = k;
           dists[k] = 0;
@@ -575,19 +683,19 @@ void update_slider(void) {
     }
   }
   // delete ended presses
-  for (k = 0; k<4; k++) {
+  for (k = 0; k<N_PRESS; k++) {
     if (sld.pres[k] > 0 && dists[k]== INTERNAL_ONE) {
       sld.pres[k] = 0;
     }
   }
 
   // update
-  for (n = 0; n<4; n++) {
+  for (n = 0; n<N_PRESS; n++) {
     if (sld.pres[n] > 0) {
       update_peak(n);
       // remove doubles
     }
-  }
+  }*/
 }
 
 /*
@@ -673,11 +781,12 @@ if m > self:
           //but_id = note_id + 2*17;
           //but = &buttons_bas[but_id];
           //update_button(but, &samples_bas[1][cur_conv]);
+
           but_id = (note_id / 2) * 3;
 
-          sld.s[but_id + 0] = calibrate(samples_bas[1][cur_conv + 0], (ADCFACT>>6) / 6);
-          sld.s[but_id + 1] = calibrate(samples_bas[1][cur_conv + 1], (ADCFACT>>6) / 6);
-          sld.s[but_id + 2] = calibrate(samples_bas[1][cur_conv + 2], (ADCFACT>>6) / 6);
+          sld.s[but_id + 0] = calibrate(samples_bas[1][cur_conv + 0], (ADCFACT>>6) / 6, ADC_OFFSET);
+          sld.s[but_id + 1] = calibrate(samples_bas[1][cur_conv + 1], (ADCFACT>>6) / 6, ADC_OFFSET);
+          sld.s[but_id + 2] = calibrate(samples_bas[1][cur_conv + 2], (ADCFACT>>6) / 6, ADC_OFFSET);
 
           if (note_id == 16) {
             update_slider();
@@ -744,7 +853,7 @@ int main(void) {
     buttons_bas[n].but_id = n;
     buttons_bas[n].src_id = ID_BAS;
     buttons_bas[n].c_force = (ADCFACT>>6) / 6;
-    buttons_bas[n].c_offset = (128>>1);
+    buttons_bas[n].c_offset = ADC_OFFSET;
   }
 
   /*
