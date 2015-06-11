@@ -223,5 +223,12 @@ include $(CHIBIOS)/os/ports/GCC/ARMCMx/rules.mk
 prog: all
 	dfu-util -d0483:df11 -a0 -s0x8000000 -D $(BUILDDIR)/$(PROJECT).bin
 
+prog_openocd: all
+	openocd -f "board/stm32f4discovery.cfg"  -c "program $(BUILDDIR)/$(PROJECT).elf reset"
+
 prog_uart: all
 	./stm32loader.py -e -w -v $(BUILDDIR)/$(PROJECT).bin
+
+prog_gdb: all
+	arm-none-eabi-gdb $(BUILDDIR)/$(PROJECT).elf -ex "tar extended-remote | openocd -f board/stm32f4discovery.cfg -c \"stm32f4x.cpu configure -rtos auto; gdb_port pipe; log_output openocd.log\""
+
