@@ -70,6 +70,8 @@ SerialUSBDriver SDU1;
 #define ADC_GRP1_BUF_DEPTH      (2*ADC_N_ADCS) // must be 1 or even
 
 #define OUT_NUM_CHANNELS        51
+#define N_BUTTONS               68
+#define N_BUTTONS_BAS           51
 
 static const ioportid_t out_channels_port[51] = {
   GPIOC, GPIOC, GPIOC, GPIOG, GPIOG, GPIOG, GPIOG, GPIOG,
@@ -140,8 +142,8 @@ typedef struct struct_slider {
 
 static slider_t sld;
 
-static button_t buttons[51];
-static button_t buttons_bas[51];
+static button_t buttons[N_BUTTONS];
+static button_t buttons_bas[N_BUTTONS_BAS];
 static int buttons_pressed[2] = {0};
 
 /*
@@ -151,7 +153,8 @@ static adcsample_t adc_samples[ADC_GRP1_NUM_CHANNELS_PER_ADC * ADC_N_ADCS * ADC_
 static adcsample_t samples0[102] = {0};
 static adcsample_t samples1[102] = {0};
 static adcsample_t samples2[102] = {0};
-static adcsample_t* samples[3] = {samples0, samples1, samples2};
+static adcsample_t samples3[102] = {0};
+static adcsample_t* samples[4] = {samples0, samples1, samples2, samples3};
 
 static adcsample_t samples_bas0[102] = {0};
 static adcsample_t samples_bas1[102] = {0};
@@ -205,7 +208,7 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   samples0[next_conversion] = buffer[0];
   samples1[next_conversion] = buffer[1];
   samples2[next_conversion] = buffer[2];
-  //samples3[next_conversion] = buffer[3];
+  samples3[next_conversion] = buffer[3];
 
   samples_bas0[next_conversion] = buffer[4];
   samples_bas1[next_conversion] = buffer[5];
@@ -763,7 +766,7 @@ if m > self:
     self -= ...(self, m)
 
          */
-        for (int n = 0; n < 3; n++) {
+        for (int n = 0; n < 4; n++) {
           but_id = note_id + n * 17;
           but = &buttons[but_id];
           update_button(but, &samples[n][cur_conv]);
@@ -843,13 +846,13 @@ int main(void) {
   chMtxInit(&msg_lock);
 
   // Initialize buttons
-  for (int n=0; n<51; n++) {
+  for (int n=0; n<N_BUTTONS; n++) {
     buttons[n].but_id = n;
     buttons[n].src_id = ID_DIS;
     buttons[n].c_force = (ADCFACT>>6) / 6;
     buttons[n].c_offset = ADC_OFFSET;
   }
-  for (int n=0; n<51; n++) {
+  for (int n=0; n<N_BUTTONS_BAS; n++) {
     buttons_bas[n].but_id = n;
     buttons_bas[n].src_id = ID_BAS;
     buttons_bas[n].c_force = (ADCFACT>>6) / 6;
