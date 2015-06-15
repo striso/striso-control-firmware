@@ -160,26 +160,6 @@ static adcsample_t samples_bas0[102] = {0};
 static adcsample_t samples_bas1[102] = {0};
 static adcsample_t* samples_bas[2] = {samples_bas0, samples_bas1};
 
-#define VAL_GPIOA_MODER_CLEAR_INPUT_CAPACITANCE ((VAL_GPIOA_MODER \
-                          & ~(PIN_MODE_ANALOG(GPIOA_ADC0) | \
-                              PIN_MODE_ANALOG(GPIOA_ADC1) | \
-                              PIN_MODE_ANALOG(GPIOA_ADC2) | \
-                              PIN_MODE_ANALOG(GPIOA_ADC3))) \
-                          |  (PIN_MODE_OUTPUT(GPIOA_ADC0) | \
-                              PIN_MODE_OUTPUT(GPIOA_ADC1) | \
-                              PIN_MODE_OUTPUT(GPIOA_ADC2) | \
-                              PIN_MODE_OUTPUT(GPIOA_ADC3)))
-
-#define VAL_GPIOC_MODER_CLEAR_INPUT_CAPACITANCE ((VAL_GPIOA_MODER \
-                          & ~(PIN_MODE_ANALOG(GPIOC_ADC10) | \
-                              PIN_MODE_ANALOG(GPIOC_ADC11) | \
-                              PIN_MODE_ANALOG(GPIOC_ADC12) | \
-                              PIN_MODE_ANALOG(GPIOC_ADC13))) \
-                          |  (PIN_MODE_OUTPUT(GPIOC_ADC10) | \
-                              PIN_MODE_OUTPUT(GPIOC_ADC11) | \
-                              PIN_MODE_OUTPUT(GPIOC_ADC12) | \
-                              PIN_MODE_OUTPUT(GPIOC_ADC13)))
-
 static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   (void)adcp;
   (void)n;
@@ -188,18 +168,10 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   palSetPort(out_channels_port[cur_channel], out_channels_pad[cur_channel]);
   palSetPort(out_channels_bas_port[cur_channel], out_channels_bas_pad[cur_channel]);
 
-  /* Clear capacitance on analog input pins */
-  GPIOA->MODER = VAL_GPIOA_MODER_CLEAR_INPUT_CAPACITANCE;
-  GPIOC->MODER = VAL_GPIOC_MODER_CLEAR_INPUT_CAPACITANCE;
-
   cur_channel = (next_conversion+1) % OUT_NUM_CHANNELS;
   /* Drain new channel */
   palClearPort(out_channels_port[cur_channel], out_channels_pad[cur_channel]);
   palClearPort(out_channels_bas_port[cur_channel], out_channels_bas_pad[cur_channel]);
-
-  /* Reset input pins to analog */
-  GPIOA->MODER = VAL_GPIOA_MODER;
-  GPIOC->MODER = VAL_GPIOC_MODER;
 
   // start next ADC conversion
   adcp->adc->CR2 |= ADC_CR2_SWSTART;
