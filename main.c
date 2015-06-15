@@ -560,9 +560,20 @@ void update_slider(void) {
   int msg[8];
   msg[0] = ID_CONTROL;
 
+  // make slider less sensitive when buttons are pressed, because of crosstalk
+  int min_pres = 0;
+  for (n=18; n<(18+17); n+=2) {
+    if (min_pres < buttons_bas[n].s0)
+      min_pres = buttons_bas[n].s0;
+    if (min_pres < buttons_bas[n].s1)
+      min_pres = buttons_bas[n].s1;
+    if (min_pres < buttons_bas[n].s2)
+      min_pres = buttons_bas[n].s2;
+  }
+
   // find peaks
   for (n=1; n<27-1; n++) {
-    if (sld.s[n] > 0 && sld.s[n-1] <= sld.s[n] && sld.s[n] > sld.s[n+1]) {
+    if (sld.s[n] > min_pres && sld.s[n-1] <= sld.s[n] && sld.s[n] > sld.s[n+1]) {
       peaks[np++] = n;
     }
   }
@@ -586,9 +597,6 @@ void update_slider(void) {
   }
   #endif
 
-  if (buttons_pressed[1]) {
-    np = 0;
-  }
   /*
   signals:
   slide
@@ -609,7 +617,7 @@ void update_slider(void) {
     if (sld.n_press == 1) {
       if (sld.timer <= 0) {
         msg[1] = IDC_SLD_SLIDE;
-        msg[2] = pos - sld.pos[0];
+        msg[2] = -(pos - sld.pos[0]);
         msgSend(3, msg);
         sld.timer = 16 * SENDFACT;
         sld.pos[0] = pos;
@@ -708,6 +716,7 @@ static WORKING_AREA(waThreadReadButtons, 128);
 static msg_t ThreadReadButtons(void *arg) {
   (void)arg;
 
+  int32_t s_new;
   int cur_conv, but_id, note_id;
   button_t* but;
 
@@ -787,9 +796,12 @@ if m > self:
 
           but_id = (note_id / 2) * 3;
 
-          sld.s[but_id + 0] = calibrate(samples_bas[1][cur_conv + 0], (ADCFACT>>6) / 6, ADC_OFFSET);
-          sld.s[but_id + 1] = calibrate(samples_bas[1][cur_conv + 1], (ADCFACT>>6) / 6, ADC_OFFSET);
-          sld.s[but_id + 2] = calibrate(samples_bas[1][cur_conv + 2], (ADCFACT>>6) / 6, ADC_OFFSET);
+          s_new = calibrate(samples_bas[1][cur_conv + 0], (ADCFACT>>6) / 6, ADC_OFFSET);
+          update_and_filter(&sld.s[but_id + 0], &sld.v[but_id + 0], s_new);
+          s_new = calibrate(samples_bas[1][cur_conv + 1], (ADCFACT>>6) / 6, ADC_OFFSET);
+          update_and_filter(&sld.s[but_id + 1], &sld.v[but_id + 1], s_new);
+          s_new = calibrate(samples_bas[1][cur_conv + 2], (ADCFACT>>6) / 6, ADC_OFFSET);
+          update_and_filter(&sld.s[but_id + 2], &sld.v[but_id + 2], s_new);
 
           if (note_id == 16) {
             update_slider();
