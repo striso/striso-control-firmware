@@ -545,7 +545,7 @@ void update_slider(void) {
 
   // find peaks
   for (n=1; n<27-1; n++) {
-    if (sld.s[n] > min_pres && sld.s[n-1] <= sld.s[n] && sld.s[n] > sld.s[n+1]) {
+    if (sld.s[n] > min_pres + (INTERNAL_ONE/64) && sld.s[n-1] <= sld.s[n] && sld.s[n] > sld.s[n+1]) {
       peaks[np++] = n;
     }
   }
