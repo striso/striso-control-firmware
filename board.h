@@ -227,6 +227,8 @@
 #define PIN_PUPDR_PULLDOWN(n)       (2U << ((n) * 2))
 #define PIN_AFIO_AF(n, v)           ((v##U) << ((n % 8) * 4))
 
+#define PIN_OTYPE_BUTTONOUT PIN_OTYPE_OPENDRAIN
+
 /*
  * GPIOA setup:
  */
@@ -253,7 +255,7 @@
                                      PIN_OTYPE_PUSHPULL(GPIOA_PIN4) | \
                                      PIN_OTYPE_PUSHPULL(GPIOA_PIN5) | \
                                      PIN_OTYPE_PUSHPULL(GPIOA_PIN6) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOA_DIS01) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOA_DIS01) | \
                                      PIN_OTYPE_OPENDRAIN(GPIOA_I2C3_SCL) | \
                                      PIN_OTYPE_PUSHPULL(GPIOA_UART1_TX) | \
                                      PIN_OTYPE_PUSHPULL(GPIOA_UART1_RX) | \
@@ -261,7 +263,7 @@
                                      PIN_OTYPE_PUSHPULL(GPIOA_OTG_FS_DP) | \
                                      PIN_OTYPE_PUSHPULL(GPIOA_SWDIO) | \
                                      PIN_OTYPE_PUSHPULL(GPIOA_SWCLK) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOA_BAS01))
+                                     PIN_OTYPE_BUTTONOUT(GPIOA_BAS01))
 #define VAL_GPIOA_OSPEEDR           (PIN_OSPEED_100M(GPIOA_ADC0) | \
                                      PIN_OSPEED_100M(GPIOA_ADC1) | \
                                      PIN_OSPEED_100M(GPIOA_ADC2) | \
@@ -349,13 +351,13 @@
 #define VAL_GPIOB_OTYPER            (PIN_OTYPE_OPENDRAIN(GPIOB_DIS04) | \
                                      PIN_OTYPE_OPENDRAIN(GPIOB_DIS05) | \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN2) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOB_BAS20) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOB_BAS21) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOB_BAS22) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOB_BAS23) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOB_BAS24) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOB_BAS25) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOB_BAS26) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOB_BAS20) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOB_BAS21) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOB_BAS22) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOB_BAS23) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOB_BAS24) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOB_BAS25) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOB_BAS26) | \
                                      PIN_OTYPE_OPENDRAIN(GPIOB_DIS22) | \
                                      PIN_OTYPE_OPENDRAIN(GPIOB_DIS23) | \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN12) | \
@@ -456,9 +458,9 @@
                                      PIN_OTYPE_OPENDRAIN(GPIOC_DIS50) | \
                                      PIN_OTYPE_OPENDRAIN(GPIOC_DIS51) | \
                                      PIN_OTYPE_OPENDRAIN(GPIOC_I2C3_SDA) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOC_BAS02) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOC_BAS03) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOC_BAS04) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOC_BAS02) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOC_BAS03) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOC_BAS04) | \
                                      PIN_OTYPE_PUSHPULL(GPIOC_PIN13) | \
                                      PIN_OTYPE_PUSHPULL(GPIOC_PIN14) | \
                                      PIN_OTYPE_PUSHPULL(GPIOC_PIN15))
@@ -546,14 +548,14 @@
                                      PIN_MODE_OUTPUT(GPIOD_DIS39) | \
                                      PIN_MODE_OUTPUT(GPIOD_DIS40) | \
                                      PIN_MODE_OUTPUT(GPIOD_DIS41))
-#define VAL_GPIOD_OTYPER            (PIN_OTYPE_OPENDRAIN(GPIOD_BAS05) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOD_BAS06) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOD_BAS07) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOD_BAS08) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOD_BAS09) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOD_BAS10) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOD_BAS11) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOD_BAS12) | \
+#define VAL_GPIOD_OTYPER            (PIN_OTYPE_BUTTONOUT(GPIOD_BAS05) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOD_BAS06) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOD_BAS07) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOD_BAS08) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOD_BAS09) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOD_BAS10) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOD_BAS11) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOD_BAS12) | \
                                      PIN_OTYPE_OPENDRAIN(GPIOD_DIS34) | \
                                      PIN_OTYPE_OPENDRAIN(GPIOD_DIS35) | \
                                      PIN_OTYPE_OPENDRAIN(GPIOD_DIS36) | \
@@ -646,13 +648,13 @@
                                      PIN_MODE_OUTPUT(GPIOE_DIS19) | \
                                      PIN_MODE_OUTPUT(GPIOE_DIS20) | \
                                      PIN_MODE_OUTPUT(GPIOE_DIS21))
-#define VAL_GPIOE_OTYPER            (PIN_OTYPE_OPENDRAIN(GPIOE_BAS27) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOE_BAS28) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOE_BAS33) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOE_BAS34) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOE_BAS35) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOE_BAS36) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOE_BAS37) | \
+#define VAL_GPIOE_OTYPER            (PIN_OTYPE_BUTTONOUT(GPIOE_BAS27) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOE_BAS28) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOE_BAS33) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOE_BAS34) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOE_BAS35) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOE_BAS36) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOE_BAS37) | \
                                      PIN_OTYPE_OPENDRAIN(GPIOE_DIS13) | \
                                      PIN_OTYPE_OPENDRAIN(GPIOE_DIS14) | \
                                      PIN_OTYPE_OPENDRAIN(GPIOE_DIS15) | \
@@ -746,17 +748,17 @@
                                      PIN_MODE_OUTPUT(GPIOF_DIS08) | \
                                      PIN_MODE_OUTPUT(GPIOF_DIS09) | \
                                      PIN_MODE_OUTPUT(GPIOF_DIS10))
-#define VAL_GPIOF_OTYPER            (PIN_OTYPE_OPENDRAIN(GPIOF_BAS41) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOF_BAS42) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOF_BAS43) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOF_BAS44) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOF_BAS45) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOF_BAS46) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOF_BAS47) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOF_BAS48) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOF_BAS49) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOF_BAS50) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOF_BAS51) | \
+#define VAL_GPIOF_OTYPER            (PIN_OTYPE_BUTTONOUT(GPIOF_BAS41) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOF_BAS42) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOF_BAS43) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOF_BAS44) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOF_BAS45) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOF_BAS46) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOF_BAS47) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOF_BAS48) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOF_BAS49) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOF_BAS50) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOF_BAS51) | \
                                      PIN_OTYPE_OPENDRAIN(GPIOF_DIS06) | \
                                      PIN_OTYPE_OPENDRAIN(GPIOF_DIS07) | \
                                      PIN_OTYPE_OPENDRAIN(GPIOF_DIS08) | \
@@ -855,13 +857,13 @@
                                      PIN_OTYPE_OPENDRAIN(GPIOG_DIS46) | \
                                      PIN_OTYPE_OPENDRAIN(GPIOG_DIS47) | \
                                      PIN_OTYPE_OPENDRAIN(GPIOG_DIS48) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOG_BAS13) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOG_BAS14) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOG_BAS15) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOG_BAS16) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOG_BAS17) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOG_BAS18) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOG_BAS19))
+                                     PIN_OTYPE_BUTTONOUT(GPIOG_BAS13) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOG_BAS14) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOG_BAS15) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOG_BAS16) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOG_BAS17) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOG_BAS18) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOG_BAS19))
 #define VAL_GPIOG_OSPEEDR           (PIN_OSPEED_100M(GPIOG_DIS11) | \
                                      PIN_OSPEED_100M(GPIOG_DIS12) | \
                                      PIN_OSPEED_100M(GPIOG_DIS42) | \
@@ -1050,14 +1052,14 @@
                                      PIN_OTYPE_PUSHPULL(GPIOI_PIN1) | \
                                      PIN_OTYPE_PUSHPULL(GPIOI_PIN2) | \
                                      PIN_OTYPE_PUSHPULL(GPIOI_PIN3) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOI_BAS29) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOI_BAS30) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOI_BAS31) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOI_BAS32) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOI_BAS29) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOI_BAS30) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOI_BAS31) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOI_BAS32) | \
                                      PIN_OTYPE_PUSHPULL(GPIOI_PIN8) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOI_BAS38) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOI_BAS39) | \
-                                     PIN_OTYPE_OPENDRAIN(GPIOI_BAS40) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOI_BAS38) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOI_BAS39) | \
+                                     PIN_OTYPE_BUTTONOUT(GPIOI_BAS40) | \
                                      PIN_OTYPE_PUSHPULL(GPIOI_PIN12) | \
                                      PIN_OTYPE_PUSHPULL(GPIOI_PIN13) | \
                                      PIN_OTYPE_PUSHPULL(GPIOI_PIN14) | \
