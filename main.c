@@ -745,8 +745,33 @@ if m > self:
     self -= ...(self, m, mn, note(id, idn))
   else:
     self -= ...(self, m)
+*/
 
-         */
+/*
+if note in multiple octaves:
+  subtract f * (max - n) from n
+  max = 8.5 * n (from test with v1.9, on sensor values)
+  f = 1/7.5
+  but for very light touches 
+ */
+        for (int m = 0; m < 3; m++) {
+          int max = samples[0][cur_conv + m];
+          for (int n = 1; n < 4; n++) {
+            if (max > samples[n][cur_conv + m]) { // samples is invert so >
+              max = samples[n][cur_conv + m];
+            }
+          }
+          for (int n = 0; n < 4; n++) {
+            samples[n][cur_conv + m] -= (max - samples[n][cur_conv + m]); // /7   TODO: - k if other notes in this octave
+            if (samples[n][cur_conv + m] > 4095) samples[n][cur_conv + m] = 4095;
+          }
+        }
+
+/*
+if four corners are on remove lowest
+*/
+
+
         for (int n = 0; n < 4; n++) {
           but_id = note_id + n * 17;
           but = &buttons[but_id];
