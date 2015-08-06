@@ -864,8 +864,8 @@ int main(void) {
   for (int n=0; n<N_BUTTONS_BAS; n++) {
     buttons_bas[n].but_id = n;
     buttons_bas[n].src_id = ID_BAS;
-    buttons_bas[n].c_force = (ADCFACT>>6) / 6;
-    buttons_bas[n].c_offset = ADC_OFFSET;
+    buttons_bas[n].c_force = (ADCFACT>>6) / 2;
+    buttons_bas[n].c_offset = ADC_OFFSET * 16;
   }
 
   /*
