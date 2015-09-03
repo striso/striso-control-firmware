@@ -26,6 +26,8 @@
 
 #include "adc_multi.h"
 
+#include "calib.h"
+
 // force sqrtf to use FPU, the standard one apparently doesn't
 float vsqrtf(float op1) {
   float result;
@@ -762,7 +764,7 @@ if note in multiple octaves:
             }
           }
           for (int n = 0; n < 4; n++) {
-            samples[n][cur_conv + m] -= (max - samples[n][cur_conv + m]); // /7   TODO: - k if other notes in this octave
+            samples[n][cur_conv + m] -= (max - samples[n][cur_conv + m]) / 6; // / 7; // TODO: - k if other notes in this octave
             if (samples[n][cur_conv + m] > 4095) samples[n][cur_conv + m] = 4095;
           }
         }
@@ -858,13 +860,13 @@ int main(void) {
   for (int n=0; n<N_BUTTONS; n++) {
     buttons[n].but_id = n;
     buttons[n].src_id = ID_DIS;
-    buttons[n].c_force = (ADCFACT>>6) / 6;
+    buttons[n].c_force = calib_dis[n];//(ADCFACT>>6) / 6;
     buttons[n].c_offset = ADC_OFFSET;
   }
   for (int n=0; n<N_BUTTONS_BAS; n++) {
     buttons_bas[n].but_id = n;
     buttons_bas[n].src_id = ID_BAS;
-    buttons_bas[n].c_force = (ADCFACT>>6) / 2;
+    buttons_bas[n].c_force = calib_bas[n];//(ADCFACT>>6) / 2;
     buttons_bas[n].c_offset = ADC_OFFSET * 16;
   }
 
