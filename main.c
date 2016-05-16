@@ -344,11 +344,11 @@ static msg_t Thread1(void *arg) {
   msg[1] = 1;
   while (TRUE) {
     chThdSleepMilliseconds(250);
-    palSetPad(GPIOH, GPIOH_LED1);
+    palSetPad(GPIOA, GPIOA_LED1);
     chThdSleepMilliseconds(250);
     msg[2] = underruns;
     //if (!msgSend(3,msg))
-      palClearPad(GPIOH, GPIOH_LED1);
+      palClearPad(GPIOA, GPIOA_LED1);
   }
 
   return 0;
@@ -387,7 +387,7 @@ static msg_t ThreadSend(void *arg) {
       cmsg[0] = 0x80 | ((uint8_t)msg[0])<<3 | ((uint8_t)(size-2));
       cmsg[1] = 0x7f & (uint8_t)msg[1];
       pack(&msg[2], &cmsg[2], size - 2);
-      size = chSequentialStreamWrite((BaseSequentialStream *)&SD1, cmsg, 2+(size-2)*2);
+      size = chSequentialStreamWrite((BaseSequentialStream *)&SDU1, cmsg, 2+(size-2)*2);
     }
     else if (size == 0) {
       chThdSleep(1);
@@ -754,7 +754,7 @@ if note in multiple octaves:
   subtract f * (max - n) from n
   max = 8.5 * n (from test with v1.9, on sensor values)
   f = 1/7.5
-  but for very light touches 
+  but for very light touches
  */
         for (int m = 0; m < 3; m++) {
           int max = samples[0][cur_conv + m];
@@ -860,13 +860,13 @@ int main(void) {
   for (int n=0; n<N_BUTTONS; n++) {
     buttons[n].but_id = n;
     buttons[n].src_id = ID_DIS;
-    buttons[n].c_force = calib_dis[n];//(ADCFACT>>6) / 6;
+    buttons[n].c_force = (ADCFACT>>6) / 6;//calib_dis[n];//(ADCFACT>>6) / 6;
     buttons[n].c_offset = ADC_OFFSET;
   }
   for (int n=0; n<N_BUTTONS_BAS; n++) {
     buttons_bas[n].but_id = n;
     buttons_bas[n].src_id = ID_BAS;
-    buttons_bas[n].c_force = calib_bas[n];//(ADCFACT>>6) / 2;
+    buttons_bas[n].c_force = (ADCFACT>>6) / 6;//calib_bas[n];//(ADCFACT>>6) / 2;
     buttons_bas[n].c_offset = ADC_OFFSET * 16;
   }
 
