@@ -22,6 +22,7 @@
 #include "hal.h"
 #include "chprintf.h"
 
+#include "striso.h"
 #include "usbcfg.h"
 
 #include "adc_multi.h"
@@ -41,16 +42,6 @@ SerialUSBDriver SDU1;
 /*
  * end accelerometer
  */
-
-#define ID_DIS 0
-#define ID_BAS 1
-#define ID_CONTROL 2
-#define ID_ACCEL 3
-#define ID_SYS 4
-
-#define IDC_SLD_NPRESS 8
-#define IDC_SLD_SLIDE 9
-#define IDC_SLD_SLIDEZOOM 10
 
 #define INTERNAL_ONE (1<<24)
 #define ADCFACT (1<<12)
@@ -341,7 +332,7 @@ static msg_t Thread1(void *arg) {
   chRegSetThreadName("blinker");
   int msg[8];
   msg[0] = ID_SYS;
-  msg[1] = 1;
+  msg[1] = IDS_UNDERRUNS_BUTTONS;
   while (TRUE) {
     chThdSleepMilliseconds(250);
     palSetPad(GPIOA, GPIOA_LED1);
