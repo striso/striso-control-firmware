@@ -5,7 +5,7 @@
 
 # Compiler options here.
 ifeq ($(USE_OPT),)
-  USE_OPT = -O2 -ggdb -fomit-frame-pointer -falign-functions=16
+  USE_OPT = -O1 -ggdb -fomit-frame-pointer -falign-functions=16
 endif
 
 # C specific options here (added to USE_OPT).
@@ -25,7 +25,7 @@ endif
 
 # Linker extra options here.
 ifeq ($(USE_LDOPT),)
-  USE_LDOPT = 
+  USE_LDOPT =
 endif
 
 # Enable this if you want link time optimizations (LTO)
@@ -97,7 +97,7 @@ CSRC = $(PORTSRC) \
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
-CPPSRC =
+CPPSRC = #synth_control.cpp
 
 # C sources to be compiled in ARM mode regardless of the global setting.
 # NOTE: Mixing ARM and THUMB mode enables the -mthumb-interwork compiler
@@ -217,14 +217,13 @@ ULIBS =
 include $(CHIBIOS)/os/ports/GCC/ARMCMx/rules.mk
 
 prog: all
-	dfu-util -d0483:df11 -a0 -s0x8000000 -D $(BUILDDIR)/$(PROJECT).bin
+	dfu-util -d0483:df11 -a0 -s0x8000000:leave -D $(BUILDDIR)/$(PROJECT).bin
 
 prog_openocd: all
-	openocd -f "board/stm32f4discovery.cfg"  -c "program $(BUILDDIR)/$(PROJECT).elf reset"
+	openocd -f "board/stm32f4discovery.cfg"  -c "program $(BUILDDIR)/$(PROJECT).elf reset" -c "exit"
 
 prog_uart: all
 	./stm32loader.py -e -w -v $(BUILDDIR)/$(PROJECT).bin
 
 prog_gdb: all
 	arm-none-eabi-gdb $(BUILDDIR)/$(PROJECT).elf -ex "tar extended-remote | openocd -f board/stm32f4discovery.cfg -c \"stm32f4x.cpu configure -rtos auto; gdb_port pipe; log_output openocd.log\""
-
