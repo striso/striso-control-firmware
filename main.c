@@ -24,6 +24,9 @@
 
 #include "striso.h"
 #include "usbcfg.h"
+#include "exceptions.h"
+#include "pconnection.h"
+#include "midi_usb.h"
 
 #include "adc_multi.h"
 
@@ -35,9 +38,6 @@ float vsqrtf(float op1) {
   __ASM volatile ("vsqrt.f32 %0, %1" : "=w" (result) : "w" (op1) );
   return (result);
 }
-
-/* Virtual serial port over USB.*/
-SerialUSBDriver SDU1;
 
 /*
  * end accelerometer
@@ -332,11 +332,11 @@ static msg_t Thread1(void *arg) {
   chRegSetThreadName("blinker");
   int msg[8];
   msg[0] = ID_SYS;
-  msg[1] = IDS_UNDERRUNS_BUTTONS;
+  msg[1] = ID_SYS_MSGQUE_OVERFLOW_BB;
   while (TRUE) {
-    chThdSleepMilliseconds(250);
+    chThdSleepMilliseconds(500);
     palSetPad(GPIOA, GPIOA_LED1);
-    chThdSleepMilliseconds(250);
+    chThdSleepMilliseconds(500);
     msg[2] = underruns;
     //if (!msgSend(3,msg))
       palClearPad(GPIOA, GPIOA_LED1);
@@ -360,6 +360,18 @@ static void unpack(uint8_t *in, int *out, int n) {
   }
 }
 
+void sendMidi(int size, int* msg) {
+  if (size == 8 && msg[0] == ID_DIS) {
+    int velo = (msg[5]+msg[6]+msg[7]) >> (14-7);
+    if (msg[2]+msg[3]+msg[4] > 0)
+      midi_usb_MidiSend3(1, MIDI_NOTE_ON, msg[1], velo);
+    else
+      midi_usb_MidiSend3(1, MIDI_NOTE_OFF, msg[1], 0);
+  }
+  //midi_usb_MidiSend3(0, MIDI_NOTE_OFF, pitch, velo);
+  //midi_usb_MidiSend3(0, MIDI_POLY_PRESSURE, pitch, velo);
+}
+
 /*
  * Message send thread
  */
@@ -375,10 +387,13 @@ static msg_t ThreadSend(void *arg) {
   while (TRUE) {
     size = msgGet(8, msg);
     if (size > 0 && size <= 9) {
+      sendMidi(size, &msg);
+      chThdSleepMilliseconds(100);
+      palTogglePad(GPIOA, GPIOA_LED1);
       cmsg[0] = 0x80 | ((uint8_t)msg[0])<<3 | ((uint8_t)(size-2));
       cmsg[1] = 0x7f & (uint8_t)msg[1];
       pack(&msg[2], &cmsg[2], size - 2);
-      size = chSequentialStreamWrite((BaseSequentialStream *)&SDU1, cmsg, 2+(size-2)*2);
+      chSequentialStreamWrite((BaseSequentialStream *)&SD1, cmsg, 2+(size-2)*2);
     }
     else if (size == 0) {
       chThdSleep(1);
@@ -826,23 +841,7 @@ int main(void) {
    */
   sdStart(&SD1, &ser_cfg);
 
-  /*
-   * Initializes a serial-over-USB CDC driver.
-   */
-  sduObjectInit(&SDU1);
-  sduStart(&SDU1, &serusbcfg);
-
-  /*
-   * Activates the USB driver and then the USB bus pull-up on D+.
-   * Note, a delay is inserted in order to not have to disconnect the cable
-   * after a reset.
-   */
-  //usbDisconnectBus(serusbcfg.usbp);
-  //chThdSleepMilliseconds(1000);
-  usbStart(serusbcfg.usbp, &usbcfg);
-  //usbConnectBus(serusbcfg.usbp);
-
-  //chThdSleepMilliseconds(1000);
+  InitPConnection();
 
   // init msg mutex
   chMtxInit(&msg_lock);
@@ -887,6 +886,7 @@ int main(void) {
   chThdCreateStatic(waThreadReadButtons, sizeof(waThreadReadButtons), NORMALPRIO, ThreadReadButtons, NULL);
 
   while (1) {
+    PExReceive();
     chThdSleepMilliseconds(500);
   }
 }

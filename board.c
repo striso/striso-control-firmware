@@ -52,7 +52,7 @@ const PALConfig pal_default_config =
  *          and before any other initialization.
  */
 void __early_init(void) {
-
+  exception_check_DFU();
   stm32_clock_init();
 }
 

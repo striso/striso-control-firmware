@@ -20,8 +20,6 @@
 #include "hal.h"
 #include "exceptions.h"
 
-#include "striso_synth_board.h"
-
 #define ERROR_MAGIC_NUMBER 0xE1212012
 
 typedef enum {
@@ -136,12 +134,12 @@ void exception_initiate_dfu(void) {
   volatile int i = 20;
   while (i--) {
     volatile int j = 1 << 12;
-    palTogglePad(LED1_PORT, LED1_PIN);
+    palTogglePad(GPIOA, GPIOA_LED1);
     while (j--) {
       volatile int k = 1 << 8;
       while (k--) {
       }
-      watchdog_feed();
+      //watchdog_feed();
     }
   }
   exceptiondump->magicnumber = ERROR_MAGIC_NUMBER;

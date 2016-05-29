@@ -88,6 +88,10 @@ CSRC = $(PORTSRC) \
        $(BOARDSRC) \
        $(CHIBIOS)/os/various/chprintf.c \
        usbcfg.c \
+       pconnection.c \
+       bulk_usb.c \
+       midi_usb.c \
+       exceptions.c \
        adc_multi.c \
        main.c
 
