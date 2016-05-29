@@ -2,3 +2,4 @@
 .dep/
 build/*
 !build/*.bin
+*.tmp
