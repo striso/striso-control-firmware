@@ -97,7 +97,7 @@ CSRC = $(PORTSRC) \
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
-CPPSRC = #synth_control.cpp
+CPPSRC =
 
 # C sources to be compiled in ARM mode regardless of the global setting.
 # NOTE: Mixing ARM and THUMB mode enables the -mthumb-interwork compiler
@@ -220,10 +220,15 @@ prog: all
 	dfu-util -d0483:df11 -a0 -s0x8000000:leave -D $(BUILDDIR)/$(PROJECT).bin
 
 prog_openocd: all
-	openocd -f "board/stm32f4discovery.cfg"  -c "program $(BUILDDIR)/$(PROJECT).elf reset" -c "exit"
+	openocd -f "board/stm32f4discovery.cfg"  -c "program $(BUILDDIR)/$(PROJECT).elf reset exit"
 
 prog_uart: all
 	./stm32loader.py -e -w -v $(BUILDDIR)/$(PROJECT).bin
 
-prog_gdb: all
+# Launch GDB via openocd debugger
+gdb: all
 	arm-none-eabi-gdb $(BUILDDIR)/$(PROJECT).elf -ex "tar extended-remote | openocd -f board/stm32f4discovery.cfg -c \"stm32f4x.cpu configure -rtos auto; gdb_port pipe; log_output openocd.log\""
+
+# Start GDB server for external use (e.g. Eclipse)
+openocd:
+	openocd -f "board/stm32f4discovery.cfg" -c "stm32f4x.cpu configure -rtos auto;"
