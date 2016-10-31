@@ -28,9 +28,28 @@
 #include "pconnection.h"
 #include "midi_usb.h"
 
+#include "synth.h"
+
 #include "adc_multi.h"
 
 #include "calib.h"
+
+// next lines are necessary since synth_contol.cpp is included
+// and are copied from ChibiOS/testhal/STM32F4xx/RTC/main.c
+/* libc stub */
+int _getpid(void) {return 1;}
+/* libc stub */
+void _exit(int i) {(void)i;while(1);}
+/* libc stub */
+#include <errno.h>
+#undef errno
+extern int errno;
+int _kill(int pid, int sig) {
+  (void)pid;
+  (void)sig;
+  errno = EINVAL;
+  return -1;
+}
 
 // force sqrtf to use FPU, the standard one apparently doesn't
 float vsqrtf(float op1) {
@@ -182,6 +201,7 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
 }
 
 #define SENDFACT 1
+#define INITIAL_DELAY 5
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_3
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_15
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_28
@@ -363,10 +383,11 @@ static void unpack(uint8_t *in, int *out, int n) {
 void sendMidi(int size, int* msg) {
   if (size == 8 && msg[0] == ID_DIS) {
     int velo = (msg[5]+msg[6]+msg[7]) >> (14-7);
-    if (msg[2]+msg[3]+msg[4] > 0)
-      midi_usb_MidiSend3(1, MIDI_NOTE_ON, msg[1], velo);
-    else
-      midi_usb_MidiSend3(1, MIDI_NOTE_OFF, msg[1], 0);
+    if (msg[2]+msg[3]+msg[4] > 0) {
+      midi_usb_MidiSend3(9, MIDI_NOTE_ON, msg[1], velo);
+    } else {
+      midi_usb_MidiSend3(8, MIDI_NOTE_OFF, msg[1], 0);
+    }
   }
   //midi_usb_MidiSend3(0, MIDI_NOTE_OFF, pitch, velo);
   //midi_usb_MidiSend3(0, MIDI_POLY_PRESSURE, pitch, velo);
@@ -387,13 +408,14 @@ static msg_t ThreadSend(void *arg) {
   while (TRUE) {
     size = msgGet(8, msg);
     if (size > 0 && size <= 9) {
-      sendMidi(size, &msg);
-      chThdSleepMilliseconds(100);
-      palTogglePad(GPIOA, GPIOA_LED1);
+      synth_message(size, &msg);
+      //sendMidi(size, &msg);
       cmsg[0] = 0x80 | ((uint8_t)msg[0])<<3 | ((uint8_t)(size-2));
       cmsg[1] = 0x7f & (uint8_t)msg[1];
       pack(&msg[2], &cmsg[2], size - 2);
       chSequentialStreamWrite((BaseSequentialStream *)&SD1, cmsg, 2+(size-2)*2);
+
+      //chSequentialStreamWrite((BaseSequentialStream *)&BDU1,cmsg, 2+(size-2)*2);
     }
     else if (size == 0) {
       chThdSleep(1);
@@ -459,6 +481,7 @@ void update_button(button_t* but, adcsample_t* inp) {
   if (but->s0 > (INTERNAL_ONE/64) || but->s1 > 0 || but->s2 > 0) {
     if (but->pressed == 0) {
       but->pressed = 1;
+      but->timer = INITIAL_DELAY;
       buttons_pressed[but->src_id]++;
     }
     if (but->timer <= 0) {
@@ -490,7 +513,6 @@ void update_button(button_t* but, adcsample_t* inp) {
   else if (but->pressed) {
     but->pressed = 0;
     buttons_pressed[but->src_id]--;
-    but->timer = 0;
     msg[1] = but_id;
     msg[2] = 0;
     msg[3] = 0;
@@ -886,7 +908,7 @@ int main(void) {
   chThdCreateStatic(waThreadReadButtons, sizeof(waThreadReadButtons), NORMALPRIO, ThreadReadButtons, NULL);
 
   while (1) {
-    PExReceive();
-    chThdSleepMilliseconds(500);
+    chThdSleepMilliseconds(2);
+    synth_tick();
   }
 }

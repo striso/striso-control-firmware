@@ -38,6 +38,7 @@ class Button {
         int coord1;
         float signals[6] = {0,0,0,0,0,0};
         float note;
+        int midinote;
         float pres;
         float vpres;
         float but_x;
@@ -89,32 +90,12 @@ class Button {
             but_x = (signals[2] - signals[0]) * fact;
             but_y = (0.5 * (signals[0] + signals[2]) - signals[1]) * fact;
         }
-
-        void send_direct(synth_interface_t* synth_interface) {
-            #ifdef SYNTH_INTERFACE
-            *(synth_interface->note[voice])  = note;
-            *(synth_interface->pres[voice])  = pres;
-            *(synth_interface->vpres[voice]) = vpres;
-            *(synth_interface->but_x[voice]) = but_x;
-            *(synth_interface->but_y[voice]) = but_y;
-            #endif
-
-            #ifdef DO_MIDI_OUT
-            //palTogglePad(GPIOA, GPIOA_LED1);
-            //midi_usb_MidiSend3(voice, MIDI_CHANNEL_PRESSURE, note, pres * 127);
-            //midi_usb_MidiSend2(voice, MIDI_PITCH_BEND, but_x * 63);
-            //midi_usb_MidiSend3(voice, MIDI_CONTROL_CHANGE, MIDI_C_MODULATION, but_y * 63);
-            #endif
-        }
 };
 
 class Instrument {
     public:
         Button buttons[BUTTONCOUNT];
         int voices[VOICECOUNT];
-        int free_voices[VOICECOUNT];
-        int next_voice = 0;
-        int freed_voice = 0;
         float notegen0 = 12.00;
         float notegen1 = 7.00;
         float note_offset = 62;
@@ -130,10 +111,14 @@ class Instrument {
             for (n = 0; n < n_buttons; n++) {
                 buttons[n].coord0 = c0[n];
                 buttons[n].coord1 = c1[n];
+                // calculate note number
+                buttons[n].note = note_offset +
+                                  notegen0 * buttons[n].coord0 +
+                                  notegen1 * buttons[n].coord1;
+                buttons[n].midinote = (uint8_t)(buttons[n].note + 0.5);
             }
             for (n = 0; n < VOICECOUNT; n++) {
                 voices[n] = -1;
-                free_voices[n] = n;
             }
             synth_interface = si;
         }
@@ -174,8 +159,8 @@ class Instrument {
                             voices[port_voice] = but;
                             voices[v] = -1;
                             for (int w=0; w<VOICECOUNT; w++) {
-                                if (free_voices[w] == port_voice) {
-                                    free_voices[w] = v;
+                                if (voices[w] == port_voice) {
+                                    voices[w] = v;
                                 }
                             }
                             break;
@@ -202,14 +187,10 @@ class Instrument {
             // Note on detection
             if (buttons[but].state == 0 && buttons[but].pres > 0.0) {
                 int v = get_voice(but);
+
                 if (v >= 0 && portamento) {
                     port_timebut = but;
                 }
-                #ifdef DO_MIDI_OUT
-                if (v >= 0)
-                    palTogglePad(GPIOA, GPIOA_LED1);
-                    midi_usb_MidiSend3(buttons[but].voice, MIDI_NOTE_ON, buttons[but].note, buttons[but].vpres);
-                #endif
             }
 
             if (buttons[but].state) {
@@ -221,8 +202,8 @@ class Instrument {
                 buttons[but].timer = chTimeNow() + CLEAR_TIMER;
 
                 if (!portamento) {
-                    // calculate and send synth parameters
-                    buttons[but].send_direct(synth_interface);
+                    // send synth parameters
+                    update_voice(but);
                 } else if (portamento && but == port_timebut) {
                     // calculate and send portamento voice
                     float sw = 0;
@@ -258,13 +239,10 @@ class Instrument {
                     *(synth_interface->but_y[port_voice]) = but_y;
                     #endif
                 }
+
+                // Note off detection
                 if (buttons[but].pres <= 0) {
-                    // Note off detection
-                    //release_voice(but);
-                    #ifdef DO_MIDI_OUT
-                    palTogglePad(GPIOA, GPIOA_LED1);
-                    midi_usb_MidiSend3(buttons[but].voice, MIDI_NOTE_OFF, buttons[but].note, 0);
-                    #endif
+                    release_voice(but);
 
                     if (portamento && but == port_timebut) {
                         for (int n = 0; n < VOICECOUNT; n++) {
@@ -279,23 +257,27 @@ class Instrument {
         }
 
         void release_voice(int but) {
-            buttons[but].state = 0;
-            voices[buttons[but].voice] = -1;
-            free_voices[freed_voice] = buttons[but].voice;
-            freed_voice++;
-            if (freed_voice >= VOICECOUNT)
-                freed_voice = 0;
+            if (buttons[but].state > 0) {
+                buttons[but].state = 0;
+
+                #ifdef DO_MIDI_OUT // buttons[but].voice + 
+                midi_usb_MidiSend3(1, MIDI_NOTE_OFF, buttons[but].note, 0);
+                palTogglePad(GPIOA, GPIOA_LED1);
+                #endif
+            }
         }
 
         int get_voice(int but) {
+            // check if last used voice is available
             int voice = -1;
             int n;
             float min_vol = buttons[but].vol;// * 0.9 - 0.05; // * factor for hysteresis
             for (n=0; n<VOICECOUNT; n++)
             {
-                if (voices[n] == -1)
+                if (voices[n] == -1 || voices[n] == but)
                 {
                     voice = n;
+                    //voices[n] = but; // alternative to check below
                     break;
                 }
                 float vol = buttons[voices[n]].vol;
@@ -306,13 +288,50 @@ class Instrument {
             }
             if (voice >= 0) {
                 // take over the voice
-                buttons[voices[voice]].state = 0;
+                if (voices[voice] >= 0 && buttons[voices[voice]].state > 0) {
+                    release_voice(voices[voice]);
+                }
+
                 buttons[but].state = 1;
                 buttons[but].voice = voice;
                 voices[voice] = but;
+
+                #ifdef DO_MIDI_OUT
+                chThdSleepMilliseconds(2);
+                palTogglePad(GPIOA, GPIOA_LED1);
+
+                int velo = 1 + buttons[but].vpres * 127;
+                if (velo > 127) velo = 127;
+                else if (velo < 1) velo = 1;
+
+                midi_usb_MidiSend3(1, MIDI_NOTE_ON, buttons[but].midinote, velo);
+                #endif
+
                 return voice;
             }
             return -1;
+        }
+
+        void update_voice(int but) {
+            #ifdef SYNTH_INTERFACE
+            *(synth_interface->note[voice])  = buttons[but].note;
+            *(synth_interface->pres[voice])  = buttons[but].pres;
+            *(synth_interface->vpres[voice]) = buttons[but].vpres;
+            *(synth_interface->but_x[voice]) = buttons[but].but_x;
+            *(synth_interface->but_y[voice]) = buttons[but].but_y;
+            #endif
+
+            #ifdef DO_MIDI_OUT
+            //palTogglePad(GPIOA, GPIOA_LED1);
+            int velo = 1 + buttons[but].vpres * 127;
+            if (velo > 127) velo = 127;
+            else if (velo < 1) velo = 1;
+
+            //midi_usb_MidiSend3(1, MIDI_POLY_PRESSURE, buttons[but].midinote, pres * 127);
+            midi_usb_MidiSend2(1, MIDI_CHANNEL_PRESSURE, velo);
+            //midi_usb_MidiSend2(1, MIDI_PITCH_BEND, but_x * 63);
+            //midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE, MIDI_C_TIMBRE, but_y * 63); // CC74 as used in MPE
+            #endif
         }
 
         void clear_dead_notes(void) {
