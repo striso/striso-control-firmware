@@ -137,6 +137,7 @@ typedef struct struct_button {
   int timer;
   int but_id;
   int src_id;
+  int prev_but_pressed;
 } button_t;
 
 typedef struct struct_slider {
@@ -479,7 +480,8 @@ void update_button(button_t* but, adcsample_t* inp) {
   s_new = calibrate(inp[2], but->c_force, but->c_offset);
   update_and_filter(&but->s2, &but->v2, s_new);
 
-  if (but->s0 > (INTERNAL_ONE/64) || but->s1 > MSGFACT || but->s2 > MSGFACT) {
+  int min_pres = MSGFACT + but->prev_but_pressed * 2 * (INTERNAL_ONE/64);
+  if (but->s0 > min_pres + but->prev_but_pressed * (INTERNAL_ONE/64) || but->s1 > min_pres || but->s2 > min_pres) {
     if (but->pressed == 0) {
       but->pressed = 1;
       but->timer = INITIAL_DELAY;
@@ -725,6 +727,7 @@ static msg_t ThreadReadButtons(void *arg) {
   int32_t s_new;
   int cur_conv, but_id, note_id;
   button_t* but;
+  int prev_but_pressed[4] = {0};
 
   while (TRUE) {
     while (proc_conversion != next_conversion) {
@@ -809,7 +812,9 @@ if four corners are on remove lowest
         for (int n = 0; n < 4; n++) {
           but_id = note_id + n * 17;
           but = &buttons[but_id];
+          but->prev_but_pressed = prev_but_pressed[n] > 0;
           update_button(but, &samples[n][cur_conv]);
+          prev_but_pressed[n] = but->pressed;
         }
 #ifdef USE_BAS
         // bas side
@@ -878,7 +883,7 @@ int main(void) {
   for (int n=0; n<N_BUTTONS; n++) {
     buttons[n].but_id = n;
     buttons[n].src_id = ID_DIS;
-    buttons[n].c_force = (ADCFACT>>6) / 6;//calib_dis[n];//(ADCFACT>>6) / 6;
+    buttons[n].c_force = (ADCFACT>>6) / 12;//calib_dis[n];//(ADCFACT>>6) / 6;
     buttons[n].c_offset = ADC_OFFSET;
   }
   for (int n=0; n<N_BUTTONS_BAS; n++) {
