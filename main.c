@@ -478,13 +478,14 @@ void update_button(button_t* but, adcsample_t* inp) {
   s_new = calibrate(inp[2], but->c_force, but->c_offset);
   update_and_filter(&but->s2, &but->v2, s_new);
 
-  if (but->s0 > (INTERNAL_ONE/64) || but->s1 > 0 || but->s2 > 0) {
+  if (but->s0 > (INTERNAL_ONE/64) || but->s1 > MSGFACT || but->s2 > MSGFACT) {
     if (but->pressed == 0) {
       but->pressed = 1;
       but->timer = INITIAL_DELAY;
       buttons_pressed[but->src_id]++;
     }
     if (but->timer <= 0) {
+      but->pressed = 2;
       msg[1] = but_id;
       if (but->s0 <= 0)
         msg[2] = 0;
@@ -511,18 +512,20 @@ void update_button(button_t* but, adcsample_t* inp) {
     }
   }
   else if (but->pressed) {
+    if (but->pressed >= 2) {
+      msg[1] = but_id;
+      msg[2] = 0;
+      msg[3] = 0;
+      msg[4] = 0;
+      msg[5] = but->v0 / MSGFACT_VELO;
+      msg[6] = but->v1 / MSGFACT_VELO;
+      msg[7] = but->v2 / MSGFACT_VELO;
+      while (msgSend(8, msg)) {
+        chThdSleep(1);
+      }
+    }
     but->pressed = 0;
     buttons_pressed[but->src_id]--;
-    msg[1] = but_id;
-    msg[2] = 0;
-    msg[3] = 0;
-    msg[4] = 0;
-    msg[5] = but->v0 / MSGFACT_VELO;
-    msg[6] = but->v1 / MSGFACT_VELO;
-    msg[7] = but->v2 / MSGFACT_VELO;
-    while (msgSend(8, msg)) {
-      chThdSleep(1);
-    }
   }
 }
 /*
