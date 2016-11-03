@@ -62,6 +62,7 @@ float vsqrtf(float op1) {
  * end accelerometer
  */
 
+//#define USE_BAS
 #define INTERNAL_ONE (1<<24)
 #define ADCFACT (1<<12)
 #define VELOFACT 32
@@ -810,6 +811,7 @@ if four corners are on remove lowest
           but = &buttons[but_id];
           update_button(but, &samples[n][cur_conv]);
         }
+#ifdef USE_BAS
         // bas side
         but_id = note_id;
         but = &buttons_bas[but_id];
@@ -837,6 +839,7 @@ if four corners are on remove lowest
             update_slider();
           }
         }
+#endif // USE_BAS
 
       }
       proc_conversion = (proc_conversion+1) % 102;
