@@ -68,7 +68,7 @@ float vsqrtf(float op1) {
 #define VELOFACT 32
 #define MSGFACT (1<<11)
 #define MSGFACT_VELO (MSGFACT/VELOFACT)
-#define FILT 8
+#define FILT 8  // max:  1<<32 / INTERNAL_ONE = 64
 
 #define ADC_OFFSET (16>>1)
 //#define CALIBRATION_MODE TRUE
@@ -204,12 +204,12 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
 
 #define SENDFACT 1
 #define INITIAL_DELAY 5
-//#define ADC_SAMPLE_DEF ADC_SAMPLE_3
-//#define ADC_SAMPLE_DEF ADC_SAMPLE_15
-//#define ADC_SAMPLE_DEF ADC_SAMPLE_28
-//#define ADC_SAMPLE_DEF ADC_SAMPLE_56
-//#define ADC_SAMPLE_DEF ADC_SAMPLE_84
-//#define ADC_SAMPLE_DEF ADC_SAMPLE_112
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_3   // 0.05 ms per cycle
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_15  // 0.11 ms per cycle
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_28  // 0.18 ms per cycle
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_56  // 0.33 ms per cycle
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_84  // 0.50 ms per cycle
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_112 // 0.65 ms per cycle
 #define ADC_SAMPLE_DEF ADC_SAMPLE_144 // 0.83 ms per cycle
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_480 // 2.7 ms per cycle
 
