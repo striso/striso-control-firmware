@@ -39,7 +39,13 @@
 #define WS2812_TIM_N    5  // timer, 1-11
 #define WS2812_TIM_CH   3  // timer channel, 0-3
 #define WS2812_DMA_STREAM STM32_DMA1_STREAM0  // DMA stream for TIMx_UP (look up in reference manual under DMA Channel selection)
-#define WS2812_DMA_CHANNEL 6                  // DMA channel for TIMx_UP
+#define WS2812_DMA_CHANNEL 6                  // DMA channel for TIMx_UP// The WS2812 expects 5V signal level (or at least 0.7 * VDD). Sometimes it works
+// with a 3V signal level, otherwise the easiest way to get the signal level to 5V
+// is to add an external pullup resistor from the DI pin to 5V (10k will do) and
+// configure the pin as open drain.
+// (An SMD resistor is easily solders on the connections of a light strip)
+// Uncomment the next line if an external pullup resistor is used.
+#define WS2812_EXTERNAL_PULLUP
 
 /* --- CONFIGURATION CHECK -------------------------------------------------- */
 
@@ -106,11 +112,11 @@
  *
  * Per the datasheet:
  * WS2812:
- * - T0H: 550 nS to 850 nS, inclusive
- * - T0L: 450 nS to 750 nS, inclusive
+ * - T1H: 550 nS to 850 nS, inclusive
+ * - T1L: 450 nS to 750 nS, inclusive
  * WS2812B:
- * - T0H: 750 nS to 1050 nS, inclusive
- * - T0L: 200 nS to 500 nS, inclusive
+ * - T1H: 750 nS to 1050 nS, inclusive
+ * - T1L: 200 nS to 500 nS, inclusive
  *
  * The duty cycle is calculated for a high period of 800 nS.
  * This is in the middle of the specifications of the WS2812 and WS2812B.
@@ -195,8 +201,12 @@ void ws2812_init(void)
     for (i = 0; i < WS2812_COLOR_BIT_N; i++) ws2812_frame_buffer[i]                       = WS2812_DUTYCYCLE_0;   // All color bits are zero duty cycle
     for (i = 0; i < WS2812_RESET_BIT_N; i++) ws2812_frame_buffer[i + WS2812_COLOR_BIT_N]  = 0;                    // All reset bits are zero
 
-    // Configure pin as AF output
+    // Configure pin as AF output. If there's an external pull up resistor the signal level is brought to 5V using open drain mode.
+#ifdef WS2812_EXTERNAL_PULLUP
     palSetPadMode(PORT_WS2812, PIN_WS2812, PAL_MODE_ALTERNATE(WS2812_AF) | PAL_STM32_OTYPE_OPENDRAIN);
+#else
+    palSetPadMode(PORT_WS2812, PIN_WS2812, PAL_MODE_ALTERNATE(WS2812_AF));
+#endif
 
     // PWM Configuration
     #pragma GCC diagnostic ignored "-Woverride-init"                                        // Turn off override-init warning for this struct. We use the overriding ability to set a "default" channel config
