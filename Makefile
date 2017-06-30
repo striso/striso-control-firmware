@@ -93,6 +93,7 @@ CSRC = $(PORTSRC) \
        midi_usb.c \
        exceptions.c \
        adc_multi.c \
+       ws2812.c \
        main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global

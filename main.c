@@ -22,6 +22,8 @@
 #include "hal.h"
 #include "chprintf.h"
 
+#include "config.h"
+
 #include "striso.h"
 #include "usbcfg.h"
 #include "exceptions.h"
@@ -159,6 +161,10 @@ static slider_t sld;
 static button_t buttons[N_BUTTONS];
 static button_t buttons_bas[N_BUTTONS_BAS];
 static int buttons_pressed[2] = {0};
+
+#ifdef USE_HARDBUT
+static int hardbutton_state = 0;
+#endif
 
 /*
  * ADC samples buffer.
@@ -845,8 +851,12 @@ if four corners are on remove lowest
           }
         }
 #endif // USE_BAS
-
       }
+#ifdef USE_HARDBUT
+      if (proc_conversion == 2) {
+        //if (BUT_PORT && hardbutton_state)
+      }
+#endif // USE_HARDBUT
       proc_conversion = (proc_conversion+1) % 102;
     }
 
@@ -872,7 +882,14 @@ int main(void) {
   /*
    * Activates the serial driver using the driver default configuration.
    */
+#ifdef USE_UART
   sdStart(&SD1, &ser_cfg);
+#endif
+
+#ifdef USE_WS2812
+  ws2812_init();
+  ws2812_write_led(0, 15, 0, 31);
+#endif
 
   InitPConnection();
 
@@ -901,7 +918,9 @@ int main(void) {
   /*
    * Creates the message send thread.
    */
+#ifdef USE_UART
   chThdCreateStatic(waThreadSend, sizeof(waThreadSend), NORMALPRIO, ThreadSend, NULL);
+#endif
 
   /*
    * Creates the LED flash thread.
