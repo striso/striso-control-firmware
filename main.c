@@ -408,7 +408,7 @@ static WORKING_AREA(waThreadSend, 128);
 static msg_t ThreadSend(void *arg) {
 
   (void)arg;
-  chRegSetThreadName("send messages over USB");
+  chRegSetThreadName("send messages");
   int msg[8];
   uint8_t cmsg[16];
   int size;
@@ -421,9 +421,11 @@ static msg_t ThreadSend(void *arg) {
       cmsg[0] = 0x80 | ((uint8_t)msg[0])<<3 | ((uint8_t)(size-2));
       cmsg[1] = 0x7f & (uint8_t)msg[1];
       pack(&msg[2], &cmsg[2], size - 2);
+#ifdef USE_UART
       chSequentialStreamWrite((BaseSequentialStream *)&SD1, cmsg, 2+(size-2)*2);
+#endif
 
-      //chSequentialStreamWrite((BaseSequentialStream *)&BDU1,cmsg, 2+(size-2)*2);
+      chSequentialStreamWrite((BaseSequentialStream *)&BDU1,cmsg, 2+(size-2)*2);
     }
     else if (size == 0) {
       chThdSleep(1);
@@ -918,9 +920,7 @@ int main(void) {
   /*
    * Creates the message send thread.
    */
-#ifdef USE_UART
   chThdCreateStatic(waThreadSend, sizeof(waThreadSend), NORMALPRIO, ThreadSend, NULL);
-#endif
 
   /*
    * Creates the LED flash thread.
