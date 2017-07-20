@@ -29,13 +29,13 @@ typedef struct struct_synth_interface {
 extern synth_interface_t synth_interface;
 extern synth_interface_t synth_interface_bas;
 
-extern void start_synth_thread(void);
+void start_synth_thread(void);
 #endif
 
-extern int synth_message(int size, int* msg);
-extern void synth_tick(void);
+int synth_message(int size, int* msg);
+void synth_tick(void);
 
-extern void clear_dead_notes(void);
+void clear_dead_notes(void);
 
 extern float volume;
 

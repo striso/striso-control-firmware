@@ -8,10 +8,9 @@ extern "C" {
     #include "synth.h"
 }
 
+#include "config.h"
 #include "striso.h"
 #include "midi_usb.h"
-
-#define DO_MIDI_OUT
 
 #define BUTTONCOUNT 68
 
@@ -260,7 +259,7 @@ class Instrument {
             if (buttons[but].state > 0) {
                 buttons[but].state = 0;
 
-                #ifdef DO_MIDI_OUT // buttons[but].voice + 
+                #ifdef USE_MIDI_OUT // buttons[but].voice + 
                 midi_usb_MidiSend3(1, MIDI_NOTE_OFF, buttons[but].note, 0);
                 palTogglePad(GPIOA, GPIOA_LED1);
                 #endif
@@ -296,7 +295,7 @@ class Instrument {
                 buttons[but].voice = voice;
                 voices[voice] = but;
 
-                #ifdef DO_MIDI_OUT
+                #ifdef USE_MIDI_OUT
                 chThdSleepMilliseconds(2);
                 palTogglePad(GPIOA, GPIOA_LED1);
 
@@ -321,7 +320,7 @@ class Instrument {
             *(synth_interface->but_y[voice]) = buttons[but].but_y;
             #endif
 
-            #ifdef DO_MIDI_OUT
+            #ifdef USE_MIDI_OUT
             //palTogglePad(GPIOA, GPIOA_LED1);
             int velo = 1 + buttons[but].vpres * 127;
             if (velo > 127) velo = 127;

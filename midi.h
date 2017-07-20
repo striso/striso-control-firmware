@@ -24,7 +24,6 @@
 // according to MIDI standard
 
 // MIDI Status bytes
-
 #define MIDI_NOTE_OFF			0x80
 #define MIDI_NOTE_ON			0x90
 #define MIDI_POLY_PRESSURE		0xa0
@@ -40,8 +39,8 @@
 #define MIDI_SYSEX_END			0xf7
 #define MIDI_RESET				0xff //	0xff never used as reset in a MIDIMessage
 #define MIDI_META_EVENT			0xff //	0xff is for non MIDI messages
-// MIDI Real Time Messages
 
+// MIDI Real Time Messages
 #define MIDI_TIMING_CLOCK		0xf8
 #define MIDI_MEASURE_END		0xf9 // proposed measure end byte
 #define MIDI_START				0xfa
@@ -50,7 +49,6 @@
 #define MIDI_ACTIVE_SENSE		0xfe 
 
 // Controller Numbers
-
 #define MIDI_C_LSB				0x20 // add this to a non-switch controller to access the LSB.
 #define MIDI_C_GM_BANK			0x00 // general midi bank select
 #define MIDI_C_MODULATION		0x01 // modulation
@@ -71,6 +69,7 @@
 #define MIDI_C_SOSTENUTO		0x42 // sostenuto switch
 #define MIDI_C_SOFT_PEDAL		0x43 // soft pedal
 #define MIDI_C_HOLD_2			0x45 // hold pedal 2
+#define MIDI_C_MPE_AFTERTOUCH	0x46 // MPE aftertouch
 #define MIDI_C_TIMBRE			0x4a // timbre
 #define MIDI_C_GENERAL_5		0x50 // general purpose controller 5
 #define MIDI_C_GENERAL_6		0x51 // general purpose controller 6

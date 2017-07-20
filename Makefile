@@ -65,7 +65,7 @@ endif
 #
 
 # Define project name here
-PROJECT = ch
+PROJECT = striso_control
 
 # Imported source files and paths
 CHIBIOS = ../ChibiOS_2.6
@@ -94,6 +94,8 @@ CSRC = $(PORTSRC) \
        exceptions.c \
        adc_multi.c \
        ws2812.c \
+       button_read.c \
+       messaging.c \
        main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
