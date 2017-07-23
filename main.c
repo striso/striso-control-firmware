@@ -67,10 +67,12 @@ static msg_t Thread1(void *arg) {
   while (TRUE) {
     chThdSleepMilliseconds(500);
     palSetPad(GPIOA, GPIOA_LED1);
+    ws2812_write_led(0, 15, 0, 31);
     chThdSleepMilliseconds(500);
     msg[2] = underruns;
     //if (!msgSend(3,msg))
       palClearPad(GPIOA, GPIOA_LED1);
+    ws2812_write_led(0, 15, 31, 0);
   }
 
   return 0;
@@ -115,7 +117,8 @@ static msg_t ThreadSend(void *arg) {
       chSequentialStreamWrite((BaseSequentialStream *)&SD1, cmsg, 2+(size-2)*2);
 #endif
 
-      chSequentialStreamWrite((BaseSequentialStream *)&BDU1,cmsg, 2+(size-2)*2);
+      //chSequentialStreamWrite((BaseSequentialStream *)&BDU1,cmsg, 2+(size-2)*2);
+      chOQWriteTimeout(&BDU1.oqueue, cmsg, 2+(size-2)*2, TIME_IMMEDIATE);
     }
     else if (size == 0) {
       chThdSleep(1);
@@ -148,7 +151,7 @@ int main(void) {
 
 #ifdef USE_WS2812
   ws2812_init();
-  ws2812_write_led(0, 15, 0, 31);
+  ws2812_write_led(0, 15, 0, 0);
 #endif
 
   InitPConnection();
