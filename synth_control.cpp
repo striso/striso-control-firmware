@@ -105,6 +105,7 @@ class Instrument {
         int port_timebut = -1;
         synth_interface_t* synth_interface;
         int midi_channel_offset = 1;
+        float midi_bend_range = 48.0;
 
         Instrument(int* c0, int* c1, int n_buttons, synth_interface_t* si) {
             int n;
@@ -315,46 +316,49 @@ class Instrument {
         }
 
         void update_voice(int but) {
-            #ifdef SYNTH_INTERFACE
+#ifdef SYNTH_INTERFACE
             *(synth_interface->note[voice])  = buttons[but].note;
             *(synth_interface->pres[voice])  = buttons[but].pres;
             *(synth_interface->vpres[voice]) = buttons[but].vpres;
             *(synth_interface->but_x[voice]) = buttons[but].but_x;
             *(synth_interface->but_y[voice]) = buttons[but].but_y;
-            #endif
+#endif
 
-            #ifdef USE_MIDI_OUT
+#ifdef USE_MIDI_OUT
+            // TODO: pruning unnecessary messages
             //palTogglePad(GPIOA, GPIOA_LED1);
-            int velo = 1 + buttons[but].vpres * 127;
-            if (velo > 127) velo = 127;
-            else if (velo < 1) velo = 1;
+            int pres = buttons[but].pres * 127;
+            if (pres > 127) pres = 127;
+            else if (pres < 0) pres = 0;
             
-            int timbre = 64 + buttons[but].but_y * 64;
-            if (timbre > 127) timbre = 127;
-            else if (timbre < 0) timbre = 0;
+            int tilt = 63.5 + buttons[but].but_y * 64;
+            if (tilt > 127) tilt = 127;
+            else if (tilt < 0) tilt = 0;
             
-            int pitchbend = buttons[but].but_x * buttons[but].but_x * buttons[but].but_x * (1<<14)/(2*48.0);
+            int pitchbend = buttons[but].but_x * buttons[but].but_x * buttons[but].but_x * (0x2000 / midi_bend_range) + 0x2000 + 0.5;
 
             midi_usb_MidiSend2(1, MIDI_CHANNEL_PRESSURE | (midi_channel_offset + buttons[but].voice),
-                               velo);
+                               pres);
+            //midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+            //                   70, pres);
             midi_usb_MidiSend3(1, MIDI_PITCH_BEND | (midi_channel_offset + buttons[but].voice),
-                               pitchbend&0x7F, ((pitchbend>>7)+64)&0x7F);
+                               pitchbend & 0x7f, (pitchbend >> 7) & 0x7f);
             midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
-                               MIDI_C_TIMBRE, timbre);
+                               74, tilt);
             if (buttons[but].vpres > 0) {
                 int velo = 1 + buttons[but].vpres * 127;
                 if (velo > 127) velo = 127;
-                else if (velo < 1) velo = 1;
+                else if (velo < 0) velo = 0;
                 midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
                                    73, velo);
             } else {
                 int velo = 1 - buttons[but].vpres * 127;
                 if (velo > 127) velo = 127;
-                else if (velo < 1) velo = 1;
+                else if (velo < 0) velo = 0;
                 midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
                                    72, velo);
             }
-            #endif
+#endif
         }
 
         void clear_dead_notes(void) {

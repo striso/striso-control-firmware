@@ -8,7 +8,7 @@
 #define SAMPLINGFREQ 44100
 #define CHANNEL_BUFFER_SIZE		32
 #define PLAYBACK_BUFFER_SIZE	(CHANNEL_BUFFER_SIZE*2)
-#define VOICECOUNT 3
+#define VOICECOUNT 5
 
 typedef struct struct_synth_interface {
 	float* acc_abs;
@@ -25,7 +25,7 @@ typedef struct struct_synth_interface {
 	float* but_y[VOICECOUNT];
 } synth_interface_t;
 
-#ifdef SYNTH_INTERFACE
+#ifdef USE_SYNTH_INTERFACE
 extern synth_interface_t synth_interface;
 extern synth_interface_t synth_interface_bas;
 
