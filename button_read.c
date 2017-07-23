@@ -153,7 +153,7 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   next_conversion = (next_conversion+1) % 102;
 }
 
-#define SENDFACT 1
+#define SENDFACT 10
 #define INITIAL_DELAY 5
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_3   // 0.05 ms per cycle
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_15  // 0.11 ms per cycle

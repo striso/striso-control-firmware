@@ -3,7 +3,6 @@
 
 //#define USE_BAS
 //#define USE_UART
-#define USE_USBMIDI
 //#define USE_HARDBUT
 #define USE_MIDI_OUT
 //#define USE_SYNTH_INTERFACE

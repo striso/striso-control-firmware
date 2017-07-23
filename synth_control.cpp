@@ -104,6 +104,7 @@ class Instrument {
         int port_voice = -1;
         int port_timebut = -1;
         synth_interface_t* synth_interface;
+        int midi_channel_offset = 1;
 
         Instrument(int* c0, int* c1, int n_buttons, synth_interface_t* si) {
             int n;
@@ -259,8 +260,9 @@ class Instrument {
             if (buttons[but].state > 0) {
                 buttons[but].state = 0;
 
-                #ifdef USE_MIDI_OUT // buttons[but].voice + 
-                midi_usb_MidiSend3(1, MIDI_NOTE_OFF, buttons[but].note, 0);
+                #ifdef USE_MIDI_OUT
+                midi_usb_MidiSend3(1, MIDI_NOTE_OFF | (midi_channel_offset + buttons[but].voice),
+                                   buttons[but].midinote, 0);
                 palTogglePad(GPIOA, GPIOA_LED1);
                 #endif
             }
@@ -303,7 +305,8 @@ class Instrument {
                 if (velo > 127) velo = 127;
                 else if (velo < 1) velo = 1;
 
-                midi_usb_MidiSend3(1, MIDI_NOTE_ON, buttons[but].midinote, velo);
+                midi_usb_MidiSend3(1, MIDI_NOTE_ON | (midi_channel_offset + buttons[but].voice),
+                                   buttons[but].midinote, velo);
                 #endif
 
                 return voice;
@@ -325,11 +328,32 @@ class Instrument {
             int velo = 1 + buttons[but].vpres * 127;
             if (velo > 127) velo = 127;
             else if (velo < 1) velo = 1;
+            
+            int timbre = 63 + buttons[but].but_y * 64;
+            if (timbre > 127) timbre = 127;
+            else if (timbre < 0) timbre = 0;
+            
+            int pitchbend = buttons[but].but_x * buttons[but].but_x * buttons[but].but_x * (1<<14)/(2*48.0);
 
-            //midi_usb_MidiSend3(1, MIDI_POLY_PRESSURE, buttons[but].midinote, pres * 127);
-            midi_usb_MidiSend2(1, MIDI_CHANNEL_PRESSURE, velo);
-            //midi_usb_MidiSend2(1, MIDI_PITCH_BEND, but_x * 63);
-            //midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE, MIDI_C_TIMBRE, but_y * 63); // CC74 as used in MPE
+            midi_usb_MidiSend2(1, MIDI_CHANNEL_PRESSURE | (midi_channel_offset + buttons[but].voice),
+                               velo);
+            midi_usb_MidiSend3(1, MIDI_PITCH_BEND | (midi_channel_offset + buttons[but].voice),
+                               pitchbend&0x7F, (pitchbend>>7)+64);
+            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                               MIDI_C_TIMBRE, timbre);
+            if (buttons[but].vpres > 0) {
+                int velo = 1 + buttons[but].vpres * 127;
+                if (velo > 127) velo = 127;
+                else if (velo < 1) velo = 1;
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                                   73, velo);
+            } else {
+                int velo = 1 - buttons[but].vpres * 127;
+                if (velo > 127) velo = 127;
+                else if (velo < 1) velo = 1;
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                                   72, velo);
+            }
             #endif
         }
 
