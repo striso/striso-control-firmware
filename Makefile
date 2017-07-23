@@ -93,6 +93,8 @@ CSRC = $(PORTSRC) \
        midi_usb.c \
        exceptions.c \
        adc_multi.c \
+       MPU6050.c \
+       motionsensor.c \
        ws2812.c \
        button_read.c \
        messaging.c \
@@ -211,7 +213,7 @@ UINCDIR =
 ULIBDIR =
 
 # List all user libraries here
-ULIBS =
+ULIBS = -lm
 
 #
 # End of user defines

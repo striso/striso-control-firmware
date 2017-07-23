@@ -1,0 +1,12 @@
+#ifndef _MOTIONSENSOR_H_
+#define _MOTIONSENSOR_H_
+
+#define I2CD_MOTION I2CD3
+#define MOTION_I2C_SDA_PORT GPIOC
+#define MOTION_I2C_SDA_PIN GPIOC_I2C3_SDA
+#define MOTION_I2C_SCL_PORT GPIOA
+#define MOTION_I2C_SCL_PIN GPIOA_I2C3_SCL
+
+void MotionSensorStart(void);
+
+#endif

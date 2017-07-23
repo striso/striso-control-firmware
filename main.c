@@ -101,13 +101,13 @@ static msg_t ThreadSend(void *arg) {
 
   (void)arg;
   chRegSetThreadName("send messages");
-  int msg[8];
+  int msg[9];
   uint8_t cmsg[16];
   int size;
   cmsg[0] = 0;
   while (TRUE) {
-    size = msgGet(8, msg);
-    if (size > 0 && size <= 9) {
+    size = msgGet(9, msg);
+    if (size >= 2 && size <= 9) {
       synth_message(size, &msg);
 
       cmsg[0] = 0x80 | ((uint8_t)msg[0])<<3 | ((uint8_t)(size-2));
@@ -169,6 +169,10 @@ int main(void) {
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
 
   ButtonReadStart();
+  
+#ifdef USE_MPU6050
+  MotionSensorStart();
+#endif
 
   while (1) {
     chThdSleepMilliseconds(2);
