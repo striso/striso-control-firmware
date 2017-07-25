@@ -18,6 +18,17 @@
 #define MSGFACT_VELO (MSGFACT/VELOFACT)
 #define FILT 8  // max:  1<<32 / INTERNAL_ONE = 64
 
+#define INITIAL_INTEGRATED_PRES_TRESHOLD (INTERNAL_ONE/2)
+#define SENDFACT 1
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_3   // 0.05 ms per cycle
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_15  // 0.11 ms per cycle
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_28  // 0.18 ms per cycle
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_56  // 0.33 ms per cycle
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_84  // 0.50 ms per cycle
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_112 // 0.65 ms per cycle
+#define ADC_SAMPLE_DEF ADC_SAMPLE_144 // 0.83 ms per cycle
+//#define ADC_SAMPLE_DEF ADC_SAMPLE_480 // 2.7 ms per cycle
+
 #define ADC_OFFSET (16>>1)
 
 /* Number of ADCs used in multi ADC mode (2 or 3) */
@@ -154,17 +165,6 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   next_conversion = (next_conversion+1) % 102;
 }
 
-#define SENDFACT 10
-#define INITIAL_DELAY 5
-//#define ADC_SAMPLE_DEF ADC_SAMPLE_3   // 0.05 ms per cycle
-//#define ADC_SAMPLE_DEF ADC_SAMPLE_15  // 0.11 ms per cycle
-//#define ADC_SAMPLE_DEF ADC_SAMPLE_28  // 0.18 ms per cycle
-//#define ADC_SAMPLE_DEF ADC_SAMPLE_56  // 0.33 ms per cycle
-//#define ADC_SAMPLE_DEF ADC_SAMPLE_84  // 0.50 ms per cycle
-//#define ADC_SAMPLE_DEF ADC_SAMPLE_112 // 0.65 ms per cycle
-#define ADC_SAMPLE_DEF ADC_SAMPLE_144 // 0.83 ms per cycle
-//#define ADC_SAMPLE_DEF ADC_SAMPLE_480 // 2.7 ms per cycle
-
 /*
  * ADC conversion group for ADC0 as multi ADC mode master.
  * Mode:        Circular buffer, triple ADC mode master, SW triggered.
@@ -283,13 +283,16 @@ void update_button(button_t* but, adcsample_t* inp) {
   s_new = calibrate(inp[2], but->c_force, but->c_offset);
   update_and_filter(&but->s2, &but->v2, s_new);
 
-  int min_pres = (but->prev_but->s2 > MSGFACT) * (INTERNAL_ONE/64);
+  int min_pres = ((but->prev_but->s2 > MSGFACT) + (but->prev_but->s2 > INTERNAL_ONE/4)) * (INTERNAL_ONE/64);
   if (but->s0 > MSGFACT + min_pres || but->s1 > MSGFACT + min_pres || but->s2 > MSGFACT + min_pres) {
 
     if (but->pressed == 0) {
       but->pressed = 1;
-      but->timer = INITIAL_DELAY;
+      but->timer = INITIAL_INTEGRATED_PRES_TRESHOLD;
       buttons_pressed[but->src_id]++;
+    }
+    if (but->pressed == 1) {
+      but->timer -= (but->s0 + but->s1 + but->s2);
     }
     if (but->timer <= 0) {
       but->pressed = 2;
