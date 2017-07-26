@@ -19,7 +19,7 @@
 #define FILT 8  // max:  1<<32 / INTERNAL_ONE = 64
 
 #define INITIAL_INTEGRATED_PRES_TRESHOLD (INTERNAL_ONE/2)
-#define SENDFACT 1
+#define SENDFACT 10
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_3   // 0.05 ms per cycle
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_15  // 0.11 ms per cycle
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_28  // 0.18 ms per cycle
@@ -82,17 +82,25 @@ static int cur_channel = 0;
 static int next_conversion = 0;
 static int proc_conversion = 0;
 
+enum button_status {
+  OFF = 0,
+  STARTING = 1,
+  ON = 2,
+  PHANTOM_FLAG = 4,
+};
+
 typedef struct struct_button button_t;
 struct struct_button {
   int32_t s0;
   int32_t s1;
   int32_t s2;
+  int32_t p;
   int32_t v0;
   int32_t v1;
   int32_t v2;
   int32_t c_force;
   int32_t c_offset;
-  int pressed;
+  enum button_status status;
   int timer;
   int but_id;
   int src_id;
@@ -118,6 +126,8 @@ static slider_t sld;
 static button_t buttons[N_BUTTONS];
 static button_t buttons_bas[N_BUTTONS_BAS];
 static int buttons_pressed[2] = {0};
+static int col_pressed[2][17] = {0};
+static int32_t max_pres, max_pres1;
 
 #ifdef USE_HARDBUT
 static int hardbutton_state = 0;
@@ -282,20 +292,41 @@ void update_button(button_t* but, adcsample_t* inp) {
   update_and_filter(&but->s1, &but->v1, s_new);
   s_new = calibrate(inp[2], but->c_force, but->c_offset);
   update_and_filter(&but->s2, &but->v2, s_new);
+  but->p = but->s0 + but->s1 + but->s2;
 
-  int min_pres = ((but->prev_but->s2 > MSGFACT) + (but->prev_but->s2 > INTERNAL_ONE/4)) * (INTERNAL_ONE/64);
+  int min_pres = ((but->prev_but->s2 > MSGFACT) + (but->prev_but->s2 > INTERNAL_ONE/4)) * (INTERNAL_ONE/64) // stop ADC reaction time phantom presses
+    + max_pres/32   // stop three nearby corner phantom presses TODO: fix for bas
+    + buttons_pressed[0] * (INTERNAL_ONE/256); // reduce sensitivity a bit when many buttons are pressed TODO: fix for bas
   if (but->s0 > MSGFACT + min_pres || but->s1 > MSGFACT + min_pres || but->s2 > MSGFACT + min_pres) {
-
-    if (but->pressed == 0) {
-      but->pressed = 1;
+    // if button is off start integration timer
+    if (but->status == OFF) {
+      but->status = STARTING;
       but->timer = INITIAL_INTEGRATED_PRES_TRESHOLD;
       buttons_pressed[but->src_id]++;
+      col_pressed[but->src_id][but_id % 17]++;
     }
-    if (but->pressed == 1) {
-      but->timer -= (but->s0 + but->s1 + but->s2);
+    // if button is in start integration reduce timer
+    if (but->status == STARTING) {
+      but->timer -= but->p; //(but->s0 + but->s1 + but->s2);
     }
-    if (but->timer <= 0) {
-      but->pressed = 2;
+    // if button is phantom pressed release it
+    if (but->status & PHANTOM_FLAG) {
+      if (but->status == (ON | PHANTOM_FLAG)) {
+          msg[1] = but_id;
+          msg[2] = 0;
+          msg[3] = 0;
+          msg[4] = 0;
+          msg[5] = 0;
+          msg[6] = 0;
+          msg[7] = 0;
+          msgSend(8, msg);
+      }
+      // reset phantom flag since next round it can change
+      but->status = STARTING;
+    }
+    // if integration is succesful and interval is ready send note message
+    else if (but->timer <= 0) {
+      but->status = ON;
       msg[1] = but_id;
       if (but->s0 <= 0)
         msg[2] = 0;
@@ -321,8 +352,8 @@ void update_button(button_t* but, adcsample_t* inp) {
       but->timer--;
     }
   }
-  else if (but->pressed) {
-    if (but->pressed >= 2) {
+  else if (but->status) {
+    if (but->status & ON) {
       msg[1] = but_id;
       msg[2] = 0;
       msg[3] = 0;
@@ -330,14 +361,16 @@ void update_button(button_t* but, adcsample_t* inp) {
       msg[5] = but->v0 / MSGFACT_VELO;
       msg[6] = but->v1 / MSGFACT_VELO;
       msg[7] = but->v2 / MSGFACT_VELO;
-      while (msgSend(8, msg)) {
+      while (msgSend(8, msg)) { // note off messages are more important so keep trying
         chThdSleep(1);
       }
     }
-    but->pressed = 0;
+    but->status = OFF;
     buttons_pressed[but->src_id]--;
+    col_pressed[but->src_id][but_id % 17]--;
   }
 }
+
 /*
 typedef struct struct_slider {
   int32_t s[27];
@@ -541,61 +574,13 @@ static msg_t ThreadReadButtons(void *arg) {
         note_id = (proc_conversion / 3) % 17;
         cur_conv = (proc_conversion - 2);
 
-        /*
-         * Update button in each octave/adc-channel
+        /* Octave crosstalk
+           if note in multiple octaves:
+             subtract f * (max - n) from n
+             max = 8.5 * n (from test with v1.9, on sensor values)
+             f = 1/7.5
+             but for very light touches
          */
-        // dis side
-        /* TODO: reduce crosstalk
-if self is weak and note in other octave is on or just off:
-  subtract a bit
-if note in other octave is stronger:
-  if self is weak:
-    subtract a bit
-  if other button in same octave played:
-    subtract something based on (self, other octave, other note, 4th note)
-    if other octave is almost the same:
-      subtract almost nothing
-    if other note and/or 4th note are stronger:
-    if 4th button is stronger:
-      subtract something
-
- 1 6       6
- 6 1     6
-
- 2 6       6
- 6 6     6 6
-
- 2 6       6
- 6 4     6 2
-
- 2 4
- 6 4
-
- 2 2
- 6 2
-
- 3 2
- 6 3
-
- 0
- 1       1
-
-m, id = max(octaves)
-if m > self:
-  mn, idn = max(othernotes)
-  if mn:
-    self -= ...(self, m, mn, note(id, idn))
-  else:
-    self -= ...(self, m)
-*/
-
-/*
-if note in multiple octaves:
-  subtract f * (max - n) from n
-  max = 8.5 * n (from test with v1.9, on sensor values)
-  f = 1/7.5
-  but for very light touches
- */
         for (int m = 0; m < 3; m++) {
           int max = samples[0][cur_conv + m];
           for (int n = 1; n < 4; n++) {
@@ -609,16 +594,64 @@ if note in multiple octaves:
           }
         }
 
-/*
-if four corners are on remove lowest
-*/
-
-
+        // Update button in each octave/adc-channel
         for (int n = 0; n < 4; n++) {
           but_id = note_id + n * 17;
           but = &buttons[but_id];
           update_button(but, &samples[n][cur_conv]);
         }
+        
+        // Once per cycle, after the last buttons
+        if (note_id == 16) {
+          // Find maximum pressure (and second to maximum)
+          max_pres1 = 0;
+          max_pres = 0;
+          for (int n = 0; n<17; n++) {
+            for (int nr = 0; nr<4; nr++) {
+              if (buttons[n + 17*nr].p > max_pres1) {
+                max_pres1 = buttons[n + 17*nr].p;
+                if (max_pres1 > max_pres) {
+                  max_pres1 = max_pres;
+                  max_pres = buttons[n + 17*nr].p;
+                }
+              }
+            }
+          }
+          // Find phantom presses (presses on the fourth corner that appear when 3 corners are pressed)
+          // Specific for dis side, on bas side there's only one octave
+          for (int n = 0; n<17; n++) {
+            if (col_pressed[0][n] >= 2) {
+              for (int k = n+1; k<17; k++) {
+                if (col_pressed[0][k] >= 2) {
+                  for (int nr = 0; nr<4; nr++) {
+                    if (buttons[n + 17*nr].status && buttons[k + 17*nr].status) {
+                      for (int kr = nr+1; kr<4; kr++) {
+                        if (buttons[n + 17*kr].status && buttons[k + 17*kr].status) {
+                          // 4 pressed corners are found, give lowest pressure a phantom flag
+                          button_t* min = &buttons[n + 17*nr];
+                          button_t* b1  = &buttons[k + 17*nr];
+                          button_t* b2  = &buttons[n + 17*kr];
+                          button_t* b3  = &buttons[k + 17*kr];
+                          if (b1->p < min->p) {min = b1;}
+                          if (b2->p < min->p) {min = b2;}
+                          if (b3->p < min->p) {min = b3;}
+                          min->status |= PHANTOM_FLAG;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          
+#ifdef USE_HARDBUT
+          if (proc_conversion == 2) {
+            //if (BUT_PORT && hardbutton_state)
+          }
+#endif // USE_HARDBUT
+        }
+        
 #ifdef USE_BAS
         // bas side
         but_id = note_id;
@@ -650,11 +683,6 @@ if four corners are on remove lowest
         }
 #endif // USE_BAS
       }
-#ifdef USE_HARDBUT
-      if (proc_conversion == 2) {
-        //if (BUT_PORT && hardbutton_state)
-      }
-#endif // USE_HARDBUT
       proc_conversion = (proc_conversion+1) % 102;
     }
 
