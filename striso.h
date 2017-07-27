@@ -12,6 +12,7 @@
 #define IDC_PORTAMENTO 0
 #define IDC_OCT_UP 1
 #define IDC_OCT_DOWN 2
+#define IDC_ALT 3
 #define IDC_SLD_NPRESS 8
 #define IDC_SLD_SLIDE 9
 #define IDC_SLD_SLIDEZOOM 10
