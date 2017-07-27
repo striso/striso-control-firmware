@@ -40,6 +40,7 @@ class Button {
         int midinote;
         float pres;
         float vpres;
+        float vpres_prev;
         float but_x;
         float but_y;
         float vol0;
@@ -65,9 +66,9 @@ class Button {
             }
             vpres = (signals[3] + signals[4] + signals[5])/3;
             if (vpres > 1.0) {
-                vpres = 0.0;
+                vpres = 1.0;
             } else if (vpres < -1.0) {
-                vpres = -0.0;
+                vpres = -1.0;
             }
 
             // allow vol below zero to take over oldest voice
@@ -337,10 +338,10 @@ class Instrument {
             
             int pitchbend = buttons[but].but_x * buttons[but].but_x * buttons[but].but_x * (0x2000 / midi_bend_range) + 0x2000 + 0.5;
 
-            midi_usb_MidiSend2(1, MIDI_CHANNEL_PRESSURE | (midi_channel_offset + buttons[but].voice),
-                               pres);
-            //midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
-            //                   70, pres);
+            // midi_usb_MidiSend2(1, MIDI_CHANNEL_PRESSURE | (midi_channel_offset + buttons[but].voice),
+            //                    pres);
+            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                               70, pres);
             midi_usb_MidiSend3(1, MIDI_PITCH_BEND | (midi_channel_offset + buttons[but].voice),
                                pitchbend & 0x7f, (pitchbend >> 7) & 0x7f);
             midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
@@ -351,13 +352,22 @@ class Instrument {
                 else if (velo < 0) velo = 0;
                 midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
                                    73, velo);
+                if (buttons[but].vpres_prev <= 0) {
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                                       72, 0);
+                }
             } else {
                 int velo = 1 - buttons[but].vpres * 127;
                 if (velo > 127) velo = 127;
                 else if (velo < 0) velo = 0;
                 midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
                                    72, velo);
+                if (buttons[but].vpres_prev > 0) {
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                                       73, 0);
+                }
             }
+            buttons[but].vpres_prev = buttons[but].vpres;
 #endif
         }
 
