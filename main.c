@@ -20,6 +20,7 @@
 #include "synth.h"
 #include "button_read.h"
 #include "messaging.h"
+#include "motionsensor.h"
 #include "ws2812.h"
 
 // next lines are necessary since synth_contol.cpp is included
