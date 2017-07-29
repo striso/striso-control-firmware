@@ -404,10 +404,15 @@ uint8_t MPU6050_readReg(uint8_t addr);
 void MPUinitialize(void);
 bool MPUtestConnection(void);
 
-// ACCEL_*OUT_* registers
+// Get acceleration and rotation values
 void MPUgetMotion6(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz);
-void MPUgetAcceleration(int16_t* x, int16_t* y, int16_t* z);
+// getMotion6 with temperature in decidegree
+void MPUgetMotion6t(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t *t);
+// Get temperature of last MPUgetMotion6 call in decidegree
+int MPUgetTemperature(void);
 
+// ACCEL_*OUT_* registers
+void MPUgetAcceleration(int16_t* x, int16_t* y, int16_t* z);
 // GYRO_*OUT_* registers
 void MPUgetRotation(int16_t* x, int16_t* y, int16_t* z);
 

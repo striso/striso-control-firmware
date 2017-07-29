@@ -45,7 +45,7 @@ THE SOFTWARE.
 #include "motionsensor.h"
 
 uint8_t txbuf[2];
-uint8_t rxbuf[14];
+uint8_t rxbuf[14] = {0};
 
 void MPU6050_writeReg(uint8_t addr, uint8_t data) {
     txbuf[0]=addr;
@@ -102,6 +102,24 @@ void MPUgetMotion6(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* 
     *gy = (((int16_t)rxbuf[10]) << 8) | rxbuf[11];
     *gz = (((int16_t)rxbuf[12]) << 8) | rxbuf[13];
 }
+void MPUgetMotion6t(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t* t) {
+    txbuf[0]=MPU6050_RA_ACCEL_XOUT_H;
+    i2cMasterTransmitTimeout(&I2CD_MOTION, MPU6050_ADDRESS, txbuf, 1, rxbuf, 14, MS2ST(4));
+    *ax = (((int16_t)rxbuf[0]) << 8) | rxbuf[1];
+    *ay = (((int16_t)rxbuf[2]) << 8) | rxbuf[3];
+    *az = (((int16_t)rxbuf[4]) << 8) | rxbuf[5];
+    *gx = (((int16_t)rxbuf[8]) << 8) | rxbuf[9];
+    *gy = (((int16_t)rxbuf[10]) << 8) | rxbuf[11];
+    *gz = (((int16_t)rxbuf[12]) << 8) | rxbuf[13];
+    *t = (((((int16_t)rxbuf[6]) << 8) | rxbuf[7]) + 12412 + 34/2) / 34;
+}
+
+/** Get temperature of last MPUgetMotion6 call in decidegree
+ */
+int MPUgetTemperature(void) {
+  return (((((int)rxbuf[6]) << 8) | rxbuf[7]) + 12412 + 34/2) / 34;
+}
+
 /** Get 3-axis accelerometer readings.
  * These registers store the most recent accelerometer measurements.
  * Accelerometer measurements are written to these registers at the Sample Rate
@@ -140,7 +158,7 @@ void MPUgetMotion6(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* 
  */
 void MPUgetAcceleration(int16_t* x, int16_t* y, int16_t* z) {
     txbuf[0]=MPU6050_RA_ACCEL_XOUT_H;
-    i2cMasterTransmitTimeout(&I2CD_MOTION, MPU6050_ADDRESS, txbuf, 1, rxbuf, 14, MS2ST(4));
+    i2cMasterTransmitTimeout(&I2CD_MOTION, MPU6050_ADDRESS, txbuf, 1, rxbuf, 6, MS2ST(4));
     *x = (((int16_t)rxbuf[0]) << 8) | rxbuf[1];
     *y = (((int16_t)rxbuf[2]) << 8) | rxbuf[3];
     *z = (((int16_t)rxbuf[4]) << 8) | rxbuf[5];
@@ -182,7 +200,7 @@ void MPUgetAcceleration(int16_t* x, int16_t* y, int16_t* z) {
  */
 void MPUgetRotation(int16_t* x, int16_t* y, int16_t* z) {
     txbuf[0]=MPU6050_RA_GYRO_XOUT_H;
-    i2cMasterTransmitTimeout(&I2CD_MOTION, MPU6050_ADDRESS, txbuf, 1, rxbuf, 14, MS2ST(4));
+    i2cMasterTransmitTimeout(&I2CD_MOTION, MPU6050_ADDRESS, txbuf, 1, rxbuf, 6, MS2ST(4));
     *x = (((int16_t)rxbuf[0]) << 8) | rxbuf[1];
     *y = (((int16_t)rxbuf[2]) << 8) | rxbuf[3];
     *z = (((int16_t)rxbuf[4]) << 8) | rxbuf[5];

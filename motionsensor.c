@@ -10,6 +10,8 @@
 #include "messaging.h"
 #include <math.h>
 
+#define pow2(x) ((x)*(x))
+
 /* I2C interface #1 */
 static const I2CConfig i2ccfg_motion = {
   OPMODE_I2C,
@@ -75,7 +77,6 @@ static msg_t ThreadAccel(void *arg) {
     float acc_x = ((float)ax)*(8.0/32768.0);
     float acc_y = ((float)ay)*(8.0/32768.0);
     float acc_z = ((float)az)*(8.0/32768.0);
-    #define pow2(x) (x*x)
     float acc_abs = sqrtf(pow2(acc_x) + pow2(acc_y) + pow2(acc_z));
     if (acc_abs>0.001) {
       acc_x /= acc_abs;
