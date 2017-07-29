@@ -66,10 +66,10 @@ static msg_t Thread1(void *arg) {
   msg[0] = ID_SYS;
   msg[1] = ID_SYS_MSGQUE_OVERFLOW_BB;
   while (TRUE) {
-    chThdSleepMilliseconds(500);
+    chThdSleepMilliseconds(1000);
     palSetPad(GPIOA, GPIOA_LED1);
     ws2812_write_led(0, 15, 0, 31);
-    chThdSleepMilliseconds(500);
+    chThdSleepMilliseconds(1000);
     msg[2] = underruns;
     //if (!msgSend(3,msg))
       palClearPad(GPIOA, GPIOA_LED1);
@@ -97,7 +97,7 @@ static void unpack(uint8_t *in, int *out, int n) {
 /*
  * Message send thread
  */
-static WORKING_AREA(waThreadSend, 128);
+static WORKING_AREA(waThreadSend, 256);
 static msg_t ThreadSend(void *arg) {
 
   (void)arg;

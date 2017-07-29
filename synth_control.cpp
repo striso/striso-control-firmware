@@ -6,6 +6,7 @@
 
 extern "C" {
     #include "synth.h"
+    #include "ws2812.h"
 }
 
 #include "config.h"
@@ -13,6 +14,7 @@ extern "C" {
 #include "midi_usb.h"
 
 #define BUTTONCOUNT 68
+#define MAX_PORTAMENTO_BUTTONS 8
 
 #define VOL_TICK (0.0005) // (1.0 / (SAMPLINGFREQ / CHANNEL_BUFFER_SIZE) / 0.5) // decay time of estimated volume
 #define VOL_TICK_FACT (0.998) // 0.5**(1/(SAMPLINGFREQ / CHANNEL_BUFFER_SIZE)/0.1)
@@ -34,6 +36,12 @@ float powf_schlick_d(const float a, const float b)
 #define pow2(x) ((x)*(x))
 #define pow3(x) ((x)*(x)*(x))
 
+typedef enum {
+    STATE_OFF = 0,
+    STATE_ON = 1,
+    STATE_PORTAMENTO = 2,
+} button_state_t;
+
 class Button {
     public:
         int coord0;
@@ -49,7 +57,7 @@ class Button {
         float but_y;
         float vol0;
         float vol = 0.0;
-        int state = 0;
+        button_state_t state = STATE_OFF;
         systime_t timer = -1;
         int voice = -1;
 
@@ -100,14 +108,16 @@ class Instrument {
     public:
         Button buttons[BUTTONCOUNT];
         int voices[VOICECOUNT];
+        int portamento_buttons[MAX_PORTAMENTO_BUTTONS];
         float notegen0 = 12.00;
         float notegen1 = 7.00;
         float note_offset = 62;
         float min_note_offset = 32;
         float max_note_offset = 92;
         int portamento = 0;
+        int last_button = 0;
         int port_voice = -1;
-        int port_timebut = -1;
+        int portamento_button = -1;
         synth_interface_t* synth_interface;
         int midi_channel_offset = 1;
         float midi_bend_range = 48.0;
@@ -128,6 +138,9 @@ class Instrument {
             for (n = 0; n < VOICECOUNT; n++) {
                 voices[n] = -1;
             }
+            for (n = 0; n < MAX_PORTAMENTO_BUTTONS; n++) {
+                portamento_buttons[n] = -1;
+            }
             synth_interface = si;
         }
 
@@ -135,47 +148,13 @@ class Instrument {
             if (p) {
                 if (!portamento) {
                     portamento = 1;
-                    // Take over the first channel/string encountered, and silence the others
-                    for (int v=0; v<VOICECOUNT; v++) {
-                        if (voices[v] >= 0 && buttons[voices[v]].state == 1) {
-                            if (port_voice < 0) {
-                                port_voice = v;
-                                port_timebut = voices[v];
-                            }
-                            else {
-                                #ifdef SYNTH_INTERFACE
-                                *(synth_interface->pres[v])  = 0.0;
-                                *(synth_interface->vpres[v]) = 0.0;
-                                *(synth_interface->but_x[v]) = 0.0;
-                                *(synth_interface->but_y[v]) = 0.0;
-                                #endif
-                            }
-                        }
+                    if (buttons[last_button].state == STATE_ON) {
+                        portamento_button = last_button;
                     }
-                    if (port_voice < 0)
-                        port_voice = 0;
+                    // TODO: else check if only one button is pressed
                 }
             } else if (portamento) {
                 portamento = 0;
-
-                // if portamento voice button is released, find another pressed button to take over the voice
-                if (voices[port_voice] < 0 || buttons[voices[port_voice]].state != 1) {
-                    for (int v=0; v<VOICECOUNT; v++) {
-                        if (voices[v] >= 0 && buttons[voices[v]].state == 1) {
-                            int but = voices[v];
-                            buttons[but].voice = port_voice;
-                            voices[port_voice] = but;
-                            voices[v] = -1;
-                            for (int w=0; w<VOICECOUNT; w++) {
-                                if (voices[w] == port_voice) {
-                                    voices[w] = v;
-                                }
-                            }
-                            break;
-                        }
-                    }
-                }
-                port_voice = -1;
             }
         }
 
@@ -193,13 +172,28 @@ class Instrument {
             buttons[but].message(msg);
 
             // Note on detection
-            if (buttons[but].state == 0 && buttons[but].pres > 0.0) {
+            if (buttons[but].state == STATE_OFF && buttons[but].pres > 0.0) {
                 // calculate midinote only at note on
                 buttons[but].midinote = buttons[but].midinote_base + (int)(note_offset + 0.5);
-                int v = get_voice(but);
-
-                if (v >= 0 && portamento) {
-                    port_timebut = but;
+                
+                if (portamento) {
+                    if (portamento_button == -1) {
+                        if (get_voice(but) >= 0) {
+                            portamento_button = but;
+                        }
+                    } else {
+                        // add button to portamento button
+                        for (int n = 0; n < MAX_PORTAMENTO_BUTTONS; n++) {
+                            if (portamento_buttons[n] == -1) {
+                                portamento_buttons[n] = but;
+                                buttons[but].state = STATE_PORTAMENTO;
+                                ws2812_write_led(0, 0, 0, 20);
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    get_voice(but);
                 }
             }
 
@@ -211,20 +205,18 @@ class Instrument {
                 buttons[but].calculate();
                 buttons[but].timer = chTimeNow() + CLEAR_TIMER;
 
-                if (!portamento) {
-                    // send synth parameters
-                    update_voice(but);
-                } else if (portamento && but == port_timebut) {
-                    // calculate and send portamento voice
-                    float sw = 0;
-                    float pres  = 0;
-                    float note  = 0;
-                    float vpres = 0;
-                    float but_x = 0;
-                    float but_y = 0;
-                    for (int m = 0; m < VOICECOUNT; m++) {
-                        int b = voices[m];
-                        if (b >= 0 && buttons[b].state == 1) {
+                if (but == portamento_button) {
+                    // calculate average of portamento buttons
+                    float temp_pres = buttons[but].pres; // save pres for note off detection
+                    
+                    float sw = buttons[but].pres;
+                    float note  = sw * buttons[but].note;
+                    float vpres = sw * buttons[but].vpres;
+                    float but_x = sw * buttons[but].but_x;
+                    float but_y = sw * buttons[but].but_y;
+                    for (int n = 0; n < MAX_PORTAMENTO_BUTTONS; n++) {
+                        int b = portamento_buttons[n];
+                        if (b >= 0) {
                             float w = buttons[b].pres;
                             sw += w;
                             vpres += buttons[b].vpres;
@@ -233,42 +225,66 @@ class Instrument {
                             but_y += w * buttons[b].but_y;
                         }
                     }
-                    pres = sw;
+                    buttons[but].pres = sw;
                     if (sw == 0) sw = 1;
-                    note  /= sw;
-                    but_x /= sw;
-                    but_y /= sw;
-
-                    #ifdef SYNTH_INTERFACE
                     if (note > 0.1) {
-                        *(synth_interface->note[port_voice]) = note;
+                        buttons[but].note = note / sw;
                     }
-                    *(synth_interface->pres[port_voice])  = pres;
-                    *(synth_interface->vpres[port_voice]) = vpres;
-                    *(synth_interface->but_x[port_voice]) = but_x;
-                    *(synth_interface->but_y[port_voice]) = but_y;
-                    #endif
+                    buttons[but].vpres = vpres / sw;
+                    buttons[but].but_x = but_x / sw;
+                    buttons[but].but_y = but_y / sw;
+                    
+                    update_voice(but);
+                    buttons[but].pres = temp_pres;
+                }
+                else if (buttons[but].state == STATE_ON) {
+                    // send synth parameters
+                    update_voice(but);
                 }
 
                 // Note off detection
                 if (buttons[but].pres <= 0) {
-                    release_voice(but);
-
-                    if (portamento && but == port_timebut) {
-                        for (int n = 0; n < VOICECOUNT; n++) {
-                            if (voices[n] >= 0 && buttons[voices[n]].pres > 0.0) {
-                                port_timebut = voices[n];
+                    if (buttons[but].state == STATE_PORTAMENTO) {
+                        int count = 0;
+                        for (int n = 0; n < MAX_PORTAMENTO_BUTTONS; n++) {
+                            if (portamento_buttons[n] == but) {
+                                portamento_buttons[n] = -1;
+                            }
+                            count += portamento_buttons[n] >= 0;
+                        }
+                        buttons[but].state = STATE_OFF;
+                        if (!portamento && count == 0) {
+                            // if no portamento buttons left turn off portamento
+                            portamento_button = -1;
+                        }
+                    } else if (but == portamento_button) {
+                        // find other portamento button to take over portamento voice
+                        for (int n = 0; n < MAX_PORTAMENTO_BUTTONS; n++) {
+                            if (portamento_buttons[n] >= 0) {
+                                buttons[portamento_buttons[n]].midinote = buttons[but].midinote;
+                                buttons[portamento_buttons[n]].voice = buttons[but].voice;
+                                portamento_button = portamento_buttons[n];
+                                voices[buttons[portamento_button].voice] = portamento_button;
+                                portamento_buttons[n] = -1;
+                                buttons[portamento_button].state = STATE_ON;
+                                buttons[but].state = STATE_OFF;
                                 break;
                             }
                         }
+                        // if no other portamento button is found turn off portamento
+                        if (buttons[but].state) {
+                            portamento_button = -1;
+                        }
                     }
+
+                    release_voice(but);
                 };
             }
         }
 
         void release_voice(int but) {
-            if (buttons[but].state > 0) {
-                buttons[but].state = 0;
+            if (buttons[but].state == STATE_ON) {
+                buttons[but].state = STATE_OFF;
 
 #ifdef USE_MIDI_OUT
                 int velo = 1 - buttons[but].vpres * 127;
@@ -281,18 +297,18 @@ class Instrument {
         }
 
         int get_voice(int but) {
-            // check if last used voice is available
             int voice = -1;
             int n;
             float min_vol = buttons[but].vol;// * 0.9 - 0.05; // * factor for hysteresis
             for (n=0; n<VOICECOUNT; n++)
             {
+                // check if empty or last used voice is available
                 if (voices[n] == -1 || voices[n] == but)
                 {
                     voice = n;
-                    //voices[n] = but; // alternative to check below
                     break;
                 }
+                // else find voice with minimum approximated volume
                 float vol = buttons[voices[n]].vol;
                 if (vol < min_vol) {
                     min_vol = vol;
@@ -301,13 +317,14 @@ class Instrument {
             }
             if (voice >= 0) {
                 // take over the voice
-                if (voices[voice] >= 0 && buttons[voices[voice]].state > 0) {
+                if (voices[voice] >= 0) {
                     release_voice(voices[voice]);
                 }
 
-                buttons[but].state = 1;
+                buttons[but].state = STATE_ON;
                 buttons[but].voice = voice;
                 voices[voice] = but;
+                last_button = but;
 
 #ifdef USE_MIDI_OUT
                 int velo = 1 + buttons[but].vpres * 127;
@@ -318,7 +335,7 @@ class Instrument {
                                    buttons[but].midinote, velo);
 #endif
 
-                return voice;
+                return 0;
             }
             return -1;
         }
@@ -384,7 +401,7 @@ class Instrument {
             systime_t now = chTimeNow();
 
             for (int n=0; n<VOICECOUNT; n++) {
-                if (voices[n] >= 0 && buttons[voices[n]].state == 1
+                if (voices[n] >= 0 && buttons[voices[n]].state == STATE_ON
                     && buttons[voices[n]].timer < now)
                 {
                     release_voice(voices[n]);
@@ -455,7 +472,11 @@ int synth_message(int size, int* msg) {
     msg = &msg[2];
 
     if (src == ID_CONTROL) {
-        if (id == IDC_SLD_NPRESS) {
+        if (id == IDC_PORTAMENTO) {
+            // Portamento button
+            dis.set_portamento(msg[0]);
+        }
+        else if (id == IDC_SLD_NPRESS) {
             if (msg[0] >= 3) {
                 // Portamento when 3 fingers are pressed
                 dis.set_portamento(1);
