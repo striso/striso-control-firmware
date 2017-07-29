@@ -31,6 +31,9 @@ float powf_schlick_d(const float a, const float b)
     return b/(t*t);
 }
 
+#define pow2(x) ((x)*(x))
+#define pow3(x) ((x)*(x)*(x))
+
 class Button {
     public:
         int coord0;
@@ -38,6 +41,7 @@ class Button {
         float signals[6] = {0,0,0,0,0,0};
         float note;
         int midinote;
+        int midinote_base;
         float pres;
         float vpres;
         float vpres_prev;
@@ -100,13 +104,14 @@ class Instrument {
         float notegen1 = 7.00;
         float note_offset = 62;
         float min_note_offset = 32;
-        float max_note_offset = 80;
+        float max_note_offset = 92;
         int portamento = 0;
         int port_voice = -1;
         int port_timebut = -1;
         synth_interface_t* synth_interface;
         int midi_channel_offset = 1;
         float midi_bend_range = 48.0;
+        float bend_sensitivity = 0.5;
 
         Instrument(int* c0, int* c1, int n_buttons, synth_interface_t* si) {
             int n;
@@ -117,7 +122,8 @@ class Instrument {
                 buttons[n].note = note_offset +
                                   notegen0 * buttons[n].coord0 +
                                   notegen1 * buttons[n].coord1;
-                buttons[n].midinote = (uint8_t)(buttons[n].note + 0.5);
+                buttons[n].midinote_base = (int)(buttons[n].note + 0.5) - (int)note_offset;
+                buttons[n].midinote = buttons[n].midinote_base;
             }
             for (n = 0; n < VOICECOUNT; n++) {
                 voices[n] = -1;
@@ -188,6 +194,8 @@ class Instrument {
 
             // Note on detection
             if (buttons[but].state == 0 && buttons[but].pres > 0.0) {
+                // calculate midinote only at note on
+                buttons[but].midinote = buttons[but].midinote_base + (int)(note_offset + 0.5);
                 int v = get_voice(but);
 
                 if (v >= 0 && portamento) {
@@ -262,11 +270,13 @@ class Instrument {
             if (buttons[but].state > 0) {
                 buttons[but].state = 0;
 
-                #ifdef USE_MIDI_OUT
+#ifdef USE_MIDI_OUT
+                int velo = 1 - buttons[but].vpres * 127;
+                if (velo > 127) velo = 127;
+                else if (velo < 0) velo = 0;
                 midi_usb_MidiSend3(1, MIDI_NOTE_OFF | (midi_channel_offset + buttons[but].voice),
-                                   buttons[but].midinote, 0);
-                palTogglePad(GPIOA, GPIOA_LED1);
-                #endif
+                                   buttons[but].midinote, velo);
+#endif
             }
         }
 
@@ -299,17 +309,14 @@ class Instrument {
                 buttons[but].voice = voice;
                 voices[voice] = but;
 
-                #ifdef USE_MIDI_OUT
-                chThdSleepMilliseconds(2);
-                palTogglePad(GPIOA, GPIOA_LED1);
-
+#ifdef USE_MIDI_OUT
                 int velo = 1 + buttons[but].vpres * 127;
                 if (velo > 127) velo = 127;
                 else if (velo < 1) velo = 1;
 
                 midi_usb_MidiSend3(1, MIDI_NOTE_ON | (midi_channel_offset + buttons[but].voice),
                                    buttons[but].midinote, velo);
-                #endif
+#endif
 
                 return voice;
             }
@@ -336,10 +343,12 @@ class Instrument {
             if (tilt > 127) tilt = 127;
             else if (tilt < 0) tilt = 0;
             
-            int pitchbend = buttons[but].but_x * buttons[but].but_x * buttons[but].but_x * (0x2000 / midi_bend_range) + 0x2000 + 0.5;
+            int pitchbend = (bend_sensitivity * pow3(buttons[but].but_x)
+                + buttons[but].note - buttons[but].midinote)
+              * (0x2000 / midi_bend_range) + 0x2000 + 0.5;
 
-            // midi_usb_MidiSend2(1, MIDI_CHANNEL_PRESSURE | (midi_channel_offset + buttons[but].voice),
-            //                    pres);
+            midi_usb_MidiSend2(1, MIDI_CHANNEL_PRESSURE | (midi_channel_offset + buttons[but].voice),
+                               pres);
             midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
                                70, pres);
             midi_usb_MidiSend3(1, MIDI_PITCH_BEND | (midi_channel_offset + buttons[but].voice),
@@ -475,11 +484,11 @@ int synth_message(int size, int* msg) {
         else if (msg[0]) {
             float dif = 12.0;
             if (dis.portamento) dif = 1.0;
-            if (id==1) {
+            if (id == IDC_OCT_UP) {
                 dis.change_note_offset(dif);
                 bas.change_note_offset(dif);
             }
-            if (id==2) {
+            if (id == IDC_OCT_DOWN) {
                 dis.change_note_offset(-dif);
                 bas.change_note_offset(-dif);
             }
