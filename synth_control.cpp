@@ -560,7 +560,6 @@ int synth_message(int size, int* msg) {
         if (src == ID_DIS) {
             dis.button_message(id, fmsg);
         } else if (src == ID_BAS) {
-            if (id == 8) { fmsg[1] -= 3.0/64.0; fmsg[2] -= 1.0/64.0; } // hacky sticky button removal
             bas.button_message(id, fmsg);
         }
     }
