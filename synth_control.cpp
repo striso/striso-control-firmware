@@ -53,6 +53,7 @@ class Button {
         float pres;
         float vpres;
         float vpres_prev;
+        int last_pitchbend;
         float but_x;
         float but_y;
         float vol0;
@@ -107,7 +108,7 @@ class Button {
 class Instrument {
     public:
         Button buttons[BUTTONCOUNT];
-        int voices[VOICECOUNT];
+        int voices[MAX_VOICECOUNT];
         int portamento_buttons[MAX_PORTAMENTO_BUTTONS];
         float notegen0 = 12.00;
         float notegen1 = 7.00;
@@ -119,9 +120,10 @@ class Instrument {
         int port_voice = -1;
         int portamento_button = -1;
         synth_interface_t* synth_interface;
+        int voicecount = 5;
         int midi_channel_offset = 1;
         float midi_bend_range = 48.0;
-        float bend_sensitivity = 0.5;
+        float bend_sensitivity = 0.25;
 
         Instrument(int* c0, int* c1, int n_buttons, synth_interface_t* si) {
             int n;
@@ -135,7 +137,7 @@ class Instrument {
                 buttons[n].midinote_base = (int)(buttons[n].note + 0.5) - (int)note_offset;
                 buttons[n].midinote = buttons[n].midinote_base;
             }
-            for (n = 0; n < VOICECOUNT; n++) {
+            for (n = 0; n < MAX_VOICECOUNT; n++) {
                 voices[n] = -1;
             }
             for (n = 0; n < MAX_PORTAMENTO_BUTTONS; n++) {
@@ -298,10 +300,8 @@ class Instrument {
 
         int get_voice(int but) {
             int voice = -1;
-            int n;
             float min_vol = buttons[but].vol;// * 0.9 - 0.05; // * factor for hysteresis
-            for (n=0; n<VOICECOUNT; n++)
-            {
+            for (int n = 0; n < voicecount; n++) {
                 // check if empty or last used voice is available
                 if (voices[n] == -1 || voices[n] == but)
                 {
@@ -355,21 +355,34 @@ class Instrument {
             int pres = buttons[but].pres * 127;
             if (pres > 127) pres = 127;
             else if (pres < 0) pres = 0;
-            
-            int tilt = 63.5 + buttons[but].but_y * 64;
+
+            int tilt = 64.5 + buttons[but].but_y * 64;
             if (tilt > 127) tilt = 127;
             else if (tilt < 0) tilt = 0;
-            
+
             int pitchbend = (bend_sensitivity * pow3(buttons[but].but_x)
                 + buttons[but].note - buttons[but].midinote)
               * (0x2000 / midi_bend_range) + 0x2000 + 0.5;
 
-            midi_usb_MidiSend2(1, MIDI_CHANNEL_PRESSURE | (midi_channel_offset + buttons[but].voice),
-                               pres);
-            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
-                               70, pres);
-            midi_usb_MidiSend3(1, MIDI_PITCH_BEND | (midi_channel_offset + buttons[but].voice),
-                               pitchbend & 0x7f, (pitchbend >> 7) & 0x7f);
+            if (config.midi_pres == 1) {
+                midi_usb_MidiSend2(1, MIDI_CHANNEL_PRESSURE | (midi_channel_offset + buttons[but].voice),
+                                   pres);
+            } else if (config.midi_pres == 2) {
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                                   70, pres);
+            }
+            if (pitchbend != buttons[but].last_pitchbend) {
+                midi_usb_MidiSend3(1, MIDI_PITCH_BEND | (midi_channel_offset + buttons[but].voice),
+                                   pitchbend & 0x7f, (pitchbend >> 7) & 0x7f);
+                buttons[but].last_pitchbend = pitchbend;
+            }
+            if (config.midi_bend == 2) {
+                int bend = 64.5 + buttons[but].but_x * 64;
+                if (bend > 127) bend = 127;
+                else if (bend < 0) bend = 0;
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                                   71, bend);
+            }
             midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
                                74, tilt);
             if (buttons[but].vpres > 0) {
@@ -400,7 +413,7 @@ class Instrument {
         void clear_dead_notes(void) {
             systime_t now = chTimeNow();
 
-            for (int n=0; n<VOICECOUNT; n++) {
+            for (int n = 0; n < voicecount; n++) {
                 if (voices[n] >= 0 && buttons[voices[n]].state == STATE_ON
                     && buttons[voices[n]].timer < now)
                 {
@@ -417,7 +430,7 @@ class Instrument {
 
         void tick(void) {
             // approximated volume
-            for (int n=0; n<VOICECOUNT; n++) {
+            for (int n = 0; n < voicecount; n++) {
                 if (voices[n] >= 0) {
                     buttons[voices[n]].vol *= VOL_TICK_FACT;
                     buttons[voices[n]].vol -= VOL_TICK;
@@ -470,6 +483,7 @@ int synth_message(int size, int* msg) {
     int src = msg[0];
     int id = msg[1];
     msg = &msg[2];
+    static int send_motion_time = 0;
 
     if (src == ID_CONTROL) {
         if (id == IDC_PORTAMENTO) {
@@ -526,20 +540,23 @@ int synth_message(int size, int* msg) {
         int rot_y = msg[5];
         int rot_z = msg[6];
 #ifdef USE_MIDI_OUT
-        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                           16, (64+(acc_x>>7))&0x7F);
-        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                           17, (64+(acc_y>>7))&0x7F);
-        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                           18, (64+(acc_z>>7))&0x7F);
-        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                           19, (acc_abs>>6)&0x7F);
-        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                           80, (64+(rot_x>>7))&0x7F);
-        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                           81, (64+(rot_y>>7))&0x7F);
-        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                           82, (64+(rot_z>>7))&0x7F);
+        if (config.send_motion_interval && (--send_motion_time == 0)) {
+            send_motion_time = config.send_motion_interval;
+            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                               16, (64+(acc_x>>7))&0x7F);
+            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                               17, (64+(acc_y>>7))&0x7F);
+            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                               18, (64+(acc_z>>7))&0x7F);
+            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                               19, (acc_abs>>6)&0x7F);
+            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                               80, (64+(rot_x>>7))&0x7F);
+            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                               81, (64+(rot_y>>7))&0x7F);
+            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                               82, (64+(rot_z>>7))&0x7F);
+        }
 #endif
 #ifdef USE_SYNTH_INTERFACE
         int2float(msg, fmsg, size);

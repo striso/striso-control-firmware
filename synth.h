@@ -4,11 +4,11 @@
 
 #include "ch.h"
 #include "hal.h"
+#include "config.h"
 
 #define SAMPLINGFREQ 44100
 #define CHANNEL_BUFFER_SIZE		32
 #define PLAYBACK_BUFFER_SIZE	(CHANNEL_BUFFER_SIZE*2)
-#define VOICECOUNT 5
 
 typedef struct struct_synth_interface {
 	float* acc_abs;
@@ -18,11 +18,11 @@ typedef struct struct_synth_interface {
 	float* rot_x;
 	float* rot_y;
 	float* rot_z;
-	float* note[VOICECOUNT];
-	float* pres[VOICECOUNT];
-	float* vpres[VOICECOUNT];
-	float* but_x[VOICECOUNT];
-	float* but_y[VOICECOUNT];
+	float* note[MAX_VOICECOUNT];
+	float* pres[MAX_VOICECOUNT];
+	float* vpres[MAX_VOICECOUNT];
+	float* but_x[MAX_VOICECOUNT];
+	float* but_y[MAX_VOICECOUNT];
 } synth_interface_t;
 
 #ifdef USE_SYNTH_INTERFACE

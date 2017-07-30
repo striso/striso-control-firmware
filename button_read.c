@@ -18,8 +18,9 @@
 #define MSGFACT_VELO (MSGFACT/VELOFACT)
 #define FILT 8  // max:  1<<32 / INTERNAL_ONE = 64
 
-#define INITIAL_INTEGRATED_PRES_TRESHOLD (INTERNAL_ONE/2)
-#define SENDFACT 10
+#define INTEGRATED_PRES_TRESHOLD (INTERNAL_ONE/2)
+#define SENDFACT    config.message_interval
+
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_3   // 0.05 ms per cycle
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_15  // 0.11 ms per cycle
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_28  // 0.18 ms per cycle
@@ -309,7 +310,7 @@ void update_button(button_t* but, adcsample_t* inp) {
     // if button is off start integration timer
     if (but->status == OFF) {
       but->status = STARTING;
-      but->timer = INITIAL_INTEGRATED_PRES_TRESHOLD;
+      but->timer = INTEGRATED_PRES_TRESHOLD;
       buttons_pressed[but->src_id]++;
       col_pressed[but->src_id][but_id % 17]++;
     }

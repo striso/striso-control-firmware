@@ -12,6 +12,7 @@
 #include "hal.h"
 #include "chprintf.h"
 
+#define CONFIG_HERE
 #include "config.h"
 #include "striso.h"
 #include "usbcfg.h"
@@ -118,8 +119,10 @@ static msg_t ThreadSend(void *arg) {
       chSequentialStreamWrite((BaseSequentialStream *)&SD1, cmsg, 2+(size-2)*2);
 #endif
 
-      //chSequentialStreamWrite((BaseSequentialStream *)&BDU1,cmsg, 2+(size-2)*2);
-      chOQWriteTimeout(&BDU1.oqueue, cmsg, 2+(size-2)*2, TIME_IMMEDIATE);
+      if (config.send_usb_bulk) {
+        //chSequentialStreamWrite((BaseSequentialStream *)&BDU1,cmsg, 2+(size-2)*2);
+        chOQWriteTimeout(&BDU1.oqueue, cmsg, 2+(size-2)*2, TIME_IMMEDIATE);
+      }
     }
     else if (size == 0) {
       chThdSleep(1);
