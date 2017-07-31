@@ -26,11 +26,11 @@ extern config_t config;
 
 #ifdef CONFIG_HERE
 config_t config = {
-  .message_interval = 5,
-  .send_usb_bulk = 0,
-  .send_motion_interval = 1,
-  .midi_pres = 1,
-  .midi_bend = 1,
+  .message_interval = 10,     // interval in ms
+  .send_usb_bulk = 0,         // send Striso binary protocol
+  .send_motion_interval = 0,  // 0 = disable, else x10ms
+  .midi_pres = 1,             // 1 = Channel Pressure, 2 = CC 70
+  .midi_bend = 1,             // 2 = CC 71
 };
 #endif
 

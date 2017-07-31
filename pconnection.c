@@ -26,6 +26,8 @@
 #include "bulk_usb.h"
 #include "midi.h"
 #include "midi_usb.h"
+#include "config.h"
+#include "version.h"
 
 //#define DEBUG_SERIAL 1
 
@@ -72,23 +74,24 @@ void InitPConnection(void) {
 }
 
 void PExReceiveByte(unsigned char c) {
+  ws2812_write_led(0, 0,67,0);
   static char header = 0;
   static int state = 0;
 
   if (!header) {
     switch (state) {
     case 0:
-      if (c == 'A')
+      if (c == 'S')
         state++;
       break;
     case 1:
-      if (c == 'x')
+      if (c == 't')
         state++;
       else
         state = 0;
       break;
     case 2:
-      if (c == 'o')
+      if (c == 'c')
         state++;
       else
         state = 0;
@@ -97,6 +100,24 @@ void PExReceiveByte(unsigned char c) {
       if (c == 'D') { // go to DFU mode
         state = 0;
         exception_initiate_dfu();
+      }
+      else if (c == 'S') { // enable binary protocol over USB Bulk
+        state = 0;
+        config.send_usb_bulk = 1;
+      }
+      else if (c == 's') { // disable binary protocol over USB Bulk
+        state = 0;
+        config.send_usb_bulk = 0;
+      }
+      else if (c == 'V') { // firmware version
+        state = 0;
+        if (!chOQIsEmptyI(&BDU1.oqueue)) {
+          chThdSleepMilliseconds(1);
+          BDU1.oqueue.q_notify(&BDU1.oqueue);
+        } else {
+          chprintf((BaseSequentialStream * )&BDU1, FWVERSION " ack!\r\n");
+          //chOQWriteTimeout(&BDU1.oqueue, cmsg, 14, TIME_INFINITE);
+        }
       }
       else
         state = 0;

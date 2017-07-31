@@ -181,5 +181,6 @@ int main(void) {
   while (1) {
     chThdSleepMilliseconds(2);
     synth_tick();
+    PExReceive();
   }
 }
