@@ -5,6 +5,7 @@
 #include "ch.h"
 #include "hal.h"
 #include "config.h"
+#include "midi.h"
 
 #define SAMPLINGFREQ 44100
 #define CHANNEL_BUFFER_SIZE		32
@@ -36,6 +37,8 @@ int synth_message(int size, int* msg);
 void synth_tick(void);
 
 void clear_dead_notes(void);
+
+void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t b0, uint8_t b1, uint8_t b2);
 
 extern float volume;
 

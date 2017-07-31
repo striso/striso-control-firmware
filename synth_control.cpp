@@ -613,6 +613,52 @@ int synth_message(int size, int* msg) {
     return 0;
 }
 
+void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
+                      uint8_t data1, uint8_t data2) {
+    static uint8_t lastRPN_LSB = 0;
+    static uint8_t lastRPN_MSB = 0;
+    static uint8_t lastNRPN_LSB = 0;
+    static uint8_t lastNRPN_MSB = 0;
+    
+    uint8_t channel = status & 0x0f;
+    status &= 0xf0;
+    ws2812_write_led(0, 0, 0, 42);
+    
+    if (status == MIDI_CONTROL_CHANGE) {
+        switch (data1) {
+            case MIDI_C_RPN_LSB: lastRPN_LSB = data2; lastNRPN_LSB = lastNRPN_MSB = 0x7f; break;
+            case MIDI_C_RPN_MSB: lastRPN_MSB = data2; lastNRPN_LSB = lastNRPN_MSB = 0x7f; break;
+            case MIDI_C_NONRPN_LSB: lastNRPN_LSB = data2; lastRPN_LSB = lastRPN_MSB = 0x7f; break;
+            case MIDI_C_NONRPN_MSB: lastNRPN_MSB = data2; lastRPN_LSB = lastRPN_MSB = 0x7f; break;
+            case MIDI_C_DATA_ENTRY: {
+                if (lastRPN_LSB == 0 && lastRPN_MSB == 0) {
+                    dis.midi_bend_range = data2;
+                } else if (lastRPN_LSB == 6 && lastRPN_MSB == 0) {
+                    if (channel + data2 <= 15) {
+                        dis.midi_channel_offset = channel;
+                        dis.voicecount = data2;
+                    }
+                } else if (lastRPN_LSB == 1 && lastRPN_MSB == 0) {
+                    // Tuning
+                }
+            } break;
+            case 16: config.send_motion_interval = data2; break;
+            case 17: config.message_interval = data2 >= 1 ? data2 : 1; break;
+            case 70: if (data2 > 0 && data2 < 3) config.midi_pres = data2;
+            case 71: 
+                if (data2 > 0) {
+                    dis.bend_sensitivity = (float)data2 * 0.01;
+                    config.midi_bend = 0;
+                } else {
+                    dis.bend_sensitivity = 0;
+                    config.midi_bend = 2;
+                } break;
+            
+            default: break;
+        }
+    }
+}
+
 void clear_dead_notes(void) {
     dis.clear_dead_notes();
     bas.clear_dead_notes();

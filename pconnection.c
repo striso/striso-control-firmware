@@ -44,8 +44,8 @@ __attribute__((noreturn))
   uint8_t r[4];
   while (1) {
     chnReadTimeout(&MDU1, &r[0], 4, TIME_INFINITE);
-    //MidiInMsgHandler(MIDI_DEVICE_USB_DEVICE, ((r[0] & 0xF0) >> 4) + 1, r[1],
-    //                 r[2], r[3]);
+    MidiInMsgHandler(MIDI_DEVICE_USB_DEVICE, ((r[0] & 0xF0) >> 4) + 1, r[1],
+                    r[2], r[3]);
   }
 }
 
