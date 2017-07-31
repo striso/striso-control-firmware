@@ -115,6 +115,7 @@ class Instrument {
         float note_offset = 62;
         float min_note_offset = 32;
         float max_note_offset = 92;
+        int altmode = 0;
         int portamento = 0;
         int last_button = 0;
         int port_voice = -1;
@@ -157,6 +158,14 @@ class Instrument {
                 }
             } else if (portamento) {
                 portamento = 0;
+            }
+        }
+        
+        void set_altmode(int a) {
+            if (a) {
+                altmode = 1;
+            } else {
+                altmode = 0;
             }
         }
 
@@ -486,7 +495,10 @@ int synth_message(int size, int* msg) {
     static int send_motion_time = 0;
 
     if (src == ID_CONTROL) {
-        if (id == IDC_PORTAMENTO) {
+        if (id == IDC_ALT) {
+            dis.set_altmode(msg[0]);
+        }
+        else if (id == IDC_PORTAMENTO) {
             // Portamento button
             dis.set_portamento(msg[0]);
         }
