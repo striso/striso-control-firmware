@@ -334,7 +334,7 @@ void update_button(button_t* but, adcsample_t* inp) {
       but->status = STARTING;
     }
     // if integration is succesful and interval is ready send note message
-    else if (but->timer <= 0) {
+    else if (--but->timer <= 0) {
       but->status = ON;
       msg[1] = but_id;
       if (but->s0 <= 0)
@@ -357,8 +357,6 @@ void update_button(button_t* but, adcsample_t* inp) {
       msg[7] = but->v2 / MSGFACT_VELO;
       msgSend(8, msg);
       but->timer = (buttons_pressed[0] + buttons_pressed[1]) * SENDFACT;
-    } else {
-      but->timer--;
     }
   }
   else if (but->status) {
