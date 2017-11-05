@@ -117,11 +117,22 @@ static msg_t ThreadAccel(void *arg) {
 }
 
 void MotionSensorStart(void) {
+  // Check if pullup resistors are attached to i2c port
+  // If not there is no motion sensor daughterboard
+  palSetPadMode(MOTION_I2C_SCL_PORT, MOTION_I2C_SCL_PIN, PAL_MODE_INPUT_PULLDOWN);
+  palSetPadMode(MOTION_I2C_SDA_PORT, MOTION_I2C_SDA_PIN, PAL_MODE_INPUT_PULLDOWN);
 
-    /* I2C interface for MPU-6050 */
-    i2cStart(&I2CD_MOTION, &i2ccfg_motion);
-    palSetPadMode(MOTION_I2C_SCL_PORT, MOTION_I2C_SCL_PIN, PAL_MODE_ALTERNATE(4) | PAL_STM32_OTYPE_OPENDRAIN);
-    palSetPadMode(MOTION_I2C_SDA_PORT, MOTION_I2C_SDA_PIN, PAL_MODE_ALTERNATE(4) | PAL_STM32_OTYPE_OPENDRAIN);
+  if (!palReadPad(MOTION_I2C_SCL_PORT, MOTION_I2C_SCL_PIN) || 
+      !palReadPad(MOTION_I2C_SDA_PORT, MOTION_I2C_SDA_PIN)) {
+    // No pullups on i2c pads detected, don't enable i2c,
+    // otherwise the MCU crashes.
+    return;
+  }
 
-    chThdCreateStatic(waThreadAccel, sizeof(waThreadAccel), NORMALPRIO, ThreadAccel, NULL);
+  /* I2C interface for MPU-6050 */
+  i2cStart(&I2CD_MOTION, &i2ccfg_motion);
+  palSetPadMode(MOTION_I2C_SCL_PORT, MOTION_I2C_SCL_PIN, PAL_MODE_ALTERNATE(4) | PAL_STM32_OTYPE_OPENDRAIN);
+  palSetPadMode(MOTION_I2C_SDA_PORT, MOTION_I2C_SDA_PIN, PAL_MODE_ALTERNATE(4) | PAL_STM32_OTYPE_OPENDRAIN);
+
+  chThdCreateStatic(waThreadAccel, sizeof(waThreadAccel), NORMALPRIO, ThreadAccel, NULL);
 }
