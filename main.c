@@ -67,14 +67,20 @@ static msg_t Thread1(void *arg) {
   msg[0] = ID_SYS;
   msg[1] = ID_SYS_MSGQUE_OVERFLOW_BB;
   while (TRUE) {
-    chThdSleepMilliseconds(1000);
+    chThdSleepMilliseconds(300);
     palSetPad(GPIOA, GPIOA_LED1);
     ws2812_write_led(0, 15, 0, 31);
-    chThdSleepMilliseconds(1000);
+    ws2812_write_led(1,  0, 1,  0);
+    ws2812_write_led(2,  0,  0, 1);
+    ws2812_write_led(3,  0, 1, 1);
+    chThdSleepMilliseconds(300);
     msg[2] = underruns;
     //if (!msgSend(3,msg))
       palClearPad(GPIOA, GPIOA_LED1);
     ws2812_write_led(0, 15, 31, 0);
+    ws2812_write_led(1,  0, 15,  0);
+    ws2812_write_led(2,  0,  0, 15);
+    ws2812_write_led(3,  0, 15, 15);
   }
 
   return 0;
@@ -155,7 +161,10 @@ int main(void) {
 
 #ifdef USE_WS2812
   ws2812_init();
-  ws2812_write_led(0, 15, 0, 0);
+  ws2812_write_led(0, 15,  0,  0);
+  ws2812_write_led(1,  0, 15,  0);
+  ws2812_write_led(2,  0,  0, 15);
+  ws2812_write_led(3,  0, 15, 15);
 #endif
 
   InitPConnection();
