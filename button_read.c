@@ -132,12 +132,12 @@ static int32_t max_pres, max_pres1;
 
 #ifdef USE_AUX_BUTTONS
 #define GPIOI_BUTTON_PORT    2
-#define GPIOA_BUTTON_UP      9 // GPIOA_UART1_TX
-#define GPIOA_BUTTON_DOWN   10 // GPIOA_UART1_RX
-#define GPIOI_BUTTON_ALT     1
+#define GPIOI_BUTTON_UP      1
+#define GPIOA_BUTTON_DOWN    9 // GPIOA_UART1_TX
+#define GPIOA_BUTTON_ALT    10 // GPIOA_UART1_RX
 
-static const ioportid_t aux_buttons_port[4] = {GPIOI, GPIOA, GPIOA, GPIOI};
-static const int aux_buttons_pad[4] = {GPIOI_BUTTON_PORT, GPIOA_BUTTON_UP, GPIOA_BUTTON_DOWN, GPIOI_BUTTON_ALT};
+static const ioportid_t aux_buttons_port[4] = {GPIOI, GPIOI, GPIOA, GPIOA};
+static const int aux_buttons_pad[4] = {GPIOI_BUTTON_PORT, GPIOI_BUTTON_UP, GPIOA_BUTTON_DOWN, GPIOA_BUTTON_ALT};
 static const int aux_buttons_msg[4] = {IDC_PORTAMENTO, IDC_OCT_UP, IDC_OCT_DOWN, IDC_ALT};
 static uint32_t aux_buttons_state[4] = {0};
 #endif
@@ -654,10 +654,11 @@ static msg_t ThreadReadButtons(void *arg) {
           
 #ifdef USE_AUX_BUTTONS
           int msg[8];
+          int tmpfix = 1; // mistake in pcb, last 3 buttons pull to ground
           for (int n = 0; n < 4; n++) {
             if (aux_buttons_state[n] & 0xff) {
               aux_buttons_state[n]--;
-            } else if (palReadPad(aux_buttons_port[n], aux_buttons_pad[n]) == !aux_buttons_state[n]) {
+            } else if ((tmpfix == palReadPad(aux_buttons_port[n], aux_buttons_pad[n])) == !aux_buttons_state[n]) {
               msg[0] = ID_CONTROL;
               msg[1] = aux_buttons_msg[n];
               if (aux_buttons_state[n]) {
@@ -666,9 +667,11 @@ static msg_t ThreadReadButtons(void *arg) {
               } else {
                 msg[2] = 1;
                 aux_buttons_state[n] = AUX_BUTTON_DEBOUNCE_TIME | 0x100;
+                ws2812_write_led(0, 15,  0,  0);
               }
               msgSend(3, msg);
             }
+            tmpfix = 0;
           }
 #endif // USE_AUX_BUTTONS
         }
@@ -716,9 +719,9 @@ void ButtonReadStart(void) {
   
 #ifdef USE_AUX_BUTTONS
   palSetPadMode(GPIOI, GPIOI_BUTTON_PORT, PAL_MODE_INPUT_PULLDOWN);
-  palSetPadMode(GPIOA, GPIOA_BUTTON_UP,   PAL_MODE_INPUT_PULLDOWN);
-  palSetPadMode(GPIOA, GPIOA_BUTTON_DOWN, PAL_MODE_INPUT_PULLDOWN);
-  palSetPadMode(GPIOI, GPIOI_BUTTON_ALT,  PAL_MODE_INPUT_PULLDOWN);
+  palSetPadMode(GPIOI, GPIOI_BUTTON_UP,   PAL_MODE_INPUT_PULLUP);
+  palSetPadMode(GPIOA, GPIOA_BUTTON_DOWN, PAL_MODE_INPUT_PULLUP);
+  palSetPadMode(GPIOA, GPIOA_BUTTON_ALT,  PAL_MODE_INPUT_PULLUP);
 #endif
   
   /*
