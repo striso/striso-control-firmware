@@ -39,11 +39,12 @@
 #define WS2812_TIM_N    5  // timer, 1-11
 #define WS2812_TIM_CH   3  // timer channel, 0-3
 #define WS2812_DMA_STREAM STM32_DMA1_STREAM0  // DMA stream for TIMx_UP (look up in reference manual under DMA Channel selection)
-#define WS2812_DMA_CHANNEL 6                  // DMA channel for TIMx_UP// The WS2812 expects 5V signal level (or at least 0.7 * VDD). Sometimes it works
+#define WS2812_DMA_CHANNEL 6                  // DMA channel for TIMx_UP
+// The WS2812 expects 5V signal level (or at least 0.7 * VDD). Sometimes it works
 // with a 3V signal level, otherwise the easiest way to get the signal level to 5V
 // is to add an external pullup resistor from the DI pin to 5V (10k will do) and
 // configure the pin as open drain.
-// (An SMD resistor is easily solders on the connections of a light strip)
+// (An SMD resistor is easily soldered on the connections of a light strip)
 // Uncomment the next line if an external pullup resistor is used.
 #define WS2812_EXTERNAL_PULLUP
 
@@ -102,6 +103,9 @@
  * WS2812B:
  * - T0H: 200 nS to 500 nS, inclusive
  * - T0L: 750 nS to 1050 nS, inclusive
+ * SK6812:
+ * - T0H: 150 nS to 450 nS, inclusive
+ * - T0L: 750 nS to 1050 nS, inclusive
  *
  * The duty cycle is calculated for a high period of 350 nS.
  */
@@ -117,6 +121,9 @@
  * WS2812B:
  * - T1H: 750 nS to 1050 nS, inclusive
  * - T1L: 200 nS to 500 nS, inclusive
+ * SK6812::
+ * - T1H: 450 nS to 750 nS, inclusive
+ * - T1L: 450 nS to 750 nS, inclusive
  *
  * The duty cycle is calculated for a high period of 800 nS.
  * This is in the middle of the specifications of the WS2812 and WS2812B.
