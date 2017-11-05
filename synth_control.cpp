@@ -552,7 +552,7 @@ int synth_message(int size, int* msg) {
         int rot_y = msg[5];
         int rot_z = msg[6];
 #ifdef USE_MIDI_OUT
-        if (config.send_motion_interval && (--send_motion_time == 0)) {
+        if (config.send_motion_interval && (--send_motion_time <= 0)) {
             send_motion_time = config.send_motion_interval;
             midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
                                16, (64+(acc_x>>7))&0x7F);
