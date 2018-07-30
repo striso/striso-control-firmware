@@ -715,6 +715,30 @@ static msg_t ThreadReadButtons(void *arg) {
   return 0;
 }
 
+void ButtonBoardTest(void) {
+  // test for shorted pins
+  for (int n=1; n<OUT_NUM_CHANNELS; n++) {
+    /* Drain channel */
+    palClearPad(out_channels_port[n-1], out_channels_pad[n-1]);
+    palClearPad(out_channels_bas_port[n-1], out_channels_bas_pad[n-1]);
+
+    palSetPadMode(out_channels_port[n], out_channels_pad[n], PAL_MODE_INPUT_PULLUP);
+    palSetPadMode(out_channels_bas_port[n], out_channels_bas_pad[n], PAL_MODE_INPUT_PULLUP);
+
+    chThdSleep(1);
+    if (!palReadPad(out_channels_port[n], out_channels_pad[n])) {
+      // pin n and n-1 shorted
+
+    }
+
+    palSetPadMode(out_channels_port[n], out_channels_pad[n], PAL_MODE_OUTPUT_OPENDRAIN);
+    palSetPadMode(out_channels_bas_port[n], out_channels_bas_pad[n], PAL_MODE_OUTPUT_OPENDRAIN);
+    /* Open channel */
+    palSetPad(out_channels_port[n-1], out_channels_pad[n-1]);
+    palSetPad(out_channels_bas_port[n-1], out_channels_bas_pad[n-1]);
+  }
+}
+
 void ButtonReadStart(void) {
   
 #ifdef USE_AUX_BUTTONS
