@@ -169,9 +169,6 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   palClearPort(out_channels_port[cur_channel], out_channels_pad[cur_channel]);
   palClearPort(out_channels_bas_port[cur_channel], out_channels_bas_pad[cur_channel]);
 
-  // start next ADC conversion
-  adcp->adc->CR2 |= ADC_CR2_SWSTART;
-
   /* copy adc_samples */
   samples0[next_conversion] = buffer[0];
   samples1[next_conversion] = buffer[1];
@@ -182,6 +179,9 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   samples_bas1[next_conversion] = buffer[5];
 
   next_conversion = (next_conversion+1) % 102;
+
+  // start next ADC conversion
+  adcp->adc->CR2 |= ADC_CR2_SWSTART;
 }
 
 /*
