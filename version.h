@@ -1,6 +1,8 @@
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FWVERSION "20171105"
+#ifndef FWVERSION
+  #define FWVERSION "v0.3"
+#endif
 
 #endif

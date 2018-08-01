@@ -201,7 +201,7 @@ DLIBS =
 #
 
 # List all user C define here, like -D_DEBUG=1
-UDEFS =
+UDEFS = -DFWVERSION=\"$(git --no-pager show --date=short --format="%ad" --name-only | head -n1)_$(git --no-pager describe --tags --always --dirty)\"
 
 # Define ASM defines here
 UADEFS =
