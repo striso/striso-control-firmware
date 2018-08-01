@@ -3,3 +3,4 @@
 build/*
 !build/*.bin
 *.tmp
+.git_version

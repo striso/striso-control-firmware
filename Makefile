@@ -200,8 +200,15 @@ DLIBS =
 # Start of user section
 #
 
+# Git revision description, recompile anything depending on version.h on version change
+FWVERSION := $(shell git --no-pager show --date=short --format="%ad" --name-only | head -n1)_$(shell git --no-pager describe --tags --always --dirty)
+ifneq ($(FWVERSION), $(shell cat .git_version 2>&1))
+$(shell echo -n $(FWVERSION) > .git_version)
+$(shell touch version.h)
+endif
+
 # List all user C define here, like -D_DEBUG=1
-UDEFS = -DFWVERSION=\"$(git --no-pager show --date=short --format="%ad" --name-only | head -n1)_$(git --no-pager describe --tags --always --dirty)\"
+UDEFS = -DFWVERSION=\"$(FWVERSION)\"
 
 # Define ASM defines here
 UADEFS =
@@ -220,6 +227,9 @@ ULIBS = -lm
 ##############################################################################
 
 include $(CHIBIOS)/os/ports/GCC/ARMCMx/rules.mk
+
+version:
+	@echo $(FWVERSION)
 
 prog: all
 	dfu-util -d0483:df11 -a0 -s0x8000000:leave -D $(BUILDDIR)/$(PROJECT).bin
