@@ -5,42 +5,42 @@
 
 # Compiler options here.
 ifeq ($(USE_OPT),)
-  USE_OPT = -O1 -ggdb -fomit-frame-pointer -falign-functions=16
+	USE_OPT = -O1 -ggdb -fomit-frame-pointer -falign-functions=16
 endif
 
 # C specific options here (added to USE_OPT).
 ifeq ($(USE_COPT),)
-  USE_COPT = -std=gnu99
+	USE_COPT = -std=gnu99
 endif
 
 # C++ specific options here (added to USE_OPT).
 ifeq ($(USE_CPPOPT),)
-  USE_CPPOPT = -fno-rtti -std=c++11
+	USE_CPPOPT = -fno-rtti -std=c++11
 endif
 
 # Enable this if you want the linker to remove unused code and data
 ifeq ($(USE_LINK_GC),)
-  USE_LINK_GC = yes
+	USE_LINK_GC = yes
 endif
 
 # Linker extra options here.
 ifeq ($(USE_LDOPT),)
-  USE_LDOPT =
+	USE_LDOPT =
 endif
 
 # Enable this if you want link time optimizations (LTO)
 ifeq ($(USE_LTO),)
-  USE_LTO = no
+	USE_LTO = no
 endif
 
 # If enabled, this option allows to compile the application in THUMB mode.
 ifeq ($(USE_THUMB),)
-  USE_THUMB = yes
+	USE_THUMB = yes
 endif
 
 # Enable this if you want to see the full log while compiling.
 ifeq ($(USE_VERBOSE_COMPILE),)
-  USE_VERBOSE_COMPILE = no
+	USE_VERBOSE_COMPILE = no
 endif
 
 #
@@ -53,7 +53,7 @@ endif
 
 # Enables the use of FPU on Cortex-M4 (no, softfp, hard).
 ifeq ($(USE_FPU),)
-  USE_FPU = softfp
+	USE_FPU = softfp
 endif
 
 #
@@ -82,23 +82,23 @@ LDSCRIPT= $(PORTLD)/STM32F407xG.ld
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
 CSRC = $(PORTSRC) \
-       $(KERNSRC) \
-       $(HALSRC) \
-       $(PLATFORMSRC) \
-       $(BOARDSRC) \
-       $(CHIBIOS)/os/various/chprintf.c \
-       usbcfg.c \
-       pconnection.c \
-       bulk_usb.c \
-       midi_usb.c \
-       exceptions.c \
-       adc_multi.c \
-       MPU6050.c \
-       motionsensor.c \
-       ws2812.c \
-       button_read.c \
-       messaging.c \
-       main.c
+	$(KERNSRC) \
+	$(HALSRC) \
+	$(PLATFORMSRC) \
+	$(BOARDSRC) \
+	$(CHIBIOS)/os/various/chprintf.c \
+	usbcfg.c \
+	pconnection.c \
+	bulk_usb.c \
+	midi_usb.c \
+	exceptions.c \
+	adc_multi.c \
+	MPU6050.c \
+	motionsensor.c \
+	ws2812.c \
+	button_read.c \
+	messaging.c \
+	main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -128,8 +128,8 @@ TCPPSRC =
 ASMSRC = $(PORTASM)
 
 INCDIR = $(PORTINC) $(KERNINC) $(TESTINC) \
-         $(HALINC) $(PLATFORMINC) $(BOARDINC) \
-         $(CHIBIOS)/os/various
+	$(HALINC) $(PLATFORMINC) $(BOARDINC) \
+	$(CHIBIOS)/os/various
 
 #
 # Project, sources and paths
