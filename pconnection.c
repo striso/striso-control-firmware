@@ -111,13 +111,14 @@ void PExReceiveByte(unsigned char c) {
       }
       else if (c == 'V') { // firmware version
         state = 0;
-        if (!chOQIsEmptyI(&BDU1.oqueue)) {
-          chThdSleepMilliseconds(1);
-          BDU1.oqueue.q_notify(&BDU1.oqueue);
-        } else {
-          chprintf((BaseSequentialStream * )&BDU1, FWVERSION " ack!\r\n");
+        config.send_usb_bulk = 0;
+        // if (!chOQIsEmptyI(&BDU1.oqueue)) {
+        //   chThdSleepMilliseconds(1);
+        //   BDU1.oqueue.q_notify(&BDU1.oqueue);
+        // } else {
+          chprintf((BaseSequentialStream * )&BDU1, FWVERSION "\r\n");
           //chOQWriteTimeout(&BDU1.oqueue, cmsg, 14, TIME_INFINITE);
-        }
+        // }
       }
       else
         state = 0;
