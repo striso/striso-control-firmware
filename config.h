@@ -1,13 +1,26 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
+#define STRISOBOARD
+#ifdef STRISOBOARD
 //#define USE_BAS
 //#define USE_UART
+#define USE_USB
 #define USE_AUX_BUTTONS
 #define USE_MIDI_OUT
 //#define USE_SYNTH_INTERFACE
 #define USE_MPU6050
 #define USE_WS2812
+#else
+#define USE_BAS
+#define USE_UART
+//#define USE_USB
+//#define USE_AUX_BUTTONS
+//#define USE_MIDI_OUT
+//#define USE_SYNTH_INTERFACE
+//#define USE_MPU6050
+//#define USE_WS2812
+#endif
 
 //#define CALIBRATION_MODE TRUE
 
