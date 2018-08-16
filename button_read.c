@@ -654,11 +654,10 @@ static msg_t ThreadReadButtons(void *arg) {
           
 #ifdef USE_AUX_BUTTONS
           int msg[8];
-          int tmpfix = 1; // mistake in pcb, last 3 buttons pull to ground
           for (int n = 0; n < 4; n++) {
             if (aux_buttons_state[n] & 0xff) {
               aux_buttons_state[n]--;
-            } else if ((tmpfix == palReadPad(aux_buttons_port[n], aux_buttons_pad[n])) == !aux_buttons_state[n]) {
+            } else if ((palReadPad(aux_buttons_port[n], aux_buttons_pad[n])) == !aux_buttons_state[n]) {
               msg[0] = ID_CONTROL;
               msg[1] = aux_buttons_msg[n];
               if (aux_buttons_state[n]) {
@@ -667,11 +666,9 @@ static msg_t ThreadReadButtons(void *arg) {
               } else {
                 msg[2] = 1;
                 aux_buttons_state[n] = AUX_BUTTON_DEBOUNCE_TIME | 0x100;
-                ws2812_write_led(0, 15,  0,  0);
               }
               msgSend(3, msg);
             }
-            tmpfix = 0;
           }
 #endif // USE_AUX_BUTTONS
         }
@@ -743,9 +740,9 @@ void ButtonReadStart(void) {
   
 #ifdef USE_AUX_BUTTONS
   palSetPadMode(GPIOI, GPIOI_BUTTON_PORT, PAL_MODE_INPUT_PULLDOWN);
-  palSetPadMode(GPIOI, GPIOI_BUTTON_UP,   PAL_MODE_INPUT_PULLUP);
-  palSetPadMode(GPIOA, GPIOA_BUTTON_DOWN, PAL_MODE_INPUT_PULLUP);
-  palSetPadMode(GPIOA, GPIOA_BUTTON_ALT,  PAL_MODE_INPUT_PULLUP);
+  palSetPadMode(GPIOI, GPIOI_BUTTON_UP,   PAL_MODE_INPUT_PULLDOWN);
+  palSetPadMode(GPIOA, GPIOA_BUTTON_DOWN, PAL_MODE_INPUT_PULLDOWN);
+  palSetPadMode(GPIOA, GPIOA_BUTTON_ALT,  PAL_MODE_INPUT_PULLDOWN);
 #endif
   
   /*
