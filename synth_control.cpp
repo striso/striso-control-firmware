@@ -35,6 +35,10 @@ float powf_schlick_d(const float a, const float b)
 
 #define pow2(x) ((x)*(x))
 #define pow3(x) ((x)*(x)*(x))
+#define max(x, y) ((x)>(y)?(x):(y))
+#define min(x, y) ((x)<(y)?(x):(y))
+
+void update_leds(void);
 
 typedef enum {
     STATE_OFF = 0,
@@ -529,18 +533,28 @@ int synth_message(int size, int* msg) {
             bas.notegen1 = notegen1;
         }
         else if (msg[0]) {
-            float dif = 12.0;
-            if (dis.portamento) dif = 1.0;
-            if (id == IDC_OCT_UP) {
-                dis.change_note_offset(dif);
-                bas.change_note_offset(dif);
-            }
-            if (id == IDC_OCT_DOWN) {
-                dis.change_note_offset(-dif);
-                bas.change_note_offset(-dif);
+            if (dis.altmode) {
+                if (id == IDC_OCT_UP) {
+                    // set 12 tet
+                    bas.notegen1 = dis.notegen1 = 7.00;
+                } else if (id == IDC_OCT_DOWN) {
+                    // set 31 tet
+                    bas.notegen1 = dis.notegen1 = 6.9658;
+                }
+            } else {
+                float dif = 12.0;
+                if (dis.portamento) dif = 1.0;
+                if (id == IDC_OCT_UP) {
+                    dis.change_note_offset(dif);
+                    bas.change_note_offset(dif);
+                }
+                if (id == IDC_OCT_DOWN) {
+                    dis.change_note_offset(-dif);
+                    bas.change_note_offset(-dif);
+                }
             }
         }
-
+        update_leds();
     }
     else if (src == ID_ACCEL && size == 9) {
         // TODO: limit values, optimize MIDI range
@@ -607,4 +621,17 @@ void clear_dead_notes(void) {
 void synth_tick(void) {
     dis.tick();
     bas.tick();
+}
+
+void update_leds(void) {
+#ifdef USE_WS2812
+    ws2812_write_led(0, dis.altmode * 31, 1, dis.portamento * 31);
+    if (dis.note_offset > 62) {
+        ws2812_write_led(1, 100*max(dis.notegen1 - 7.0, 0), 0.99 + 0.05 * pow2(dis.note_offset - 62), 100*max(7.0 - dis.notegen1, 0));
+        ws2812_write_led(2, 100*max(dis.notegen1 - 7.0, 0), 0, 100*max(7.0 - dis.notegen1, 0));
+    } else {
+        ws2812_write_led(1, 100*max(dis.notegen1 - 7.0, 0), 0, 100*max(7.0 - dis.notegen1, 0));
+        ws2812_write_led(2, 100*max(dis.notegen1 - 7.0, 0), 0.99 + 0.05 * pow2(62 - dis.note_offset), 100*max(7.0 - dis.notegen1, 0));
+    }
+#endif
 }

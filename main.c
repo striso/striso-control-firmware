@@ -69,18 +69,10 @@ static msg_t Thread1(void *arg) {
   while (TRUE) {
     chThdSleepMilliseconds(300);
     palSetPad(GPIOA, GPIOA_LED1);
-    ws2812_write_led(0, 15, 0, 31);
-    ws2812_write_led(1,  0, 1,  0);
-    ws2812_write_led(2,  0,  0, 1);
-    ws2812_write_led(3,  0, 1, 1);
     chThdSleepMilliseconds(300);
     msg[2] = underruns;
     //if (!msgSend(3,msg))
       palClearPad(GPIOA, GPIOA_LED1);
-    ws2812_write_led(0, 15, 31, 0);
-    ws2812_write_led(1,  0, 15,  0);
-    ws2812_write_led(2,  0,  0, 15);
-    ws2812_write_led(3,  0, 15, 15);
   }
 
   return 0;
@@ -162,9 +154,9 @@ int main(void) {
 
 #ifdef USE_WS2812
   ws2812_init();
-  ws2812_write_led(0, 15,  0,  0);
-  ws2812_write_led(1,  0, 15,  0);
-  ws2812_write_led(2,  0,  0, 15);
+  ws2812_write_led(0, 15, 31,  0);
+  ws2812_write_led(1, 15, 31,  0);
+  ws2812_write_led(2, 15, 31,  0);
   ws2812_write_led(3,  0, 15, 15);
 #endif
 
@@ -188,6 +180,13 @@ int main(void) {
   
 #ifdef USE_MPU6050
   MotionSensorStart();
+#endif
+
+#ifdef USE_WS2812
+  ws2812_write_led(0,  0,  1,  0);
+  ws2812_write_led(1,  0,  0,  0);
+  ws2812_write_led(2,  0,  0,  0);
+  ws2812_write_led(3,  0, 15, 15);
 #endif
 
   while (1) {
