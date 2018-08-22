@@ -647,6 +647,7 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
     static uint8_t lastRPN_MSB = 0;
     static uint8_t lastNRPN_LSB = 0;
     static uint8_t lastNRPN_MSB = 0;
+    static uint8_t lsb_cc1 = 0;
     
     uint8_t channel = status & 0x0f;
     status &= 0xf0;
@@ -667,26 +668,40 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
                         dis.voicecount = data2;
                     }
                 } else if (lastRPN_LSB == 1 && lastRPN_MSB == 0) {
-                    // Tuning
+                    // Tuning, done with pitch bend
                 }
             } break;
+            case  1: { // Fifth (microtonal) tuning
+                dis.notegen1 = bas.notegen1 = 6.80 + (float)data2 * (0.20/64) + (float)lsb_cc1 * (0.20/8192);
+            } break;
+            case  1|MIDI_C_LSB: lsb_cc1 = data2; break;
             case 16: config.send_motion_interval = data2; break;
             case 16|MIDI_C_LSB: config.send_motion_14bit = data2; break;
             case 17: config.message_interval = data2 >= 1 ? data2 : 1; break;
             case 17|MIDI_C_LSB: config.send_button_14bit = data2; break;
+            case 18: { // Octave jump
+                dis.set_note_offset(data2 - 2);
+                bas.set_note_offset(data2 - 2);
+            } break;
+            case 65: dis.set_portamento(data2); break;
             case 70: if (data2 > 0 && data2 < 3) config.midi_pres = data2; break;
-            case 71: 
+            case 71: {
                 if (data2 > 0) {
-                    dis.bend_sensitivity = (float)data2 * 0.01;
+                    dis.bend_sensitivity = (float)(data2 - 1) * 0.01;
                     config.midi_bend = 0;
                 } else {
                     dis.bend_sensitivity = 0;
                     config.midi_bend = 2;
-                } break;
-            
+                }
+            } break;
+            case 126:
+            case 127:
             default: break;
         }
+    } else if (status == MIDI_PITCH_BEND) {
+        dis.note_offset = (float)((int)((data2<<7)+data1)-0x2000) * (2.0/8192);
     }
+    update_leds();
 }
 
 void clear_dead_notes(void) {
