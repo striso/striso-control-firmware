@@ -54,10 +54,11 @@ class Button {
         float note;
         int midinote;
         int midinote_base;
+        int start_note_offset;
         float pres;
         float vpres;
         float vpres_prev;
-        int last_pitchbend;
+        int last_pitchbend = INT32_MAX;
         float but_x;
         float but_y;
         float vol0;
@@ -116,7 +117,8 @@ class Instrument {
         int portamento_buttons[MAX_PORTAMENTO_BUTTONS];
         float notegen0 = 12.00;
         float notegen1 = 7.00;
-        float note_offset = 62;
+        float note_offset = 0;
+        int start_note_offset = 62;
         float min_note_offset = 32;
         float max_note_offset = 92;
         int altmode = 0;
@@ -136,10 +138,10 @@ class Instrument {
                 buttons[n].coord0 = c0[n];
                 buttons[n].coord1 = c1[n];
                 // calculate note number
-                buttons[n].note = note_offset +
+                buttons[n].note = start_note_offset +
                                   notegen0 * buttons[n].coord0 +
                                   notegen1 * buttons[n].coord1;
-                buttons[n].midinote_base = (int)(buttons[n].note + 0.5) - (int)note_offset;
+                buttons[n].midinote_base = (int)(buttons[n].note + 0.5) - start_note_offset; // careful to keep rounded value above zero
                 buttons[n].midinote = buttons[n].midinote_base;
             }
             for (n = 0; n < MAX_VOICECOUNT; n++) {
@@ -173,10 +175,18 @@ class Instrument {
             }
         }
 
-        int change_note_offset(float offset) {
-            float n = note_offset + offset;
+        int change_note_offset(int offset) {
+            int n = start_note_offset + offset;
             if (n >= min_note_offset && n <= max_note_offset) {
-                note_offset = n;
+                start_note_offset = n;
+                return 0;
+            }
+            return 1;
+        }
+
+        int set_note_offset(int offset) {
+            if (offset >= min_note_offset && offset <= max_note_offset) {
+                start_note_offset = offset;
                 return 0;
             }
             return 1;
@@ -189,7 +199,8 @@ class Instrument {
             // Note on detection
             if (buttons[but].state == STATE_OFF && buttons[but].pres > 0.0) {
                 // calculate midinote only at note on
-                buttons[but].midinote = buttons[but].midinote_base + (int)(note_offset + 0.5);
+                buttons[but].midinote = buttons[but].midinote_base + start_note_offset;
+                buttons[but].start_note_offset = start_note_offset;
                 
                 if (portamento) {
                     if (portamento_button == -1) {
@@ -213,8 +224,8 @@ class Instrument {
             }
 
             if (buttons[but].state) {
-                // calculate note number
-                buttons[but].note = note_offset +
+                // calculate note pitch
+                buttons[but].note = buttons[but].start_note_offset + note_offset +
                                     notegen0 * buttons[but].coord0 +
                                     notegen1 * buttons[but].coord1;
                 buttons[but].calculate();
@@ -336,6 +347,7 @@ class Instrument {
 
                 buttons[but].state = STATE_ON;
                 buttons[but].voice = voice;
+                buttons[but].last_pitchbend = INT32_MAX;
                 voices[voice] = but;
                 last_button = but;
 
@@ -542,8 +554,8 @@ int synth_message(int size, int* msg) {
                     bas.notegen1 = dis.notegen1 = 6.9658;
                 }
             } else {
-                float dif = 12.0;
-                if (dis.portamento) dif = 1.0;
+                int dif = 12;
+                if (dis.portamento) dif = 1;
                 if (id == IDC_OCT_UP) {
                     dis.change_note_offset(dif);
                     bas.change_note_offset(dif);
@@ -622,7 +634,7 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
     
     uint8_t channel = status & 0x0f;
     status &= 0xf0;
-    ws2812_write_led(0, 0, 0, 42);
+    ws2812_write_led(0, 102, 0, 42);
     
     if (status == MIDI_CONTROL_CHANGE) {
         switch (data1) {
@@ -644,7 +656,7 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
             } break;
             case 16: config.send_motion_interval = data2; break;
             case 17: config.message_interval = data2 >= 1 ? data2 : 1; break;
-            case 70: if (data2 > 0 && data2 < 3) config.midi_pres = data2;
+            case 70: if (data2 > 0 && data2 < 3) config.midi_pres = data2; break;
             case 71: 
                 if (data2 > 0) {
                     dis.bend_sensitivity = (float)data2 * 0.01;
@@ -672,12 +684,12 @@ void synth_tick(void) {
 void update_leds(void) {
 #ifdef USE_WS2812
     ws2812_write_led(0, dis.altmode * 31, 1, dis.portamento * 31);
-    if (dis.note_offset > 62) {
-        ws2812_write_led(1, 100*max(dis.notegen1 - 7.0, 0), 0.99 + 0.05 * pow2(dis.note_offset - 62), 100*max(7.0 - dis.notegen1, 0));
+    if (dis.start_note_offset > 62) {
+        ws2812_write_led(1, 100*max(dis.notegen1 - 7.0, 0), 0.99 + 0.05 * pow2(dis.start_note_offset - 62), 100*max(7.0 - dis.notegen1, 0));
         ws2812_write_led(2, 100*max(dis.notegen1 - 7.0, 0), 0, 100*max(7.0 - dis.notegen1, 0));
     } else {
         ws2812_write_led(1, 100*max(dis.notegen1 - 7.0, 0), 0, 100*max(7.0 - dis.notegen1, 0));
-        ws2812_write_led(2, 100*max(dis.notegen1 - 7.0, 0), 0.99 + 0.05 * pow2(62 - dis.note_offset), 100*max(7.0 - dis.notegen1, 0));
+        ws2812_write_led(2, 100*max(dis.notegen1 - 7.0, 0), 0.99 + 0.05 * pow2(62 - dis.start_note_offset), 100*max(7.0 - dis.notegen1, 0));
     }
 #endif
 }
