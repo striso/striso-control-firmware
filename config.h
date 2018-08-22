@@ -32,6 +32,8 @@ typedef struct struct_config {
   int message_interval;
   int send_usb_bulk;
   int send_motion_interval;
+  int send_motion_14bit;
+  int send_button_14bit;
   int midi_pres;
   int midi_bend;
 } config_t;
@@ -42,6 +44,8 @@ config_t config = {
   .message_interval = 10,     // interval in ms
   .send_usb_bulk = 0,         // send Striso binary protocol
   .send_motion_interval = 0,  // 0 = disable, else x10ms
+  .send_motion_14bit = 0,     // send 14 bit motion CC
+  .send_button_14bit = 0,     // send 14 bit MPE CC
   .midi_pres = 1,             // 1 = Channel Pressure, 2 = CC 70
   .midi_bend = 1,             // 2 = CC 71
 };

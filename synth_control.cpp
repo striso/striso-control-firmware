@@ -580,6 +580,22 @@ int synth_message(int size, int* msg) {
 #ifdef USE_MIDI_OUT
         if (config.send_motion_interval && (--send_motion_time <= 0)) {
             send_motion_time = config.send_motion_interval;
+            if (config.send_motion_14bit) { // TODO: interleave LSB and MSB?
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                               16|MIDI_C_LSB, acc_x&0x7F);
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                               17|MIDI_C_LSB, acc_y&0x7F);
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                               18|MIDI_C_LSB, acc_z&0x7F);
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                               19|MIDI_C_LSB, acc_abs&0x7F);
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                               80|MIDI_C_LSB, rot_x&0x7F);
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                               81|MIDI_C_LSB, rot_y&0x7F);
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                               82|MIDI_C_LSB, rot_z&0x7F);
+            }
             midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
                                16, (64+(acc_x>>7))&0x7F);
             midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
@@ -655,7 +671,9 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
                 }
             } break;
             case 16: config.send_motion_interval = data2; break;
+            case 16|MIDI_C_LSB: config.send_motion_14bit = data2; break;
             case 17: config.message_interval = data2 >= 1 ? data2 : 1; break;
+            case 17|MIDI_C_LSB: config.send_button_14bit = data2; break;
             case 70: if (data2 > 0 && data2 < 3) config.midi_pres = data2; break;
             case 71: 
                 if (data2 > 0) {
