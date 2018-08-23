@@ -704,6 +704,13 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
     update_leds();
 }
 
+void midi_config(void) {
+#ifdef USE_MIDI_OUT
+    // Send a midi message to show we're connected
+    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE, MIDI_C_ALL_NOTES_OFF, 0);
+#endif
+}
+
 void clear_dead_notes(void) {
     dis.clear_dead_notes();
     bas.clear_dead_notes();

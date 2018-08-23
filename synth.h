@@ -35,6 +35,7 @@ void start_synth_thread(void);
 
 int synth_message(int size, int* msg);
 void synth_tick(void);
+void midi_config(void);
 
 void clear_dead_notes(void);
 

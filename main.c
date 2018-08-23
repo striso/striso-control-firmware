@@ -14,6 +14,7 @@
 
 #define CONFIG_HERE
 #include "config.h"
+#undef CONFIG_HERE
 #include "striso.h"
 #include "usbcfg.h"
 #include "exceptions.h"
@@ -175,6 +176,12 @@ int main(void) {
    * Creates the LED flash thread.
    */
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
+
+#ifdef USE_MIDI_OUT
+  // Send initial configuration MIDI
+  chThdSleepMilliseconds(500);
+  midi_config();
+#endif
 
   ButtonReadStart();
   
