@@ -664,7 +664,7 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
                     dis.midi_bend_range = data2;
                 } else if (lastRPN_LSB == 6 && lastRPN_MSB == 0) {
                     if (channel + data2 <= 15) {
-                        dis.midi_channel_offset = channel;
+                        dis.midi_channel_offset = channel + 1;
                         dis.voicecount = data2;
                     }
                 } else if (lastRPN_LSB == 1 && lastRPN_MSB == 0) {
