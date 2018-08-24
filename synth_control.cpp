@@ -39,6 +39,7 @@ float powf_schlick_d(const float a, const float b)
 #define min(x, y) ((x)<(y)?(x):(y))
 
 void update_leds(void);
+void set_midi_mode(midi_mode_t mode);
 
 typedef enum {
     STATE_OFF = 0,
@@ -127,7 +128,7 @@ class Instrument {
         int port_voice = -1;
         int portamento_button = -1;
         synth_interface_t* synth_interface;
-        int voicecount = 5;
+        int voicecount = 8;
         int midi_channel_offset = 1;
         float midi_bend_range = 48.0;
         float bend_sensitivity = 0.25;
@@ -154,6 +155,10 @@ class Instrument {
         }
 
         void set_portamento(int p) {
+            // in mono mode portamento should stay on
+            if (config.midi_mode == MIDI_MODE_MONO) {
+                return;
+            }
             if (p) {
                 if (!portamento) {
                     portamento = 1;
@@ -195,6 +200,75 @@ class Instrument {
         void button_message(int but, float* msg) {
             // process button message and send osc messages
             buttons[but].message(msg);
+
+            // handle alternative functions of note buttons
+            if (altmode) {
+                // TODO: only handle on new press (not so important when only light code)
+                switch (but) {
+                    case (0): {
+                        set_midi_mode(MIDI_MODE_MPE);
+                    } return;
+                    case (2): {
+                        set_midi_mode(MIDI_MODE_POLY);
+                    } return;
+                    case (4): {
+                        set_midi_mode(MIDI_MODE_MONO);
+                    } return;
+                    case (1): {
+                        config.message_interval = 1;
+                        ws2812_write_led(0, 0, 17, 4);
+                    } return;
+                    case (3): {
+                        config.message_interval = 10;
+                        ws2812_write_led(0, 0, 4, 17);
+                    } return;
+                    case (17): {
+                        config.send_motion_interval = 1;
+                        ws2812_write_led(0, 0, 17, 4);
+                    } return;
+                    case (19): {
+                        config.send_motion_interval = 10;
+                        ws2812_write_led(0, 0, 4, 17);
+                    } return;
+                    case (21): {
+                        config.send_motion_interval = 0;
+                        ws2812_write_led(0, 4, 0, 17);
+                    } return;
+                }
+            }
+
+            if (config.midi_mode == MIDI_MODE_POLY) {
+                // in single channel poly mode just send out the notes on a single channel,
+                // skip the whole channel assignment sruff.
+#ifdef USE_MIDI_OUT
+                // Note on detection
+                if (buttons[but].pres > 0.0) {
+                    if (buttons[but].state == STATE_OFF) {
+                        buttons[but].state = STATE_ON;
+                        buttons[but].midinote = buttons[but].midinote_base + start_note_offset;
+                        buttons[but].start_note_offset = start_note_offset;
+                        int velo = 1 + buttons[but].vpres * 127;
+                        if (velo > 127) velo = 127;
+                        else if (velo < 1) velo = 1;
+                        midi_usb_MidiSend3(1, MIDI_NOTE_ON | midi_channel_offset,
+                                        buttons[but].midinote, velo);
+                    }
+                    int pres = buttons[but].pres * 127;
+                    if (pres > 127) pres = 127;
+                    else if (pres < 0) pres = 0;
+                    midi_usb_MidiSend3(1, MIDI_POLY_PRESSURE | midi_channel_offset,
+                                    buttons[but].midinote, pres);
+                } else {
+                    buttons[but].state = STATE_OFF;
+                    int velo = 1 - buttons[but].vpres * 127;
+                    if (velo > 127) velo = 127;
+                    else if (velo < 0) velo = 0;
+                    midi_usb_MidiSend3(1, MIDI_NOTE_OFF | midi_channel_offset,
+                                    buttons[but].midinote, velo);
+                }
+                return;
+#endif
+            }
 
             // Note on detection
             if (buttons[but].state == STATE_OFF && buttons[but].pres > 0.0) {
@@ -664,6 +738,7 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
                     dis.midi_bend_range = data2;
                 } else if (lastRPN_LSB == 6 && lastRPN_MSB == 0) {
                     if (channel + data2 <= 15) {
+                        set_midi_mode(MIDI_MODE_MPE);
                         dis.midi_channel_offset = channel + 1;
                         dis.voicecount = data2;
                     }
@@ -694,12 +769,45 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
                     config.midi_bend = 2;
                 }
             } break;
-            case 126:
-            case 127:
+            case 126: {
+                if (data2 == 0) {
+                    set_midi_mode(MIDI_MODE_MPE);
+                } else if (data2 <= 16) {
+                    set_midi_mode(MIDI_MODE_MONO);
+                    dis.midi_channel_offset = data2 - 1;
+                }
+            } break;
+            case 127: {
+                set_midi_mode(MIDI_MODE_POLY);
+            } break;
             default: break;
         }
     } else if (status == MIDI_PITCH_BEND) {
         dis.note_offset = (float)((int)((data2<<7)+data1)-0x2000) * (2.0/8192);
+    }
+    update_leds();
+}
+
+void set_midi_mode(midi_mode_t mode) {
+    // TODO: handle switching while buttons are pressed
+    switch (mode) {
+        case MIDI_MODE_MPE: {
+            config.midi_mode = mode;
+            dis.midi_channel_offset = 1;
+            dis.voicecount = 8;
+            dis.portamento = 0;
+        } break;
+        case MIDI_MODE_POLY: {
+            config.midi_mode = mode;
+            dis.midi_channel_offset = 0;
+            dis.portamento = 0;
+        } break;
+        case MIDI_MODE_MONO: {
+            config.midi_mode = mode;
+            dis.midi_channel_offset = 0;
+            dis.voicecount = 1;
+            dis.portamento = 1;
+        } break;
     }
     update_leds();
 }
@@ -723,7 +831,9 @@ void synth_tick(void) {
 
 void update_leds(void) {
 #ifdef USE_WS2812
-    ws2812_write_led(0, dis.altmode * 31, 1, dis.portamento * 31);
+    ws2812_write_led(0, (config.midi_mode == MIDI_MODE_POLY) * 12 + dis.altmode * 17,
+                        (config.midi_mode == MIDI_MODE_MPE) * 1,
+                        dis.portamento * 31);
     if (dis.start_note_offset > 62) {
         ws2812_write_led(1, 100*max(dis.notegen1 - 7.0, 0), 0.99 + 0.05 * pow2(dis.start_note_offset - 62), 100*max(7.0 - dis.notegen1, 0));
         ws2812_write_led(2, 100*max(dis.notegen1 - 7.0, 0), 0, 100*max(7.0 - dis.notegen1, 0));

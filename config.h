@@ -28,6 +28,12 @@
 
 #define MAX_VOICECOUNT 15
 
+typedef enum {
+  MIDI_MODE_MPE,
+  MIDI_MODE_POLY,
+  MIDI_MODE_MONO,
+} midi_mode_t;
+
 typedef struct struct_config {
   int message_interval;
   int send_usb_bulk;
@@ -36,6 +42,7 @@ typedef struct struct_config {
   int send_button_14bit;
   int midi_pres;
   int midi_bend;
+  midi_mode_t midi_mode;
 } config_t;
 extern config_t config;
 
@@ -48,6 +55,7 @@ config_t config = {
   .send_button_14bit = 0,     // send 14 bit MPE CC
   .midi_pres = 1,             // 1 = Channel Pressure, 2 = CC 70
   .midi_bend = 1,             // 2 = CC 71
+  .midi_mode = MIDI_MODE_MPE,
 };
 #endif
 
