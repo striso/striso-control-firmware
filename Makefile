@@ -232,6 +232,8 @@ version:
 	@echo $(FWVERSION)
 
 prog: all
+	@# first put striso in DFU mode if it isn't
+	@./striso_util -d && echo Resetting Striso in DFU mode... && sleep 3
 	dfu-util -d0483:df11 -a0 -s0x8000000:leave -D $(BUILDDIR)/$(PROJECT).bin
 
 prog_openocd: all

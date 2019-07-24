@@ -99,6 +99,8 @@ void PExReceiveByte(unsigned char c) {
     case 3:
       if (c == 'D') { // go to DFU mode
         state = 0;
+        chprintf((BaseSequentialStream * )&BDU1, "Resetting to DFU mode...\r\n");
+        chThdSleepMilliseconds(2);
         exception_initiate_dfu();
       }
       else if (c == 'S') { // enable binary protocol over USB Bulk
