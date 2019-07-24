@@ -105,9 +105,14 @@ class Button {
             float m = signals[0];
             if (signals[1] > m) m = signals[1];
             if (signals[2] > m) m = signals[2];
-            float fact = 1.0/(m+CENTERTEND/m-CENTERTEND);
-            but_x = (signals[2] - signals[0]) * fact;
-            but_y = (0.5 * (signals[0] + signals[2]) - signals[1]) * fact;
+            if (m > 0.0) {
+                float fact = 1.0/(m + CENTERTEND/m - CENTERTEND);
+                but_x = (signals[2] - signals[0]) * fact;
+                but_y = (0.5 * (signals[0] + signals[2]) - signals[1]) * fact;
+            } else {
+                but_x = 0.0;
+                but_y = 0.0;
+            }
         }
 };
 
