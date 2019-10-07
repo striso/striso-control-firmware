@@ -232,8 +232,8 @@ version:
 	@echo $(FWVERSION)
 
 prog: all
-	@# first put striso in DFU mode if it isn't
-	@./striso_util -d && echo Resetting Striso in DFU mode... && sleep 3
+	@# first put striso in DFU mode if it isn't (the - ignores striso_util failure)
+	@-./striso_util -d && echo Resetting Striso in DFU mode... && sleep 3
 	dfu-util -d0483:df11 -a0 -s0x8000000:leave -D $(BUILDDIR)/$(PROJECT).bin
 
 prog_openocd: all
@@ -241,6 +241,16 @@ prog_openocd: all
 
 prog_uart: all
 	./stm32loader.py -e -w -v $(BUILDDIR)/$(PROJECT).bin
+
+# Upload firmware with Black Magic Probe
+prog_bmp: all
+	arm-none-eabi-gdb --batch $(BUILDDIR)/$(PROJECT).elf \
+		-ex "target extended-remote /dev/ttyACM0" \
+		-ex "monitor swdp_scan" \
+		-ex "attach 1" \
+		-ex "load" \
+		-ex "compare-sections" \
+		-ex "kill"
 
 # Launch GDB via openocd debugger
 gdb: all
