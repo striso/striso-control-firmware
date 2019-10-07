@@ -557,20 +557,7 @@ int c1_dis[68] = {
     -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8,
     -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8};
 
-int c0_bas[68] = {
-    3, 2, 2, 1, 1, 0, 0, -1, -1, -2, -2, -3, -3, -4, -4, -5, -5,
-    4, 3, 3, 2, 2, 1, 1,  0,  0, -1, -1, -2, -2, -3, -3, -4, -4,
-    5, 4, 4, 3, 3, 2, 2,  1,  1,  0,  0, -1, -1, -2, -2, -3, -3,
-    5, 4, 4, 3, 3, 2, 2,  1,  1,  0,  0, -1, -1, -2, -2, -3, -3};
-
-int c1_bas[68] = {
-    -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8,
-    -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8,
-    -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8,
-    -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8};
-
 Instrument dis(c0_dis, c1_dis, BUTTONCOUNT, NULL);
-Instrument bas(c0_bas, c1_bas, BUTTONCOUNT, NULL);
 
 void int2float(int *msg, float *fmsg, int n) {
     int c;
@@ -578,9 +565,6 @@ void int2float(int *msg, float *fmsg, int n) {
         fmsg[c] = ((float)msg[c])/0x1fff; //8191, maximum of 14bit signed int
     }
 }
-
-int gesturestate = 0;
-int amp_state = 2; // 0 = uit, 1 = wederom aangezet, 2 = initieel aan. Vies.
 
 int synth_message(int size, int* msg) {
     float fmsg[7];
@@ -597,52 +581,14 @@ int synth_message(int size, int* msg) {
             // Portamento button
             dis.set_portamento(msg[0]);
         }
-        else if (id == IDC_SLD_NPRESS) {
-            if (msg[0] >= 3) {
-                // Portamento when 3 fingers are pressed
-                dis.set_portamento(1);
-            } else {
-                dis.set_portamento(0);
-            }
-        }
-        else if (id == IDC_SLD_SLIDE) {
-            int2float(msg, fmsg, size-2);
-            // TODO: send voume
-        }
-        else if (id == IDC_SLD_SLIDEZOOM && amp_state == 2) {
-            // temporary hack to disable retuning by default, until amp_state is changed
-        }
-        else if (id == IDC_SLD_SLIDEZOOM) {
-            int2float(msg, fmsg, size-2);
-            float note_offset = dis.note_offset + fmsg[0] * -1;
-            float notegen1 = dis.notegen1 + fmsg[1] * 0.1;
-            if (notegen1 < 6.857) notegen1 = 6.857;
-            else if (notegen1 > 7.20) notegen1 = 7.20;
-            dis.note_offset = note_offset;
-            dis.notegen1 = notegen1;
-            bas.note_offset = note_offset;
-            bas.notegen1 = notegen1;
-        }
         else if (msg[0]) {
-            if (dis.altmode) {
-                if (id == IDC_OCT_UP) {
-                    // set 12 tet
-                    bas.notegen1 = dis.notegen1 = 7.00;
-                } else if (id == IDC_OCT_DOWN) {
-                    // set 31 tet
-                    bas.notegen1 = dis.notegen1 = 6.9658;
-                }
-            } else {
-                int dif = 12;
-                if (dis.portamento) dif = 1;
-                if (id == IDC_OCT_UP) {
-                    dis.change_note_offset(dif);
-                    bas.change_note_offset(dif);
-                }
-                if (id == IDC_OCT_DOWN) {
-                    dis.change_note_offset(-dif);
-                    bas.change_note_offset(-dif);
-                }
+            int dif = 12;
+            if (dis.portamento) dif = 1;
+            if (id == IDC_OCT_UP) {
+                dis.change_note_offset(dif);
+            }
+            if (id == IDC_OCT_DOWN) {
+                dis.change_note_offset(-dif);
             }
         }
         update_leds();
@@ -709,8 +655,6 @@ int synth_message(int size, int* msg) {
 
         if (src == ID_DIS) {
             dis.button_message(id, fmsg);
-        } else if (src == ID_BAS) {
-            bas.button_message(id, fmsg);
         }
     }
     else {
@@ -752,7 +696,7 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
                 }
             } break;
             case  1: { // Fifth (microtonal) tuning
-                dis.notegen1 = bas.notegen1 = 6.80 + (float)data2 * (0.20/64) + (float)lsb_cc1 * (0.20/8192);
+                dis.notegen1 = 6.80 + (float)data2 * (0.20/64) + (float)lsb_cc1 * (0.20/8192);
             } break;
             case  1|MIDI_C_LSB: lsb_cc1 = data2; break;
             case 16: config.send_motion_interval = data2; break;
@@ -761,7 +705,6 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
             case 17|MIDI_C_LSB: config.send_button_14bit = data2; break;
             case 18: { // Octave jump
                 dis.set_note_offset(data2 - 2);
-                bas.set_note_offset(data2 - 2);
             } break;
             case 65: dis.set_portamento(data2); break;
             case 70: if (data2 > 0 && data2 < 3) config.midi_pres = data2; break;
@@ -826,12 +769,10 @@ void midi_config(void) {
 
 void clear_dead_notes(void) {
     dis.clear_dead_notes();
-    bas.clear_dead_notes();
 }
 
 void synth_tick(void) {
     dis.tick();
-    bas.tick();
 }
 
 void update_leds(void) {
