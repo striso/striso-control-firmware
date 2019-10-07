@@ -605,36 +605,51 @@ int synth_message(int size, int* msg) {
 #ifdef USE_MIDI_OUT
         if (config.send_motion_interval && (--send_motion_time <= 0)) {
             send_motion_time = config.send_motion_interval;
-            if (config.send_motion_14bit) { // TODO: interleave LSB and MSB?
+            if (config.send_motion_14bit) {
                 midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                               16|MIDI_C_LSB, acc_x&0x7F);
+                                   16|MIDI_C_LSB, acc_x&0x7F);
                 midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                               17|MIDI_C_LSB, acc_y&0x7F);
+                                   16, (64+(acc_x>>7))&0x7F);
                 midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                               18|MIDI_C_LSB, acc_z&0x7F);
+                                   17|MIDI_C_LSB, acc_y&0x7F);
                 midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                               19|MIDI_C_LSB, acc_abs&0x7F);
+                                   17, (64+(acc_y>>7))&0x7F);
                 midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                               80|MIDI_C_LSB, rot_x&0x7F);
+                                   18|MIDI_C_LSB, acc_z&0x7F);
                 midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                               81|MIDI_C_LSB, rot_y&0x7F);
+                                   18, (64+(acc_z>>7))&0x7F);
                 midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                               82|MIDI_C_LSB, rot_z&0x7F);
+                                   19|MIDI_C_LSB, acc_abs&0x7F);
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                   19, (acc_abs>>6)&0x7F);
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                   80|MIDI_C_LSB, rot_x&0x7F);
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                   80, (64+(rot_x>>7))&0x7F);
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                   81|MIDI_C_LSB, rot_y&0x7F);
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                   81, (64+(rot_y>>7))&0x7F);
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                   82|MIDI_C_LSB, rot_z&0x7F);
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                   82, (64+(rot_z>>7))&0x7F);
+            } else {
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                   16, (64+(acc_x>>7))&0x7F);
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                   17, (64+(acc_y>>7))&0x7F);
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                   18, (64+(acc_z>>7))&0x7F);
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                   19, (acc_abs>>6)&0x7F);
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                   80, (64+(rot_x>>7))&0x7F);
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                   81, (64+(rot_y>>7))&0x7F);
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                   82, (64+(rot_z>>7))&0x7F);
             }
-            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                               16, (64+(acc_x>>7))&0x7F);
-            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                               17, (64+(acc_y>>7))&0x7F);
-            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                               18, (64+(acc_z>>7))&0x7F);
-            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                               19, (acc_abs>>6)&0x7F);
-            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                               80, (64+(rot_x>>7))&0x7F);
-            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                               81, (64+(rot_y>>7))&0x7F);
-            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                               82, (64+(rot_z>>7))&0x7F);
         }
 #endif
 #ifdef USE_SYNTH_INTERFACE
