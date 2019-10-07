@@ -638,7 +638,7 @@ int synth_message(int size, int* msg) {
         }
 #endif
 #ifdef USE_SYNTH_INTERFACE
-        int2float(msg, fmsg, size);
+        int2float(msg, fmsg, size-2);
         *(synth_interface.acc_abs) = acc_abs;
         *(synth_interface.acc_x) = acc_x;
         *(synth_interface.acc_y) = acc_y;
