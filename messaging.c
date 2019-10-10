@@ -7,6 +7,7 @@ static int msg_buffer[BUFFERSIZE];
 static int msg_read = 0;
 static int msg_write = 0;
 static Mutex msg_lock;
+static Thread *tpMsg = NULL;
 int underruns = 0;
 
 int msgSend(int size, int* msg) {
@@ -29,6 +30,14 @@ int msgSend(int size, int* msg) {
   }
 
   chMtxUnlock();
+
+  // Wake up msgGet thread
+  chSysLock();
+  if (tpMsg != NULL) {
+    chSchReadyI(tpMsg);
+    tpMsg = NULL;
+  }
+  chSysUnlock();
   return 0;
 }
 
@@ -37,7 +46,12 @@ int msgGet(int maxsize, int* msg) {
 
   if (msg_read == msg_write) {
     chMtxUnlock();
-    return 0;
+    // wait for new messages to arrive
+    chSysLock();
+    tpMsg = chThdSelf();
+    chSchGoSleepS(THD_STATE_SUSPENDED);
+    chSysUnlock();
+    chMtxLock(&msg_lock);
   }
 
   int size = msg_buffer[msg_read];

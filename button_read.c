@@ -156,6 +156,8 @@ static adcsample_t samples_bas0[102] = {0};
 static adcsample_t samples_bas1[102] = {0};
 static adcsample_t* samples_bas[2] = {samples_bas0, samples_bas1};
 
+static Thread *tpReadButtons = NULL;
+
 static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   (void)adcp;
   (void)n;
@@ -182,6 +184,14 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
 
   // start next ADC conversion
   adcp->adc->CR2 |= ADC_CR2_SWSTART;
+
+  // Wake up processing thread
+  chSysLockFromIsr();
+  if (tpReadButtons != NULL) {
+    chSchReadyI(tpReadButtons);
+    tpReadButtons = NULL;
+  }
+  chSysUnlockFromIsr();
 }
 
 /*
@@ -707,7 +717,10 @@ static msg_t ThreadReadButtons(void *arg) {
       proc_conversion = (proc_conversion+1) % 102;
     }
 
-    chThdSleepMicroseconds(100);
+    chSysLock();
+    tpReadButtons = chThdSelf();
+    chSchGoSleepS(THD_STATE_SUSPENDED);
+    chSysUnlock();
   }
   return 0;
 }
