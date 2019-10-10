@@ -99,6 +99,9 @@ void PExReceiveByte(unsigned char c) {
     case 3:
       if (c == 'D') { // go to DFU mode
         state = 0;
+        ws2812_write_led(0, 64, 8, 0);
+        ws2812_write_led(1, 64, 8, 0);
+        ws2812_write_led(2, 64, 8, 0);
         chprintf((BaseSequentialStream * )&BDU1, "Resetting to DFU mode...\r\n");
         chThdSleepMilliseconds(2);
         exception_initiate_dfu();
