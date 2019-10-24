@@ -65,7 +65,7 @@ void InitPConnection(void) {
    * after a reset.
    */
   usbDisconnectBus(midiusbcfg.usbp);
-  chThdSleepMilliseconds(1000);
+  chThdSleepMilliseconds(500);
   usbStart(midiusbcfg.usbp, &usbcfg);
   usbConnectBus(midiusbcfg.usbp);
 

@@ -179,7 +179,7 @@ int main(void) {
 
 #ifdef USE_MIDI_OUT
   // Send initial configuration MIDI
-  chThdSleepMilliseconds(500);
+  chThdSleepMilliseconds(200);
   midi_config();
 #endif
 
