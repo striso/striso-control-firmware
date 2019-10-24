@@ -736,7 +736,7 @@ int synth_message(int size, int* msg) {
         update_leds();
     }
     else if (src == ID_ACCEL && size == 9) {
-        // TODO: limit values, optimize MIDI range
+        // TODO: limit values (in motionsensor.c), optimize MIDI range
         int acc_x = msg[0];
         int acc_y = msg[1];
         int acc_z = msg[2];
