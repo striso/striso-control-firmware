@@ -626,6 +626,11 @@ class Instrument {
             int pitchbend = (bend_sensitivity * pow3(buttons[but].but_x)
                 + buttons[but].note - buttons[but].midinote)
               * (0x2000 / midi_bend_range) + 0x2000 + 0.5;
+            if (pitchbend >= 0x4000) {
+                pitchbend = 0x3fff;
+            } else if (pitchbend < 0) {
+                pitchbend = 0;
+            }
 
             if (config.midi_pres == 1) {
                 midi_usb_MidiSend2(1, MIDI_CHANNEL_PRESSURE | (midi_channel_offset + buttons[but].voice),
@@ -863,7 +868,11 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
                     if (channel + data2 <= 15) {
                         set_midi_mode(MIDI_MODE_MPE);
                         dis.midi_channel_offset = channel + 1;
-                        dis.voicecount = data2;
+                        if (data2 > MAX_VOICECOUNT) {
+                            dis.voicecount = MAX_VOICECOUNT;
+                        } else {
+                            dis.voicecount = data2;
+                        }
                     }
                 } else if (lastRPN_LSB == 1 && lastRPN_MSB == 0) {
                     // TODO: Tuning, done with pitch bend
