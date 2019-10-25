@@ -45,6 +45,7 @@ typedef enum {
     STATE_OFF = 0,
     STATE_ON = 1,
     STATE_PORTAMENTO = 2,
+    STATE_ALT = 3,
 } button_state_t;
 
 class Button {
@@ -128,7 +129,6 @@ class Instrument {
         float min_note_offset = 32;
         float max_note_offset = 92;
         int altmode = 0;
-        int last_alt_button = -1;
         int portamento = 0;
         int last_button = 0;
         int port_voice = -1;
@@ -218,193 +218,195 @@ class Instrument {
             buttons[but].message(msg);
 
             // handle alternative functions of note buttons
-            if (altmode) {
+            if ((altmode && buttons[but].state == STATE_OFF)
+                || (buttons[but].state == STATE_ALT)) {
+                // only handle on new press
                 if (buttons[but].state == STATE_OFF && buttons[but].pres > 0.0) {
-                    // only handle on new press
-                    if (but != last_alt_button) {
-                        switch (but) {
-                            // row 1:  0  2  4
-                            case (0): {
-                                set_midi_mode(MIDI_MODE_MPE);
-                            } return;
-                            case (2): {
-                                set_midi_mode(MIDI_MODE_POLY);
-                            } return;
-                            case (4): {
-                                set_midi_mode(MIDI_MODE_MONO);
-                            } return;
-                            // row 2:  1  3  5  7  9 11
-                            case (1): {
-                                config.message_interval = 1;
-                                ws2812_write_led(0, 1, 12, 0);
-                            } return;
-                            case (3): {
-                                config.message_interval = 10;
-                                ws2812_write_led(0, 4, 2, 0);
-                            } return;
-                            case (5): {
-                                config.send_motion_interval = 1;
-                                ws2812_write_led(0, 1, 12, 0);
-                            } return;
-                            case (7): {
-                                config.send_motion_interval = 10;
-                                ws2812_write_led(0, 4, 2, 0);
-                            } return;
-                            case (9): {
-                                config.send_motion_interval = 0;
-                                ws2812_write_led(0, 3, 0, 0);
-                            } return;
-                            // row 3: 17 19 21  6  8 10 12 14 16
-                            case (12): {
-                                bend_sensitivity = 0.0f;
-                                ws2812_write_led(0, 1, 0, 0);
-                            } return;
-                            case (14): {
-                                bend_sensitivity = 0.125f;
-                                ws2812_write_led(0, 4, 0, 0);
-                            } return;
-                            case (16): {
-                                bend_sensitivity = 0.25f;
-                                ws2812_write_led(0, 12, 0, 0);
-                            } return;
-                            // row 4: 18 20 22 24 26 28 13 15
-                            // row 5: 34 36 38 23 25 27 29 31 33
-                            case (34): { // set 12tet tuning
-                                set_notegen1(7.0f);
-                            } return;
-                            case (36): { // set quarter comma meantone tuning
-                                set_notegen1(6.96578428466209f);
-                            } return;
-                            case (38): { // set 19tet tuning
-                                set_notegen1(6.94736842105263f);
-                            } return;
-                            case (23): { // set pythagorean tuning
-                                set_notegen1(7.01955000865388f);
-                            } return;
-                            case (25): { // set 5tet tuning
-                                set_notegen1(7.2f);
-                            } return;
-                            case (27): { // set 7tet tuning
-                                set_notegen1(6.85714285714286f);
-                            } return;
-                            case (29): { // set 31tet tuning
-                                set_notegen1(6.96774193548387f);
-                            } return;
-                            // row 6: 35 37 39 41 43 45 30 32
+                    buttons[but].state = STATE_ALT;
+                    switch (but) {
+                        // row 1:  0  2  4
+                        case (0): {
+                            set_midi_mode(MIDI_MODE_MPE);
+                        } return;
+                        case (2): {
+                            set_midi_mode(MIDI_MODE_POLY);
+                        } return;
+                        case (4): {
+                            set_midi_mode(MIDI_MODE_MONO);
+                        } return;
+                        // row 2:  1  3  5  7  9 11
+                        case (1): {
+                            config.message_interval = 1;
+                            ws2812_write_led(0, 1, 12, 0);
+                        } return;
+                        case (3): {
+                            config.message_interval = 10;
+                            ws2812_write_led(0, 4, 2, 0);
+                        } return;
+                        case (5): {
+                            config.send_motion_interval = 1;
+                            ws2812_write_led(0, 1, 12, 0);
+                        } return;
+                        case (7): {
+                            config.send_motion_interval = 10;
+                            ws2812_write_led(0, 4, 2, 0);
+                        } return;
+                        case (9): {
+                            config.send_motion_interval = 0;
+                            ws2812_write_led(0, 3, 0, 0);
+                        } return;
+                        // row 3: 17 19 21  6  8 10 12 14 16
+                        case (12): {
+                            bend_sensitivity = 0.0f;
+                            ws2812_write_led(0, 1, 0, 0);
+                        } return;
+                        case (14): {
+                            bend_sensitivity = 0.125f;
+                            ws2812_write_led(0, 4, 0, 0);
+                        } return;
+                        case (16): {
+                            bend_sensitivity = 0.25f;
+                            ws2812_write_led(0, 12, 0, 0);
+                        } return;
+                        // row 4: 18 20 22 24 26 28 13 15
+                        // row 5: 34 36 38 23 25 27 29 31 33
+                        case (34): { // set 12tet tuning
+                            set_notegen1(7.0f);
+                        } return;
+                        case (36): { // set quarter comma meantone tuning
+                            set_notegen1(6.96578428466209f);
+                        } return;
+                        case (38): { // set 19tet tuning
+                            set_notegen1(6.94736842105263f);
+                        } return;
+                        case (23): { // set pythagorean tuning
+                            set_notegen1(7.01955000865388f);
+                        } return;
+                        case (25): { // set 5tet tuning
+                            set_notegen1(7.2f);
+                        } return;
+                        case (27): { // set 7tet tuning
+                            set_notegen1(6.85714285714286f);
+                        } return;
+                        case (29): { // set 31tet tuning
+                            set_notegen1(6.96774193548387f);
+                        } return;
+                        // row 6: 35 37 39 41 43 45 30 32
 #ifdef USE_MIDI_OUT
-                            case (35): {
-                                midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
-                                                   0);
-                                ws2812_write_led(0, 4, 0, 0);
-                            } return;
-                            case (37): {
-                                midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
-                                                   1);
-                                ws2812_write_led(0, 4, 1, 0);
-                            } return;
-                            case (39): {
-                                midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
-                                                   2);
-                                ws2812_write_led(0, 4, 3, 0);
-                            } return;
-                            case (41): {
-                                midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
-                                                   3);
-                                ws2812_write_led(0, 1, 8, 0);
-                            } return;
-                            case (43): {
-                                midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
-                                                   4);
-                                ws2812_write_led(0, 0, 4, 4);
-                            } return;
-                            case (45): {
-                                midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
-                                                   5);
-                                ws2812_write_led(0, 0, 1, 12);
-                            } return;
-                            case (30): {
-                                midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
-                                                   6);
-                                ws2812_write_led(0, 2, 0, 6);
-                            } return;
-                            case (32): {
-                                midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
-                                                   7);
-                                ws2812_write_led(0, 3, 3, 3);
-                            } return;
+                        case (35): {
+                            midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
+                                                0);
+                            ws2812_write_led(0, 4, 0, 0);
+                        } return;
+                        case (37): {
+                            midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
+                                                1);
+                            ws2812_write_led(0, 4, 1, 0);
+                        } return;
+                        case (39): {
+                            midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
+                                                2);
+                            ws2812_write_led(0, 4, 4, 0);
+                        } return;
+                        case (41): {
+                            midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
+                                                3);
+                            ws2812_write_led(0, 1, 8, 0);
+                        } return;
+                        case (43): {
+                            midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
+                                                4);
+                            ws2812_write_led(0, 0, 4, 4);
+                        } return;
+                        case (45): {
+                            midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
+                                                5);
+                            ws2812_write_led(0, 0, 1, 12);
+                        } return;
+                        case (30): {
+                            midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
+                                                6);
+                            ws2812_write_led(0, 2, 0, 6);
+                        } return;
+                        case (32): {
+                            midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
+                                                7);
+                            ws2812_write_led(0, 3, 3, 3);
+                        } return;
 #endif
-                            // row 7: 51 53 55 40 42 44 46 48 50
-                            case (51): {
-                                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                                   MIDI_C_MAIN_VOLUME, 7);
-                                ws2812_write_led(0, 1, 1, 1);
-                            } return;
-                            case (53): {
-                                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                                   MIDI_C_MAIN_VOLUME, 15);
-                                ws2812_write_led(0, 2, 2, 2);
-                            } return;
-                            case (55): {
-                                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                                   MIDI_C_MAIN_VOLUME, 31);
-                                ws2812_write_led(0, 3, 3, 3);
-                            } return;
-                            case (40): {
-                                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                                   MIDI_C_MAIN_VOLUME, 47);
-                                ws2812_write_led(0, 4, 4, 4);
-                            } return;
-                            case (42): {
-                                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                                   MIDI_C_MAIN_VOLUME, 63);
-                                ws2812_write_led(0, 6, 6, 6);
-                            } return;
-                            case (44): {
-                                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                                   MIDI_C_MAIN_VOLUME, 79);
-                                ws2812_write_led(0, 8, 8, 8);
-                            } return;
-                            case (46): {
-                                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                                   MIDI_C_MAIN_VOLUME, 95);
-                                ws2812_write_led(0, 10, 10, 10);
-                            } return;
-                            case (48): {
-                                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                                   MIDI_C_MAIN_VOLUME, 111);
-                                ws2812_write_led(0, 14, 14, 14);
-                            } return;
-                            case (50): {
-                                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                                   MIDI_C_MAIN_VOLUME, 127);
-                                ws2812_write_led(0, 18, 18, 18);
-                            } return;
+                        // row 7: 51 53 55 40 42 44 46 48 50
+                        case (51): {
+                            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                                MIDI_C_MAIN_VOLUME, 7);
+                            ws2812_write_led(0, 1, 1, 1);
+                        } return;
+                        case (53): {
+                            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                                MIDI_C_MAIN_VOLUME, 15);
+                            ws2812_write_led(0, 2, 2, 2);
+                        } return;
+                        case (55): {
+                            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                                MIDI_C_MAIN_VOLUME, 31);
+                            ws2812_write_led(0, 3, 3, 3);
+                        } return;
+                        case (40): {
+                            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                                MIDI_C_MAIN_VOLUME, 47);
+                            ws2812_write_led(0, 4, 4, 4);
+                        } return;
+                        case (42): {
+                            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                                MIDI_C_MAIN_VOLUME, 63);
+                            ws2812_write_led(0, 6, 6, 6);
+                        } return;
+                        case (44): {
+                            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                                MIDI_C_MAIN_VOLUME, 79);
+                            ws2812_write_led(0, 8, 8, 8);
+                        } return;
+                        case (46): {
+                            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                                MIDI_C_MAIN_VOLUME, 95);
+                            ws2812_write_led(0, 10, 10, 10);
+                        } return;
+                        case (48): {
+                            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                                MIDI_C_MAIN_VOLUME, 111);
+                            ws2812_write_led(0, 14, 14, 14);
+                        } return;
+                        case (50): {
+                            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                                MIDI_C_MAIN_VOLUME, 127);
+                            ws2812_write_led(0, 18, 18, 18);
+                        } return;
 
-                            // row 8:       56 58 60 62 47 49
-                            // row 9:                   63 65 67
-                            case (63): { // request config
+                        // row 8:       56 58 60 62 47 49
+                        // row 9:                   63 65 67
+                        case (63): { // request config
 #ifdef USE_MIDI_OUT
-                                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                                   MIDI_C_ALL_NOTES_OFF, 0);
-                                ws2812_write_led(0, 16, 0, 0);
+                            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                                MIDI_C_ALL_NOTES_OFF, 0);
+                            ws2812_write_led(0, 16, 0, 0);
 #endif
-                            } return;
-                            case (65): { // send config
+                        } return;
+                        case (65): { // send config
 #ifdef USE_MIDI_OUT
-                                // TODO: send config
-                                ws2812_write_led(0, 16, 0, 0);
+                            // TODO: send config
+                            ws2812_write_led(0, 16, 0, 0);
 #endif
-                            } return;
-                        }
+                        } return;
                     }
-                } else {
-                    last_alt_button = -1;
+                    return;
+                } else if (buttons[but].pres == 0.0) {
+                    buttons[but].state = STATE_OFF;
+                    return;
                 }
             }
 
             if (config.midi_mode == MIDI_MODE_POLY) {
                 // in single channel poly mode just send out the notes on a single channel,
-                // skip the whole channel assignment sruff.
+                // skip the whole channel assignment stuff.
 #ifdef USE_MIDI_OUT
                 // Note on detection
                 if (buttons[but].pres > 0.0) {
@@ -886,7 +888,7 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
             case 16|MIDI_C_LSB: config.send_motion_14bit = data2; break;
             case 17: config.message_interval = data2 >= 1 ? data2 : 1; break;
             case 17|MIDI_C_LSB: config.send_button_14bit = data2; break;
-            case 18: { // Octave jump
+            case 18: { // Note offset
                 dis.set_note_offset(data2 - 2);
             } break;
             case 65: dis.set_portamento(data2); break;
