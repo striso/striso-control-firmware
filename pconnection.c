@@ -31,6 +31,8 @@
 
 //#define DEBUG_SERIAL 1
 
+#define STM32_UUID ((uint32_t *)0x1FFF7A10)
+
 void BootLoaderInit(void);
 
 static WORKING_AREA(waThreadUSBDMidi, 256);
@@ -113,19 +115,19 @@ void PExReceiveByte(unsigned char c) {
       else if (c == 's') { // disable binary protocol over USB Bulk
         state = 0;
         config.send_usb_bulk = 0;
+        chprintf((BaseSequentialStream * )&BDU1, "Stcs\r\n");
       }
       else if (c == 'V') { // firmware version
         state = 0;
         config.send_usb_bulk = 0;
-        // if (!chOQIsEmptyI(&BDU1.oqueue)) {
-        //   chThdSleepMilliseconds(1);
-        //   BDU1.oqueue.q_notify(&BDU1.oqueue);
-        // } else {
-          chprintf((BaseSequentialStream * )&BDU1, FWVERSION "\r\n");
-          //chOQWriteTimeout(&BDU1.oqueue, cmsg, 14, TIME_INFINITE);
-        // }
-      }
-      else
+        chSysLock();
+        if (!chOQIsEmptyI(&BDU1.oqueue)) {
+          chOQResetI(&BDU1.oqueue);
+        }
+        chSysUnlock();
+        chprintf((BaseSequentialStream *)&BDU1, FWVERSION " %08X%08X%08X\r\n",
+                 STM32_UUID[0], STM32_UUID[1], STM32_UUID[2]);
+      } else
         state = 0;
       break;
     }
