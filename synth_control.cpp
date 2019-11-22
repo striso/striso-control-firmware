@@ -59,7 +59,11 @@ class Button {
         int start_note_offset;
         float pres;
         float vpres;
-        float vpres_prev;
+        int last_pres = INT32_MAX;
+        int last_velo = INT32_MAX;
+        int last_rvelo = INT32_MAX;
+        int last_tilt = INT32_MAX;
+        int last_bend = INT32_MAX;
         int last_pitchbend = INT32_MAX;
         float but_x;
         float but_y;
@@ -453,8 +457,11 @@ class Instrument {
                     int pres = buttons[but].pres * pres_sensitivity;
                     if (pres > 127) pres = 127;
                     else if (pres < 0) pres = 0;
-                    midi_usb_MidiSend3(1, MIDI_POLY_PRESSURE | midi_channel_offset,
-                                    buttons[but].midinote, pres);
+                    if (pres != buttons[but].last_pres) {
+                        midi_usb_MidiSend3(1, MIDI_POLY_PRESSURE | midi_channel_offset,
+                                           buttons[but].midinote, pres);
+                        buttons[but].last_pres = pres;
+                    }
                 } else {
                     buttons[but].state = STATE_OFF;
                     int velo = 0 - buttons[but].vpres * rvelo_sensitivity;
@@ -628,6 +635,7 @@ class Instrument {
 
                 midi_usb_MidiSend3(1, MIDI_NOTE_ON | (midi_channel_offset + buttons[but].voice),
                                    buttons[but].midinote, velo);
+                buttons[but].last_velo = velo;
 #endif
 
                 return 0;
@@ -645,7 +653,6 @@ class Instrument {
 #endif
 
 #ifdef USE_MIDI_OUT
-            // TODO: pruning unnecessary messages
             //palTogglePad(GPIOA, GPIOA_LED1);
             int pres = buttons[but].pres * pres_sensitivity;
             if (pres > 127) pres = 127;
@@ -664,49 +671,66 @@ class Instrument {
                 pitchbend = 0;
             }
 
-            if (config.midi_pres == 1) {
-                midi_usb_MidiSend2(1, MIDI_CHANNEL_PRESSURE | (midi_channel_offset + buttons[but].voice),
-                                   pres);
-            } else if (config.midi_pres == 2) {
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
-                                   70, pres);
-            }
+            // pitchbend is also used for tuning and glissando
             if (pitchbend != buttons[but].last_pitchbend) {
                 midi_usb_MidiSend3(1, MIDI_PITCH_BEND | (midi_channel_offset + buttons[but].voice),
                                    pitchbend & 0x7f, (pitchbend >> 7) & 0x7f);
                 buttons[but].last_pitchbend = pitchbend;
             }
+            if (pres != buttons[but].last_pres) {
+                if (config.midi_pres == 1) {
+                    midi_usb_MidiSend2(1, MIDI_CHANNEL_PRESSURE | (midi_channel_offset + buttons[but].voice),
+                                    pres);
+                } else if (config.midi_pres == 2) {
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                                    70, pres);
+                }
+                buttons[but].last_pres = pres;
+            }
             if (config.midi_bend == 2) {
                 int bend = 64.5 + buttons[but].but_x * 64;
                 if (bend > 127) bend = 127;
                 else if (bend < 0) bend = 0;
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
-                                   71, bend);
+                if (bend != buttons[but].last_bend) {
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                                    71, bend);
+                    buttons[but].last_bend = bend;
+                }
             }
-            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
-                               74, tilt);
+            if (tilt != buttons[but].last_tilt) {
+                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                                74, tilt);
+                buttons[but].last_tilt = tilt;
+            }
             if (buttons[but].vpres > 0) {
                 int velo = 0 + buttons[but].vpres * velo_sensitivity;
                 if (velo > 127) velo = 127;
                 else if (velo < 0) velo = 0;
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
-                                   73, velo);
-                if (buttons[but].vpres_prev <= 0) {
+                if (velo != buttons[but].last_velo) {
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                                    73, velo);
+                    buttons[but].last_velo = velo;
+                }
+                if (buttons[but].last_rvelo > 0) {
                     midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
                                        72, 0);
+                    buttons[but].last_rvelo = 0;
                 }
             } else {
                 int rvelo = 0 - buttons[but].vpres * rvelo_sensitivity;
-                if (velo > 127) velo = 127;
-                else if (velo < 0) velo = 0;
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
-                                   72, velo);
-                if (buttons[but].vpres_prev > 0) {
+                if (rvelo > 127) rvelo = 127;
+                else if (rvelo < 0) rvelo = 0;
+                if (rvelo != buttons[but].last_rvelo) {
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                                    72, rvelo);
+                    buttons[but].last_rvelo = rvelo;
+                }
+                if (buttons[but].last_velo > 0) {
                     midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
                                        73, 0);
+                    buttons[but].last_velo = 0;
                 }
             }
-            buttons[but].vpres_prev = buttons[but].vpres;
 #endif
         }
 
