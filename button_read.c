@@ -270,7 +270,7 @@ float powf_schlick(const float a, const float b) {
 void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
   int32_t old_s = *s;
   *s = ((FILT-1) * (old_s + *v) + s_new) / FILT;
-  if (*s < 0) {
+  if (*s < 0 && old_s < 0) {
     *v = 0;
   } else if (*s >= INTERNAL_ONE) {
     *s = INTERNAL_ONE - 1;
