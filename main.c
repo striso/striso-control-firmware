@@ -124,9 +124,9 @@ static msg_t ThreadSend(void *arg) {
       }
 #endif
     }
-    else if (size == 0) {
-      chThdSleep(1);
-    }
+    // sleep to limit the output stream to 2 messages per millisecond (with CH_FREQUENCY = 2000)
+    // for compatibility with MIDI usb on Axoloti
+    chThdSleep(1);
   }
 
   return 0;
