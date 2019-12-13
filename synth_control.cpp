@@ -103,13 +103,21 @@ class MotionSensor {
                                     82, (64+(rot_z>>7))&0x7F);
                 } else {
                     // +(1<<5) for rounding correctly
-                    acc_x = __USAT(64+((acc_x+(1<<5))>>6), 7)&0x7F;
-                    acc_y = __USAT(64+((acc_y+(1<<5))>>6), 7)&0x7F;
-                    acc_z = __USAT(64+((acc_z+(1<<5))>>6), 7)&0x7F;
-                    acc_abs = __USAT(acc_abs>>5, 7)&0x7F;
-                    rot_x = __USAT(64+((rot_x+(1<<5))>>6), 7)&0x7F;
-                    rot_y = __USAT(64+((rot_y+(1<<5))>>6), 7)&0x7F;
-                    rot_z = __USAT(64+((rot_z+(1<<5))>>6), 7)&0x7F;
+                    int d; // calculate direction for hysteresis
+                    d = ((((last_acc_x-64)<<6) > acc_x)<<5)-(1<<4);
+                    acc_x = __USAT(64+((acc_x+(1<<5)+d)>>6), 7)&0x7F;
+                    d = ((((last_acc_y-64)<<6) > acc_y)<<5)-(1<<4);
+                    acc_y = __USAT(64+((acc_y+(1<<5)+d)>>6), 7)&0x7F;
+                    d = ((((last_acc_z-64)<<6) > acc_z)<<5)-(1<<4);
+                    acc_z = __USAT(64+((acc_z+(1<<5)+d)>>6), 7)&0x7F;
+                    d = (((last_acc_abs<<5) > acc_abs)<<4)-(1<<3);
+                    acc_abs = __USAT((acc_abs+(1<<4)+d)>>5, 7)&0x7F;
+                    d = ((((last_rot_x-64)<<6) > rot_x)<<5)-(1<<4);
+                    rot_x = __USAT(64+((rot_x+(1<<5)+d)>>6), 7)&0x7F;
+                    d = ((((last_rot_y-64)<<6) > rot_y)<<5)-(1<<4);
+                    rot_y = __USAT(64+((rot_y+(1<<5)+d)>>6), 7)&0x7F;
+                    d = ((((last_rot_z-64)<<6) > rot_z)<<5)-(1<<4);
+                    rot_z = __USAT(64+((rot_z+(1<<5)+d)>>6), 7)&0x7F;
                     if (acc_x != last_acc_x) {
                         midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
                                            16, acc_x);
@@ -757,17 +765,23 @@ class Instrument {
 
 #ifdef USE_MIDI_OUT
             //palTogglePad(GPIOA, GPIOA_LED1);
-            int pres = buttons[but].pres * pres_sensitivity;
+            // TODO: hysteresis for pitchbend and velocity
+            float d; // calculate direction for hysteresis
+            d = (buttons[but].last_pres > (buttons[but].pres * pres_sensitivity)) * 0.5 - 0.25;
+            int pres = buttons[but].pres * pres_sensitivity + 0.5 + d;
             if (pres > 127) pres = 127;
             else if (pres < 0) pres = 0;
 
-            int tilt = 64.5 + buttons[but].but_y * 64;
+            d = (buttons[but].last_tilt > (64 + buttons[but].but_y * 64)) * 0.5 - 0.25;
+            int tilt = 64 + buttons[but].but_y * 64 + 0.5 + d;
             if (tilt > 127) tilt = 127;
             else if (tilt < 0) tilt = 0;
 
-            int pitchbend = (bend_sensitivity * pow3(buttons[but].but_x)
+            float pb = (bend_sensitivity * pow3(buttons[but].but_x)
                 + buttons[but].note - buttons[but].midinote)
-              * (0x2000 / midi_bend_range) + 0x2000 + 0.5;
+                * (0x2000 / midi_bend_range) + 0x2000;
+            d = (buttons[but].last_pitchbend > pb) * 0.5 - 0.25;
+            int pitchbend = pb + 0.5 + d;
             if (pitchbend >= 0x4000) {
                 pitchbend = 0x3fff;
             } else if (pitchbend < 0) {
