@@ -48,6 +48,84 @@ typedef enum {
     STATE_ALT = 3,
 } button_state_t;
 
+class MotionSensor {
+    public:
+        int send_motion_time = 0;
+
+        MotionSensor() {}
+
+        void message(int* msg) {
+            // TODO: limit values (in motionsensor.c), optimize MIDI range
+            int acc_x = msg[0];
+            int acc_y = msg[1];
+            int acc_z = msg[2];
+            int acc_abs = msg[3];
+            int rot_x = msg[4];
+            int rot_y = msg[5];
+            int rot_z = msg[6];
+#ifdef USE_MIDI_OUT
+            if (config.send_motion_interval && (--send_motion_time <= 0)) {
+                send_motion_time = config.send_motion_interval;
+                if (config.send_motion_14bit) {
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    16|MIDI_C_LSB, acc_x&0x7F);
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    16, (64+(acc_x>>7))&0x7F);
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    17|MIDI_C_LSB, acc_y&0x7F);
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    17, (64+(acc_y>>7))&0x7F);
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    18|MIDI_C_LSB, acc_z&0x7F);
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    18, (64+(acc_z>>7))&0x7F);
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    19|MIDI_C_LSB, acc_abs&0x7F);
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    19, (acc_abs>>6)&0x7F);
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    80|MIDI_C_LSB, rot_x&0x7F);
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    80, (64+(rot_x>>7))&0x7F);
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    81|MIDI_C_LSB, rot_y&0x7F);
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    81, (64+(rot_y>>7))&0x7F);
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    82|MIDI_C_LSB, rot_z&0x7F);
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    82, (64+(rot_z>>7))&0x7F);
+                } else {
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    16, (64+(acc_x>>7))&0x7F);
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    17, (64+(acc_y>>7))&0x7F);
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    18, (64+(acc_z>>7))&0x7F);
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    19, (acc_abs>>6)&0x7F);
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    80, (64+(rot_x>>7))&0x7F);
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    81, (64+(rot_y>>7))&0x7F);
+                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                    82, (64+(rot_z>>7))&0x7F);
+                }
+            }
+#endif
+#ifdef USE_SYNTH_INTERFACE
+            int2float(msg, fmsg, size-2);
+            *(synth_interface.acc_abs) = acc_abs;
+            *(synth_interface.acc_x) = acc_x;
+            *(synth_interface.acc_y) = acc_y;
+            *(synth_interface.acc_z) = acc_z;
+            *(synth_interface.rot_x) = rot_x;
+            *(synth_interface.rot_y) = rot_y;
+            *(synth_interface.rot_z) = rot_z;
+#endif
+        }
+};
+
 class Button {
     public:
         int coord0;
@@ -778,6 +856,7 @@ int c1_dis[68] = {
     -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8};
 
 Instrument dis(c0_dis, c1_dis, BUTTONCOUNT, NULL);
+MotionSensor motion;
 
 void int2float(int *msg, float *fmsg, int n) {
     int c;
@@ -791,7 +870,6 @@ int synth_message(int size, int* msg) {
     int src = msg[0];
     int id = msg[1];
     msg = &msg[2];
-    static int send_motion_time = 0;
 
     if (src == ID_CONTROL) {
         if (id == IDC_ALT) {
@@ -814,74 +892,7 @@ int synth_message(int size, int* msg) {
         update_leds();
     }
     else if (src == ID_ACCEL && size == 9) {
-        // TODO: limit values (in motionsensor.c), optimize MIDI range
-        int acc_x = msg[0];
-        int acc_y = msg[1];
-        int acc_z = msg[2];
-        int acc_abs = msg[3];
-        int rot_x = msg[4];
-        int rot_y = msg[5];
-        int rot_z = msg[6];
-#ifdef USE_MIDI_OUT
-        if (config.send_motion_interval && (--send_motion_time <= 0)) {
-            send_motion_time = config.send_motion_interval;
-            if (config.send_motion_14bit) {
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   16|MIDI_C_LSB, acc_x&0x7F);
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   16, (64+(acc_x>>7))&0x7F);
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   17|MIDI_C_LSB, acc_y&0x7F);
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   17, (64+(acc_y>>7))&0x7F);
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   18|MIDI_C_LSB, acc_z&0x7F);
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   18, (64+(acc_z>>7))&0x7F);
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   19|MIDI_C_LSB, acc_abs&0x7F);
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   19, (acc_abs>>6)&0x7F);
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   80|MIDI_C_LSB, rot_x&0x7F);
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   80, (64+(rot_x>>7))&0x7F);
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   81|MIDI_C_LSB, rot_y&0x7F);
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   81, (64+(rot_y>>7))&0x7F);
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   82|MIDI_C_LSB, rot_z&0x7F);
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   82, (64+(rot_z>>7))&0x7F);
-            } else {
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   16, (64+(acc_x>>7))&0x7F);
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   17, (64+(acc_y>>7))&0x7F);
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   18, (64+(acc_z>>7))&0x7F);
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   19, (acc_abs>>6)&0x7F);
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   80, (64+(rot_x>>7))&0x7F);
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   81, (64+(rot_y>>7))&0x7F);
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                   82, (64+(rot_z>>7))&0x7F);
-            }
-        }
-#endif
-#ifdef USE_SYNTH_INTERFACE
-        int2float(msg, fmsg, size-2);
-        *(synth_interface.acc_abs) = acc_abs;
-        *(synth_interface.acc_x) = acc_x;
-        *(synth_interface.acc_y) = acc_y;
-        *(synth_interface.acc_z) = acc_z;
-        *(synth_interface.rot_x) = rot_x;
-        *(synth_interface.rot_y) = rot_y;
-        *(synth_interface.rot_z) = rot_z;
-#endif
+        motion.message(msg);
     }
     else if ((src == ID_DIS || src == ID_BAS) && size == 8 && id < BUTTONCOUNT && id >= 0) {
         // 6x14bit value, dis or bas button
