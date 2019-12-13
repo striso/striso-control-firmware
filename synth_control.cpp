@@ -764,8 +764,6 @@ class Instrument {
 #endif
 
 #ifdef USE_MIDI_OUT
-            //palTogglePad(GPIOA, GPIOA_LED1);
-            // TODO: hysteresis for pitchbend and velocity
             float d; // calculate direction for hysteresis
             d = (buttons[but].last_pres > (buttons[but].pres * pres_sensitivity)) * 0.5 - 0.25;
             int pres = buttons[but].pres * pres_sensitivity + 0.5 + d;
@@ -819,33 +817,36 @@ class Instrument {
                                 74, tilt);
                 buttons[but].last_tilt = tilt;
             }
-            if (buttons[but].vpres > 0) {
-                int velo = 0 + buttons[but].vpres * velo_sensitivity;
-                if (velo > 127) velo = 127;
-                else if (velo < 0) velo = 0;
-                if (velo != buttons[but].last_velo) {
-                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
-                                    73, velo);
-                    buttons[but].last_velo = velo;
-                }
-                if (buttons[but].last_rvelo > 0) {
-                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
-                                       72, 0);
-                    buttons[but].last_rvelo = 0;
-                }
-            } else {
-                int rvelo = 0 - buttons[but].vpres * rvelo_sensitivity;
-                if (rvelo > 127) rvelo = 127;
-                else if (rvelo < 0) rvelo = 0;
-                if (rvelo != buttons[but].last_rvelo) {
-                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
-                                    72, rvelo);
-                    buttons[but].last_rvelo = rvelo;
-                }
-                if (buttons[but].last_velo > 0) {
-                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
-                                       73, 0);
-                    buttons[but].last_velo = 0;
+            if (config.midi_contvelo) {
+                // TODO: hysteresis for continuous velocity
+                if (buttons[but].vpres > 0) {
+                    int velo = 0 + buttons[but].vpres * velo_sensitivity;
+                    if (velo > 127) velo = 127;
+                    else if (velo < 0) velo = 0;
+                    if (velo != buttons[but].last_velo) {
+                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                                        73, velo);
+                        buttons[but].last_velo = velo;
+                    }
+                    if (buttons[but].last_rvelo > 0) {
+                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                                        72, 0);
+                        buttons[but].last_rvelo = 0;
+                    }
+                } else {
+                    int rvelo = 0 - buttons[but].vpres * rvelo_sensitivity;
+                    if (rvelo > 127) rvelo = 127;
+                    else if (rvelo < 0) rvelo = 0;
+                    if (rvelo != buttons[but].last_rvelo) {
+                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                                        72, rvelo);
+                        buttons[but].last_rvelo = rvelo;
+                    }
+                    if (buttons[but].last_velo > 0) {
+                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                                        73, 0);
+                        buttons[but].last_velo = 0;
+                    }
                 }
             }
 #endif
