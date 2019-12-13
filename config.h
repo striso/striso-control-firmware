@@ -49,9 +49,9 @@ extern config_t config;
 
 #ifdef CONFIG_HERE
 config_t config = {
-  .message_interval = 10,     // interval in ms
+  .message_interval = 1,     // interval in ms
   .send_usb_bulk = 0,         // send Striso binary protocol
-  .send_motion_interval = 0,  // 0 = disable, else x10ms
+  .send_motion_interval = 1,  // 0 = disable, else x10ms
   .send_motion_14bit = 0,     // send 14 bit motion CC
   .send_button_14bit = 0,     // send 14 bit MPE CC
   .midi_pres = 1,             // 1 = Channel Pressure, 2 = CC 70
