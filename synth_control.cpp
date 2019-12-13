@@ -62,7 +62,6 @@ class MotionSensor {
         MotionSensor() {}
 
         void message(int* msg) {
-            // TODO: limit values (in motionsensor.c), optimize MIDI range
             int acc_x = msg[0];
             int acc_y = msg[1];
             int acc_z = msg[2];
@@ -103,13 +102,14 @@ class MotionSensor {
                     midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
                                     82, (64+(rot_z>>7))&0x7F);
                 } else {
-                    acc_x = (64+(acc_x>>7))&0x7F;
-                    acc_y = (64+(acc_y>>7))&0x7F;
-                    acc_z = (64+(acc_z>>7))&0x7F;
-                    acc_abs = (acc_abs>>6)&0x7F;
-                    rot_x = (64+(rot_x>>7))&0x7F;
-                    rot_y = (64+(rot_y>>7))&0x7F;
-                    rot_z = (64+(rot_z>>7))&0x7F;
+                    // +(1<<5) for rounding correctly
+                    acc_x = __USAT(64+((acc_x+(1<<5))>>6), 7)&0x7F;
+                    acc_y = __USAT(64+((acc_y+(1<<5))>>6), 7)&0x7F;
+                    acc_z = __USAT(64+((acc_z+(1<<5))>>6), 7)&0x7F;
+                    acc_abs = __USAT(acc_abs>>5, 7)&0x7F;
+                    rot_x = __USAT(64+((rot_x+(1<<5))>>6), 7)&0x7F;
+                    rot_y = __USAT(64+((rot_y+(1<<5))>>6), 7)&0x7F;
+                    rot_z = __USAT(64+((rot_z+(1<<5))>>6), 7)&0x7F;
                     if (acc_x != last_acc_x) {
                         midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
                                            16, acc_x);
