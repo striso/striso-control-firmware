@@ -51,6 +51,13 @@ typedef enum {
 class MotionSensor {
     public:
         int send_motion_time = 0;
+        int last_acc_x = INT32_MAX;
+        int last_acc_y = INT32_MAX;
+        int last_acc_z = INT32_MAX;
+        int last_acc_abs = INT32_MAX;
+        int last_rot_x = INT32_MAX;
+        int last_rot_y = INT32_MAX;
+        int last_rot_z = INT32_MAX;
 
         MotionSensor() {}
 
@@ -96,32 +103,50 @@ class MotionSensor {
                     midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
                                     82, (64+(rot_z>>7))&0x7F);
                 } else {
-                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                    16, (64+(acc_x>>7))&0x7F);
-                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                    17, (64+(acc_y>>7))&0x7F);
-                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                    18, (64+(acc_z>>7))&0x7F);
-                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                    19, (acc_abs>>6)&0x7F);
-                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                    80, (64+(rot_x>>7))&0x7F);
-                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                    81, (64+(rot_y>>7))&0x7F);
-                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                    82, (64+(rot_z>>7))&0x7F);
+                    acc_x = (64+(acc_x>>7))&0x7F;
+                    acc_y = (64+(acc_y>>7))&0x7F;
+                    acc_z = (64+(acc_z>>7))&0x7F;
+                    acc_abs = (acc_abs>>6)&0x7F;
+                    rot_x = (64+(rot_x>>7))&0x7F;
+                    rot_y = (64+(rot_y>>7))&0x7F;
+                    rot_z = (64+(rot_z>>7))&0x7F;
+                    if (acc_x != last_acc_x) {
+                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                           16, acc_x);
+                        last_acc_x = acc_x;
+                    }
+                    if (acc_y != last_acc_y) {
+                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                           17, acc_y);
+                        last_acc_y = acc_y;
+                    }
+                    if (acc_z != last_acc_z) {
+                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                           18, acc_z);
+                        last_acc_z = acc_z;
+                    }
+                    if (acc_abs != last_acc_abs) {
+                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                           19, acc_abs);
+                        last_acc_abs = acc_abs;
+                    }
+                    if (rot_x != last_rot_x) {
+                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                           80, rot_x);
+                        last_rot_x = rot_x;
+                    }
+                    if (rot_y != last_rot_y) {
+                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                           81, rot_y);
+                        last_rot_y = rot_y;
+                    }
+                    if (rot_z != last_rot_z) {
+                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                           82, rot_z);
+                        last_rot_z = rot_z;
+                    }
                 }
             }
-#endif
-#ifdef USE_SYNTH_INTERFACE
-            int2float(msg, fmsg, size-2);
-            *(synth_interface.acc_abs) = acc_abs;
-            *(synth_interface.acc_x) = acc_x;
-            *(synth_interface.acc_y) = acc_y;
-            *(synth_interface.acc_z) = acc_z;
-            *(synth_interface.rot_x) = rot_x;
-            *(synth_interface.rot_y) = rot_y;
-            *(synth_interface.rot_z) = rot_z;
 #endif
         }
 };
