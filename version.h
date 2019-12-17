@@ -2,7 +2,7 @@
 #define _VERSION_H
 
 #ifndef FWVERSION
-  #define FWVERSION "v0.3"
+  #define FWVERSION "v0.6 (no git)"
 #endif
 
 #endif
