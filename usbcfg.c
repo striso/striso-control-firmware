@@ -40,7 +40,7 @@ static const uint8_t vcom_device_descriptor_data[18] = {
                          0x57C0,        /* idProduct.                       */
                          0x0200,        /* bcdDevice.                       */
                          1,             /* iManufacturer.                   */
-                         5,             /* iProduct.                        */
+                         2,             /* iProduct.                        */
                          3,             /* iSerialNumber.                   */
                          1)             /* bNumConfigurations.              */
 };
@@ -59,7 +59,7 @@ static const uint8_t vcom_configuration_descriptor_data[]=
  USB_DESC_CONFIGURATION(140,            /* wTotalLength.                    */
                         0x03,          /* bNumInterfaces.                  */
                         0x01,          /* bConfigurationValue.             */
-                        5,             /* iConfiguration.                  */
+                        0,             /* iConfiguration.                  */
                         0xC0,          /* bmAttributes (self powered).     */
                         50),           /* bMaxPower (100mA).               */
  /* Interface Association Descriptor.*/
@@ -73,10 +73,10 @@ static const uint8_t vcom_configuration_descriptor_data[]=
   0x09, 0x24, 0x01, 0x00, 0x01, 0x09, 0x00, 0x01, 0x01, // CS Interface (audio)     CLASS SPECIFIC AC INTERFACE DESC
   0x09, 0x04, 0x01, 0x00, 0x02, 0x01, 0x03, 0x00, 0x00, // Interface 1              INTERFACE DESC (bLength bDescType bInterfaceNumber bAltSetting bNumEndpoints bInterfaceClass bInterfaceSubClass bInterfaceProtocol iInterface)
   0x07, 0x24, 0x01, 0x00, 0x01, 0x41, 0x00,             // CS Interface (midi)      CLASS SPECIFIC MS INTERFACE DESC
-  0x06, 0x24, 0x02, 0x01, 0x01, 0x05,                   //   IN  Jack 1 (emb)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
-  0x06, 0x24, 0x02, 0x02, 0x02, 0x06,                   //   IN  Jack 2 (ext)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
-  0x09, 0x24, 0x03, 0x01, 0x03, 0x01, 0x02, 0x01, 0x06, //   OUT Jack 3 (emb)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
-  0x09, 0x24, 0x03, 0x02, 0x04, 0x01, 0x01, 0x01, 0x02, //   OUT Jack 4 (ext)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
+  0x06, 0x24, 0x02, 0x01, 0x01, 0x00,                   //   IN  Jack 1 (emb)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
+  0x06, 0x24, 0x02, 0x02, 0x02, 0x00,                   //   IN  Jack 2 (ext)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
+  0x09, 0x24, 0x03, 0x01, 0x03, 0x01, 0x02, 0x01, 0x00, //   OUT Jack 3 (emb)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
+  0x09, 0x24, 0x03, 0x02, 0x04, 0x01, 0x01, 0x01, 0x00, //   OUT Jack 4 (ext)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
   0x09, 0x05, 0x01, 0x02, 0x40, 0x00, 0x00, 0x00, 0x00, // Endpoint OUT             ENDPOINT DESC  (bLength bDescType bEndpointAddr bmAttr wMaxPacketSize(2 bytes)  bInterval bRefresh bSyncAddress)
   0x05, 0x25, 0x01, 0x01, 0x01,                         //   CS EP IN  Jack         CLASS SPECIFIC MS BULK DATA EP DESC
   0x09, 0x05, 0x81, 0x02, 0x40, 0x00, 0x00, 0x00, 0x00, // Endpoint IN              ENDPOINT DESC  (bLength bDescType bEndpointAddr bmAttr wMaxPacketSize(2 bytes)  bInterval bRefresh bSyncAddress)
@@ -129,21 +129,19 @@ static const uint8_t vcom_string0[] = {
  * Vendor string.
  */
 static const uint8_t vcom_string1[] = {
-  USB_DESC_BYTE(16),                    /* bLength.                         */
+  USB_DESC_BYTE(14),                    /* bLength.                         */
   USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  'S', 0, 't', 0, 'r', 0, 'i', 0, 's', 0, 'o', 0, ' ', 0
+  'S', 0, 't', 0, 'r', 0, 'i', 0, 's', 0, 'o', 0,
 };
 
 /*
  * Device Description string.
  */
 static const uint8_t vcom_string2[] = {
-  USB_DESC_BYTE(56),                    /* bLength.                         */
+  USB_DESC_BYTE(26),                    /* bLength.                         */
   USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  'C', 0, 'h', 0, 'i', 0, 'b', 0, 'i', 0, 'O', 0, 'S', 0, '/', 0,
-  'R', 0, 'T', 0, ' ', 0, 'V', 0, 'i', 0, 'r', 0, 't', 0, 'u', 0,
-  'a', 0, 'l', 0, ' ', 0, 'C', 0, 'O', 0, 'M', 0, ' ', 0, 'P', 0,
-  'o', 0, 'r', 0, 't', 0
+  'S', 0, 't', 0, 'r', 0, 'i', 0, 's', 0, 'o', 0, ' ', 0,
+  'b', 0, 'o', 0, 'a', 0, 'r', 0, 'd', 0
 };
 
 /*
@@ -182,37 +180,12 @@ static const USBDescriptor descriptor_serial = {
  * Device Description string.
  */
 static const uint8_t vcom_string4[] = {
-  USB_DESC_BYTE(46),                    /* bLength.                         */
+  USB_DESC_BYTE(44),                    /* bLength.                         */
   USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
   'S', 0, 't', 0, 'r', 0, 'i', 0, 's', 0, 'o', 0, ' ', 0,
   'B', 0, 'u', 0, 'l', 0, 'k', 0, ' ', 0,
-  'I', 0, 'n', 0, 't', 0, 'e', 0, 'r', 0, 'f', 0, 'a', 0, 'c', 0,
-  'e', 0, ' ', 0
+  'I', 0, 'n', 0, 't', 0, 'e', 0, 'r', 0, 'f', 0, 'a', 0, 'c', 0, 'e', 0,
 };
-
-/*
- * Device Description string.
- */
-static const uint8_t vcom_string5[] = {
-  USB_DESC_BYTE(26),                    /* bLength.                         */
-  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  'S', 0, 't', 0, 'r', 0, 'i', 0, 's', 0, 'o', 0, ' ', 0,
-  'U', 0, 's', 0, 'b', 0, ' ', 0, ' ', 0
-};
-
-
-
-/*
- * Device Description string.
- */
-static const uint8_t vcom_string6[] = {
-  USB_DESC_BYTE(26),                    /* bLength.                         */
-  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  'S', 0, 't', 0, 'r', 0, 'i', 0, 's', 0, 'o', 0, ' ', 0,
-  'M', 0, 'I', 0, 'D', 0, 'I', 0, ' ', 0
-};
-
-
 
 /* WCID implementation reference:
  *  https://github.com/pbatard/libwdi/wiki/WCID-Devices
@@ -232,9 +205,7 @@ static const USBDescriptor vcom_strings[] = {
   {sizeof vcom_string1, vcom_string1},
   {sizeof vcom_string2, vcom_string2},
   {sizeof vcom_string3, vcom_string3},
-  {sizeof vcom_string4, vcom_string4},
-  {sizeof vcom_string5, vcom_string5},
-  {sizeof vcom_string6, vcom_string6}
+  {sizeof vcom_string4, vcom_string4}
 };
 
 static const USBDescriptor vcid_descriptor = {sizeof vcid_string, vcid_string};
@@ -259,7 +230,6 @@ static const USBDescriptor *get_descriptor(USBDriver *usbp,
                                            uint8_t dtype,
                                            uint8_t dindex,
                                            uint16_t lang) {
-
   (void)usbp;
   (void)lang;
   switch (dtype) {
@@ -274,11 +244,11 @@ static const USBDescriptor *get_descriptor(USBDriver *usbp,
       inttohex(*((uint32_t*)0x1FFF7A18),&descriptor_serial_string[2+32]);
       return &descriptor_serial;
     }
-    if (dindex < 9)
+    if (dindex < 5)
       return &vcom_strings[dindex];
+    if (dindex == 0xEE)
+      return &vcid_descriptor;
     break;
-  case 0xEE:
-    return &vcid_descriptor;
   }
   return NULL;
 }
