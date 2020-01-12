@@ -22,6 +22,7 @@ __process_stack_size__  = 0x0400;
 
 MEMORY
 {
+    fwversion : org = 0x800c000, len = 16k /* firmware version description for bootloader */
     flash : org = 0x08010000, len = 1M  /* first 32kB for bootloader */
     ram : org = 0x20000000, len = 112k
     ethram : org = 0x2001C000, len = 16k
@@ -38,6 +39,11 @@ SECTIONS
 {
     . = 0;
     _text = .;
+
+    .fwversion :
+    {
+        KEEP(*(.fwversion))
+    } > fwversion
 
     startup : ALIGN(16) SUBALIGN(16)
     {

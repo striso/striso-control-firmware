@@ -201,7 +201,7 @@ DLIBS =
 #
 
 # Git revision description, recompile anything depending on version.h on version change
-FWVERSION := $(shell git --no-pager show --date=short --format="%ad" --name-only | head -n1)_$(shell git --no-pager describe --tags --always --dirty)
+FWVERSION := $(shell git --no-pager show --date=short --format="%ad" --name-only | head -n1)_$(shell git --no-pager describe --tags --always --long --dirty)
 ifneq ($(FWVERSION), $(shell cat .git_version 2>&1))
 $(shell echo -n $(FWVERSION) > .git_version)
 $(shell touch version.h)
@@ -237,10 +237,10 @@ release: uf2
 prog: all
 	@# first put striso in DFU mode if it isn't (the - ignores striso_util failure)
 	@-./striso_util -d && echo Resetting Striso in DFU mode... && sleep 3
-	dfu-util -d0483:df11 -a0 -s0x8010000:leave -D $(BUILDDIR)/$(PROJECT).bin
+	dfu-util -d0483:df11 -a0 -s0x800c000:leave -D $(BUILDDIR)/$(PROJECT).bin
 
 uf2: all
-	python uf2/utils/uf2conv.py -c -f 0x2fca8c7e -b 0x08010000 $(BUILDDIR)/$(PROJECT).bin -o $(BUILDDIR)/$(PROJECT).uf2
+	python uf2/utils/uf2conv.py -c -f 0x2fca8c7e -b 0x0800c000 $(BUILDDIR)/$(PROJECT).bin -o $(BUILDDIR)/$(PROJECT).uf2
 
 prog_openocd: all
 	openocd -f "board/stm32f4discovery.cfg"  -c "program $(BUILDDIR)/$(PROJECT).elf reset exit"

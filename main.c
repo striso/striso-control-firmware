@@ -32,6 +32,7 @@
 #include "messaging.h"
 #include "motionsensor.h"
 #include "ws2812.h"
+#include "version.h"
 
 // next lines are necessary since synth_contol.cpp is included
 // and are copied from ChibiOS/testhal/STM32F4xx/RTC/main.c
@@ -49,6 +50,12 @@ int _kill(int pid, int sig) {
   errno = EINVAL;
   return -1;
 }
+
+/**
+ *  Firmware version description on fixed flash address for bootloader
+ */
+__attribute__ ((section(".fwversion"))) __attribute__((used))
+const char fwversion[] = "Firmware version: striso_control_" FWVERSION "\r\n";
 
 // force sqrtf to use FPU, the standard one apparently doesn't
 float vsqrtf(float op1) {
