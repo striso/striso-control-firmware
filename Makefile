@@ -76,7 +76,7 @@ include $(CHIBIOS)/os/ports/GCC/ARMCMx/STM32F4xx/port.mk
 include $(CHIBIOS)/os/kernel/kernel.mk
 
 # Define linker script file here
-LDSCRIPT= $(PORTLD)/STM32F407xG.ld
+LDSCRIPT= STM32F407xG_bootloader.ld
 #LDSCRIPT= $(PORTLD)/STM32F407xG_CCM.ld
 
 # C sources that can be compiled in ARM or THUMB mode depending on the global
@@ -231,10 +231,16 @@ include $(CHIBIOS)/os/ports/GCC/ARMCMx/rules.mk
 version:
 	@echo $(FWVERSION)
 
+release: uf2
+	cp $(BUILDDIR)/$(PROJECT).uf2 releases/$(PROJECT)_$(FWVERSION).uf2
+
 prog: all
 	@# first put striso in DFU mode if it isn't (the - ignores striso_util failure)
 	@-./striso_util -d && echo Resetting Striso in DFU mode... && sleep 3
-	dfu-util -d0483:df11 -a0 -s0x8000000:leave -D $(BUILDDIR)/$(PROJECT).bin
+	dfu-util -d0483:df11 -a0 -s0x8010000:leave -D $(BUILDDIR)/$(PROJECT).bin
+
+uf2: all
+	python uf2/utils/uf2conv.py -c -f 0x2fca8c7e -b 0x08010000 $(BUILDDIR)/$(PROJECT).bin -o $(BUILDDIR)/$(PROJECT).uf2
 
 prog_openocd: all
 	openocd -f "board/stm32f4discovery.cfg"  -c "program $(BUILDDIR)/$(PROJECT).elf reset exit"

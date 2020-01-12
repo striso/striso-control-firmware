@@ -28,6 +28,9 @@
 #ifndef _CHCONF_H_
 #define _CHCONF_H_
 
+/* Set vector table offset to after bootloader */
+#define CORTEX_VTOR_INIT 0x10000
+
 /*===========================================================================*/
 /**
  * @name Kernel parameters and options
