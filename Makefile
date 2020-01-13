@@ -87,6 +87,7 @@ CSRC = $(PORTSRC) \
 	$(PLATFORMSRC) \
 	$(BOARDSRC) \
 	$(CHIBIOS)/os/various/chprintf.c \
+	$(CHIBIOS)/os/various/syscalls.c \
 	usbcfg.c \
 	pconnection.c \
 	bulk_usb.c \
@@ -226,10 +227,8 @@ ULIBS = -lm
 # End of user defines
 ##############################################################################
 
-include $(CHIBIOS)/os/ports/GCC/ARMCMx/rules.mk
-
-version:
-	@echo $(FWVERSION)
+uf2: all
+	python uf2/utils/uf2conv.py -c -f 0x2fca8c7e -b 0x0800c000 $(BUILDDIR)/$(PROJECT).bin -o $(BUILDDIR)/$(PROJECT).uf2
 
 release: uf2
 	cp $(BUILDDIR)/$(PROJECT).uf2 releases/$(PROJECT)_$(FWVERSION).uf2
@@ -238,9 +237,6 @@ prog: all
 	@# first put striso in DFU mode if it isn't (the - ignores striso_util failure)
 	@-./striso_util -d && echo Resetting Striso in DFU mode... && sleep 3
 	dfu-util -d0483:df11 -a0 -s0x800c000:leave -D $(BUILDDIR)/$(PROJECT).bin
-
-uf2: all
-	python uf2/utils/uf2conv.py -c -f 0x2fca8c7e -b 0x0800c000 $(BUILDDIR)/$(PROJECT).bin -o $(BUILDDIR)/$(PROJECT).uf2
 
 prog_openocd: all
 	openocd -f "board/stm32f4discovery.cfg"  -c "program $(BUILDDIR)/$(PROJECT).elf reset exit"
@@ -265,3 +261,8 @@ gdb: all
 # Start GDB server for external use (e.g. Eclipse)
 openocd:
 	openocd -f "board/stm32f4discovery.cfg" -c "stm32f4x.cpu configure -rtos auto;"
+
+version:
+	@echo $(FWVERSION)
+
+include $(CHIBIOS)/os/ports/GCC/ARMCMx/rules.mk
