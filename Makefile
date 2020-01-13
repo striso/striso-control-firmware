@@ -68,7 +68,7 @@ endif
 PROJECT = striso_control
 
 # Imported source files and paths
-CHIBIOS = ../ChibiOS_2.6
+CHIBIOS = ChibiOS
 include board.mk
 include $(CHIBIOS)/os/hal/platforms/STM32F4xx/platform.mk
 include $(CHIBIOS)/os/hal/hal.mk

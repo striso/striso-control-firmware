@@ -1,3 +1,6 @@
 [submodule "uf2"]
 	path = uf2
 	url = https://github.com/Microsoft/uf2
+[submodule "ChibiOS"]
+	path = ChibiOS
+	url = https://github.com/ChibiOS/ChibiOS
