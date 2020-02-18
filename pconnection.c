@@ -36,8 +36,15 @@
 
 void BootLoaderInit(void);
 
-static WORKING_AREA(waThreadUSBDMidi, 256);
+#define BOOT_RTC_SIGNATURE 0x71a21877
+#define BOOT_RTC_REG (*(volatile uint32_t *)(RTC_BASE + 0x50))
+void reset_to_uf2_bootloader() {
+  BOOT_RTC_REG = BOOT_RTC_SIGNATURE;
 
+  NVIC_SystemReset();
+}
+
+static WORKING_AREA(waThreadUSBDMidi, 256);
 __attribute__((noreturn))
     static msg_t ThreadUSBDMidi(void *arg) {
   (void)arg;
@@ -50,6 +57,21 @@ __attribute__((noreturn))
     MidiInMsgHandler(MIDI_DEVICE_USB_DEVICE, ((r[0] & 0xF0) >> 4) + 1, r[1],
                     r[2], r[3]);
   }
+}
+
+static void cmd_threads(BaseSequentialStream *chp) {
+  static const char *states[] = {THD_STATE_NAMES};
+  Thread *tp;
+
+  chprintf(chp, "    addr    stack prio refs     state     time name\r\n");
+  tp = chRegFirstThread();
+  do {
+    chprintf(chp, "%.8lx %.8lx %4lu %4lu %9s %8lu %s\r\n",
+            (uint32_t)tp, (uint32_t)tp->p_ctx.r13,
+            (uint32_t)tp->p_prio, (uint32_t)(tp->p_refs - 1),
+            states[tp->p_state], (uint32_t)tp->p_time, tp->p_name);
+    tp = chRegNextThread(tp);
+  } while (tp != NULL);
 }
 
 void InitPConnection(void) {
@@ -100,8 +122,8 @@ void PExReceiveByte(unsigned char c) {
         state = 0;
       break;
     case 3:
+      state = 0;
       if (c == 'D') { // go to DFU mode
-        state = 0;
         ws2812_write_led(0, 64, 8, 0);
         ws2812_write_led(1, 64, 8, 0);
         ws2812_write_led(2, 64, 8, 0);
@@ -109,17 +131,22 @@ void PExReceiveByte(unsigned char c) {
         chThdSleepMilliseconds(2);
         exception_initiate_dfu();
       }
+      else if (c == 'B') { // go to bootloader
+        ws2812_write_led(0, 64, 8, 0);
+        ws2812_write_led(1, 64, 8, 0);
+        ws2812_write_led(2, 64, 8, 0);
+        chprintf((BaseSequentialStream * )&BDU1, "Resetting to UF2 bootloader mode...\r\n");
+        chThdSleepMilliseconds(2);
+        reset_to_uf2_bootloader();
+      }
       else if (c == 'S') { // enable binary protocol over USB Bulk
-        state = 0;
         config.send_usb_bulk = 1;
       }
       else if (c == 's') { // disable binary protocol over USB Bulk
-        state = 0;
         config.send_usb_bulk = 0;
         chprintf((BaseSequentialStream * )&BDU1, "Stcs\r\n");
       }
       else if (c == 'V') { // firmware version
-        state = 0;
         config.send_usb_bulk = 0;
         chSysLock();
         if (!chOQIsEmptyI(&BDU1.oqueue)) {
@@ -128,8 +155,10 @@ void PExReceiveByte(unsigned char c) {
         chSysUnlock();
         chprintf((BaseSequentialStream *)&BDU1, FWVERSION " %08X%08X%08X\r\n",
                  STM32_UUID[0], STM32_UUID[1], STM32_UUID[2]);
-      } else
-        state = 0;
+      }
+      else if (c == 'I') { // thread info
+        cmd_threads((BaseSequentialStream *)&BDU1);
+      }
       break;
     }
   }
