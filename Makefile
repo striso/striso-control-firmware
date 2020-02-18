@@ -66,6 +66,7 @@ endif
 
 # Define project name here
 PROJECT = striso_control
+BUILDDIR = build
 
 # Imported source files and paths
 CHIBIOS = ChibiOS
@@ -227,7 +228,10 @@ ULIBS = -lm
 # End of user defines
 ##############################################################################
 
-uf2: all
+# default: build .uf2 file for use with uf2 bootloader
+uf2: $(BUILDDIR)/$(PROJECT).uf2
+
+%.uf2: %.bin
 	python uf2/utils/uf2conv.py -c -f 0x2fca8c7e -b 0x0800c000 $(BUILDDIR)/$(PROJECT).bin -o $(BUILDDIR)/$(PROJECT).uf2
 
 release: uf2
