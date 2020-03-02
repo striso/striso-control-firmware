@@ -633,7 +633,7 @@ class Instrument {
                                     notegen0 * buttons[but].coord0 +
                                     notegen1 * buttons[but].coord1;
                 buttons[but].calculate();
-                buttons[but].timer = chTimeNow() + CLEAR_TIMER;
+                buttons[but].timer = chVTGetSystemTime() + CLEAR_TIMER;
 
                 if (but == portamento_button) {
                     // calculate average of portamento buttons
@@ -869,7 +869,7 @@ class Instrument {
         }
 
         void clear_dead_notes(void) {
-            systime_t now = chTimeNow();
+            systime_t now = chVTGetSystemTime();
 
             for (int n = 0; n < voicecount; n++) {
                 if (voices[n] >= 0 && buttons[voices[n]].state == STATE_ON

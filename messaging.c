@@ -65,7 +65,7 @@ int msgGet(int maxsize, int* msg) {
     chMtxUnlock();
     // wait for new messages to arrive
     chSysLock();
-    tpMsg = chThdSelf();
+    tpMsg = chThdGetSelfX();
     chSchGoSleepS(THD_STATE_SUSPENDED);
     chSysUnlock();
     chMtxLock(&msg_lock);

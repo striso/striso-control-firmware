@@ -202,12 +202,12 @@ static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   adcp->adc->CR2 |= ADC_CR2_SWSTART;
 
   // Wake up processing thread
-  chSysLockFromIsr();
+  chSysLockFromISR();
   if (tpReadButtons != NULL) {
     chSchReadyI(tpReadButtons);
     tpReadButtons = NULL;
   }
-  chSysUnlockFromIsr();
+  chSysUnlockFromISR();
 }
 
 /*
@@ -735,7 +735,7 @@ static msg_t ThreadReadButtons(void *arg) {
     }
 
     chSysLock();
-    tpReadButtons = chThdSelf();
+    tpReadButtons = chThdGetSelfX();
     chSchGoSleepS(THD_STATE_SUSPENDED);
     chSysUnlock();
   }
