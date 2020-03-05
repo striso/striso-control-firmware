@@ -593,7 +593,7 @@ void update_slider(void) {
 /*
  * Read out buttons and create messages.
  */
-static WORKING_AREA(waThreadReadButtons, 128);
+static THD_WORKING_AREA(waThreadReadButtons, 128);
 static msg_t ThreadReadButtons(void *arg) {
   (void)arg;
 

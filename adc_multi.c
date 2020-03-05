@@ -63,7 +63,7 @@ void adc_multi_lld_start(void) {
   /* If in stopped state then enables the ADC and DMA clocks.*/
   if (adcp->state == ADC_STOP) {
 #if STM32_ADC_USE_ADC1
-    bool_t b;
+    bool b;
     b = dmaStreamAllocate(adcp->dmastp,
                           STM32_ADC_ADC1_DMA_IRQ_PRIORITY,
                           (stm32_dmaisr_t)adc_lld_serve_rx_interrupt,

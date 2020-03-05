@@ -393,7 +393,7 @@ static const uint8_t msdescriptor1[] = {
 /* double NUL-terminated Unicode String (LE) Property name "{88BAE032-5A81-49f0-BC3D-A4FF138216D6}" */
 };
 
-static bool_t specialRequestsHook(USBDriver *usbp) {
+static bool specialRequestsHook(USBDriver *usbp) {
   if (
       (usbp->setup[0] == 0xC0) &&
       (usbp->setup[1] == 0x14) &&
@@ -433,7 +433,7 @@ const USBConfig usbcfg = {
   usb_event,
   get_descriptor,
   specialRequestsHook,
-  NULL
+  NULL /* sof_handler */
 };
 
 /*

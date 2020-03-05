@@ -108,6 +108,8 @@ include $(CHIBIOS)/os/rt/rt.mk
 include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v7m.mk
 # Auto-build files in ./source recursively.
 include $(CHIBIOS)/tools/mk/autobuild.mk
+# Other files (optional).
+include $(CHIBIOS)/os/hal/lib/streams/streams.mk # for chprintf
 
 # Define linker script file here
 #LDSCRIPT= $(STARTUPLD)/STM32F407xG.ld
@@ -116,7 +118,6 @@ LDSCRIPT= STM32F407xG_bootloader.ld
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
 CSRC = $(ALLCSRC) \
-	$(CHIBIOS)/os/various/chprintf.c \
 	$(CHIBIOS)/os/various/syscalls.c \
 	usbcfg.c \
 	pconnection.c \

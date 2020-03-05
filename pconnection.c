@@ -44,7 +44,7 @@ void reset_to_uf2_bootloader() {
   NVIC_SystemReset();
 }
 
-static WORKING_AREA(waThreadUSBDMidi, 256);
+static THD_WORKING_AREA(waThreadUSBDMidi, 256);
 __attribute__((noreturn))
     static msg_t ThreadUSBDMidi(void *arg) {
   (void)arg;
@@ -60,16 +60,21 @@ __attribute__((noreturn))
 }
 
 static void cmd_threads(BaseSequentialStream *chp) {
-  static const char *states[] = {THD_STATE_NAMES};
-  Thread *tp;
+  static const char *states[] = {CH_STATE_NAMES};
+  thread_t *tp;
 
-  chprintf(chp, "    addr    stack prio refs     state     time name\r\n");
+  chprintf(chp, "stklimit    stack     addr refs prio     state         name\r\n");
   tp = chRegFirstThread();
   do {
-    chprintf(chp, "%.8lx %.8lx %4lu %4lu %9s %8lu %s\r\n",
-            (uint32_t)tp, (uint32_t)tp->p_ctx.r13,
-            (uint32_t)tp->p_prio, (uint32_t)(tp->p_refs - 1),
-            states[tp->p_state], (uint32_t)tp->p_time, tp->p_name);
+#if (CH_DBG_ENABLE_STACK_CHECK == TRUE) || (CH_CFG_USE_DYNAMIC == TRUE)
+    uint32_t stklimit = (uint32_t)tp->wabase;
+#else
+    uint32_t stklimit = 0U;
+#endif
+    chprintf(chp, "%08lx %08lx %08lx %4lu %4lu %9s %12s\r\n",
+             stklimit, (uint32_t)tp->ctx.sp, (uint32_t)tp,
+             (uint32_t)tp->refs - 1, (uint32_t)tp->prio, states[tp->state],
+             tp->name == NULL ? "" : tp->name);
     tp = chRegNextThread(tp);
   } while (tp != NULL);
 }

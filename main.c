@@ -74,7 +74,7 @@ static SerialConfig ser_cfg = {
 /*
  * LED flash thread.
  */
-static WORKING_AREA(waThread1, 128);
+static THD_WORKING_AREA(waThread1, 128);
 static msg_t Thread1(void *arg) {
 
   (void)arg;
@@ -112,7 +112,7 @@ static void unpack(uint8_t *in, int *out, int n) {
 /*
  * Message send thread
  */
-static WORKING_AREA(waThreadSend, 256);
+static THD_WORKING_AREA(waThreadSend, 256);
 static msg_t ThreadSend(void *arg) {
 
   (void)arg;
