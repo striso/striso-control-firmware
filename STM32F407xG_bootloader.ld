@@ -15,7 +15,10 @@
 */
 
 /*
- * ST32F407xG memory setup.
+ * STM32F407xG memory setup with bootloader offset.
+ * You will have to
+ * 	#define CORTEX_VTOR_INIT 0x00010000
+ * in your projects chconf.h
  */
 __main_stack_size__     = 0x0400;
 __process_stack_size__  = 0x0400;
@@ -23,7 +26,7 @@ __process_stack_size__  = 0x0400;
 MEMORY
 {
     fwversion : org = 0x800c000, len = 16k /* firmware version description for bootloader */
-    flash : org = 0x08010000, len = 1M  /* first 32kB for bootloader */
+    flash : org = 0x08010000, len = 1M - 0x10000 /* offset for bootloader */
     ram : org = 0x20000000, len = 112k
     ethram : org = 0x2001C000, len = 16k
     ccmram : org = 0x10000000, len = 64k
