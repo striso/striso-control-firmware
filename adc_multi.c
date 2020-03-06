@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License along with
  * Striso Control. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "ch.h"
 #include "hal.h"
 
 #include "adc_multi.h"
@@ -63,22 +62,21 @@ void adc_multi_lld_start(void) {
   /* If in stopped state then enables the ADC and DMA clocks.*/
   if (adcp->state == ADC_STOP) {
 #if STM32_ADC_USE_ADC1
-    bool b;
-    b = dmaStreamAllocate(adcp->dmastp,
-                          STM32_ADC_ADC1_DMA_IRQ_PRIORITY,
-                          (stm32_dmaisr_t)adc_lld_serve_rx_interrupt,
-                          (void *)adcp);
-    chDbgAssert(!b, "adc_lld_start(), #1", "stream already allocated");
-    dmaStreamSetPeripheral(adcp->dmastp, &ADC->CDR);
-    rccEnableADC1(FALSE);
+    adcp->dmastp = dmaStreamAllocI(STM32_ADC_ADC1_DMA_STREAM,
+                                    STM32_ADC_ADC1_DMA_IRQ_PRIORITY,
+                                    (stm32_dmaisr_t)adc_lld_serve_rx_interrupt,
+                                    (void *)adcp);
+    osalDbgAssert(adcp->dmastp != NULL, "unable to allocate stream");
+    dmaStreamSetPeripheral(adcp->dmastp, &ADC->CDR); // ADC->CDR instead of ADC1->DR
+    rccEnableADC1(true);
 #endif /* STM32_ADC_USE_ADC1 */
 
 #if STM32_ADC_USE_ADC2
-    rccEnableADC2(FALSE);
+    rccEnableADC2(true);
 #endif /* STM32_ADC_USE_ADC2 */
 
 #if STM32_ADC_USE_ADC3
-    rccEnableADC3(FALSE);
+    rccEnableADC3(true);
 #endif /* STM32_ADC_USE_ADC3 */
 
     /* This is a common register but apparently it requires that at least one
@@ -112,7 +110,6 @@ void adc_multi_lld_start(void) {
   }
 }
 
-
 /**
  * @brief   Deactivates the ADC peripheral.
  *
@@ -125,23 +122,26 @@ void adc_multi_lld_stop(void) {
 
   /* If in ready state then disables the ADC clock.*/
   if (adcp->state == ADC_READY) {
-    dmaStreamRelease(adcp->dmastp);
+
+    dmaStreamFreeI(adcp->dmastp);
+    adcp->dmastp = NULL;
+
     adcp->adc->CR1 = 0;
     adcp->adc->CR2 = 0;
 
 #if STM32_ADC_USE_ADC1
     if (&ADCD1 == adcp)
-      rccDisableADC1(FALSE);
+      rccDisableADC1();
 #endif
 
 #if STM32_ADC_USE_ADC2
     if (&ADCD2 == adcp)
-      rccDisableADC2(FALSE);
+      rccDisableADC2();
 #endif
 
 #if STM32_ADC_USE_ADC3
     if (&ADCD3 == adcp)
-      rccDisableADC3(FALSE);
+      rccDisableADC3();
 #endif
   }
 }
@@ -177,7 +177,9 @@ void adc_multi_lld_start_conversion(ADCDriver *adcp) {
   adcp->adc->SR    = 0;
   adcp->adc->SMPR1 = grpp->smpr1;
   adcp->adc->SMPR2 = grpp->smpr2;
-  adcp->adc->SQR1  = grpp->sqr1;
+  adcp->adc->HTR   = grpp->htr;
+  adcp->adc->LTR   = grpp->ltr;
+  adcp->adc->SQR1  = grpp->sqr1 | ADC_SQR1_NUM_CH(grpp->num_channels);
   adcp->adc->SQR2  = grpp->sqr2;
   adcp->adc->SQR3  = grpp->sqr3;
 
@@ -197,23 +199,19 @@ void adc_multi_lld_start_conversion(ADCDriver *adcp) {
 /**
  * @brief   Configures and activates the ADC peripheral.
  *
- * @param[in] adcp      pointer to the @p ADCDriver object
- * @param[in] config    pointer to the @p ADCConfig object. Depending on
- *                      the implementation the value can be @p NULL.
- *
  * @api
  */
 void adcMultiStart(void) {
   ADCDriver *adcp = &ADCD1;
 
-  chSysLock();
-  chDbgAssert((adcp->state == ADC_STOP) || (adcp->state == ADC_READY),
-              "adcStart(), #1", "invalid state");
+  osalSysLock();
+  osalDbgAssert((adcp->state == ADC_STOP) || (adcp->state == ADC_READY),
+                "invalid state");
   adc_multi_lld_start();
   adcp->state = ADC_READY;
   ADCD2.state = ADC_READY;
   ADCD3.state = ADC_READY;
-  chSysUnlock();
+  osalSysUnlock();
 }
 
 /**
@@ -239,14 +237,12 @@ void adcMultiStartConversionI(ADCDriver *adcp,
                          adcsample_t *samples,
                          size_t depth) {
 
-  chDbgCheckClassI();
-  chDbgCheck((adcp != NULL) && (grpp != NULL) && (samples != NULL) &&
-             ((depth == 1) || ((depth & 1) == 0)),
-             "adcStartConversionI");
-  chDbgAssert((adcp->state == ADC_READY) ||
-              (adcp->state == ADC_COMPLETE) ||
-              (adcp->state == ADC_ERROR),
-              "adcStartConversionI(), #1", "not ready");
+  osalDbgCheckClassI();
+  osalDbgCheck((adcp != NULL) && (grpp != NULL) && (samples != NULL) &&
+               (depth > 0U) && ((depth == 1U) || ((depth & 1U) == 0U)));
+  osalDbgAssert((adcp->state == ADC_READY) ||
+                (adcp->state == ADC_ERROR),
+                "not ready");
 
   adcp->samples  = samples;
   adcp->depth    = depth;
@@ -278,7 +274,7 @@ void adcMultiStartConversion(
                         adcsample_t *samples,
                         size_t depth) {
 
-  chSysLock();
+  osalSysLock();
   // Multi-DMA mode tuning
   ADC->CCR |= ADC_CCR_DMA_0 | ADC_CCR_DDS \
               | (ADC_CCR_MULTI_TRIPLE | ADC_CCR_MULTI_REGULAR_SIMUL);
@@ -311,5 +307,5 @@ void adcMultiStartConversion(
   ADCD3.adc->CR2   = grpp3->cr2 | ADC_CR2_CONT  | ADC_CR2_ADON;
 
   adcMultiStartConversionI(&ADCD1, grpp1, samples, depth);
-  chSysUnlock();
+  osalSysUnlock();
 }
