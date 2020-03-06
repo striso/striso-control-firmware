@@ -311,28 +311,35 @@ static const USBEndpointConfig ep2config = {
 static void usb_event(USBDriver *usbp, usbevent_t event) {
 
   switch (event) {
-  case USB_EVENT_RESET:
-    return;
   case USB_EVENT_ADDRESS:
     return;
   case USB_EVENT_CONFIGURED:
     chSysLockFromISR();
+    if (usbp->state == USB_ACTIVE) {
 
-    /* Enables the endpoints specified into the configuration.
-       Note, this callback is invoked from an ISR so I-Class functions
-       must be used.*/
-    usbInitEndpointI(usbp, USBD1_DATA_REQUEST_EP, &ep1config);
-    usbInitEndpointI(usbp, USBD2_DATA_REQUEST_EP, &ep2config);
-
-    /* Resetting the state of the Bulk driver subsystem.*/
-    bduConfigureHookI(&BDU1);
-    mduConfigureHookI(&MDU1);
-
+      /* Enables the endpoints specified into the configuration.
+        Note, this callback is invoked from an ISR so I-Class functions
+        must be used.*/
+      usbInitEndpointI(usbp, USBD1_DATA_REQUEST_EP, &ep1config);
+      usbInitEndpointI(usbp, USBD2_DATA_REQUEST_EP, &ep2config);
+    } else if (usbp->state == USB_SELECTED) {
+      usbDisableEndpointsI(usbp);
+    }
     chSysUnlockFromISR();
     return;
+  case USB_EVENT_RESET:
+    /* Falls into.*/
+  case USB_EVENT_UNCONFIGURED:
+    /* Falls into.*/
   case USB_EVENT_SUSPEND:
+    chSysLockFromISR();
+    /* Disconnection event on suspend.*/
+    chSysUnlockFromISR();
     return;
   case USB_EVENT_WAKEUP:
+    chSysLockFromISR();
+    /* Connection event on wakeup.*/
+    chSysUnlockFromISR();
     return;
   case USB_EVENT_STALLED:
     return;
