@@ -26,7 +26,6 @@
  * @{
  */
 
-#include "ch.h"
 #include "hal.h"
 #include "bulk_usb.h"
 
@@ -48,94 +47,134 @@
 /* Driver local functions.                                                   */
 /*===========================================================================*/
 
+static bool bdu_start_receive(BulkUSBDriver *bdup) {
+  uint8_t *buf;
+
+  /* If the USB driver is not in the appropriate state then transactions
+     must not be started.*/
+  if ((usbGetDriverStateI(bdup->config->usbp) != USB_ACTIVE) ||
+      (bdup->state != BDU_READY)) {
+    return true;
+  }
+
+  /* Checking if there is already a transaction ongoing on the endpoint.*/
+  if (usbGetReceiveStatusI(bdup->config->usbp, bdup->config->bulk_in)) {
+    return true;
+  }
+
+  /* Checking if there is a buffer ready for incoming data.*/
+  buf = ibqGetEmptyBufferI(&bdup->ibqueue);
+  if (buf == NULL) {
+    return true;
+  }
+
+  /* Buffer found, starting a new transaction.*/
+  usbStartReceiveI(bdup->config->usbp, bdup->config->bulk_out,
+                   buf, BULK_USB_BUFFERS_SIZE);
+
+  return false;
+}
+
 /*
  * Interface implementation.
  */
 
-static size_t write(void *ip, const uint8_t *bp, size_t n) {
+static size_t _write(void *ip, const uint8_t *bp, size_t n) {
 
-  return chOQWriteTimeout(&((BulkUSBDriver *)ip)->oqueue, bp,
-                          n, TIME_INFINITE);
-}
-
-static size_t read(void *ip, uint8_t *bp, size_t n) {
-
-  return chIQReadTimeout(&((BulkUSBDriver *)ip)->iqueue, bp,
+  return obqWriteTimeout(&((BulkUSBDriver *)ip)->obqueue, bp,
                          n, TIME_INFINITE);
 }
 
-static msg_t put(void *ip, uint8_t b) {
+static size_t _read(void *ip, uint8_t *bp, size_t n) {
 
-  return chOQPutTimeout(&((BulkUSBDriver *)ip)->oqueue, b, TIME_INFINITE);
+  return ibqReadTimeout(&((BulkUSBDriver *)ip)->ibqueue, bp,
+                        n, TIME_INFINITE);
 }
 
-static msg_t get(void *ip) {
+static msg_t _put(void *ip, uint8_t b) {
 
-  return chIQGetTimeout(&((BulkUSBDriver *)ip)->iqueue, TIME_INFINITE);
+  return obqPutTimeout(&((BulkUSBDriver *)ip)->obqueue, b, TIME_INFINITE);
 }
 
-static msg_t putt(void *ip, uint8_t b, systime_t timeout) {
+static msg_t _get(void *ip) {
 
-  return chOQPutTimeout(&((BulkUSBDriver *)ip)->oqueue, b, timeout);
+  return ibqGetTimeout(&((BulkUSBDriver *)ip)->ibqueue, TIME_INFINITE);
 }
 
-static msg_t gett(void *ip, systime_t timeout) {
+static msg_t _putt(void *ip, uint8_t b, sysinterval_t timeout) {
 
-  return chIQGetTimeout(&((BulkUSBDriver *)ip)->iqueue, timeout);
+  return obqPutTimeout(&((BulkUSBDriver *)ip)->obqueue, b, timeout);
 }
 
-static size_t writet(void *ip, const uint8_t *bp, size_t n, systime_t time) {
+static msg_t _gett(void *ip, sysinterval_t timeout) {
 
-  return chOQWriteTimeout(&((BulkUSBDriver *)ip)->oqueue, bp, n, time);
+  return ibqGetTimeout(&((BulkUSBDriver *)ip)->ibqueue, timeout);
 }
 
-static size_t readt(void *ip, uint8_t *bp, size_t n, systime_t time) {
+static size_t _writet(void *ip, const uint8_t *bp, size_t n,
+                      sysinterval_t timeout) {
 
-  return chIQReadTimeout(&((BulkUSBDriver *)ip)->iqueue, bp, n, time);
+  return obqWriteTimeout(&((BulkUSBDriver *)ip)->obqueue, bp, n, timeout);
+}
+
+static size_t _readt(void *ip, uint8_t *bp, size_t n,
+                     sysinterval_t timeout) {
+
+  return ibqReadTimeout(&((BulkUSBDriver *)ip)->ibqueue, bp, n, timeout);
+}
+
+static msg_t _ctl(void *ip, unsigned int operation, void *arg) {
+  BulkUSBDriver *bdup = (BulkUSBDriver *)ip;
+
+  osalDbgCheck(bdup != NULL);
+
+  switch (operation) {
+  case CHN_CTL_NOP:
+    osalDbgCheck(arg == NULL);
+    break;
+  case CHN_CTL_INVALID:
+    osalDbgAssert(false, "invalid CTL operation");
+    break;
+  default:
+#if defined(BDU_LLD_IMPLEMENTS_CTL)
+    /* The BDU driver does not have a LLD but the application can use this
+       hook to implement extra controls by supplying this function.*/ 
+    extern msg_t bdu_lld_control(BulkUSBDriver *bdup,
+                                 unsigned int operation,
+                                 void *arg);
+    return bdu_lld_control(bdup, operation, arg);
+#else
+    break;
+#endif
+  }
+  return MSG_OK;
 }
 
 static const struct BulkUSBDriverVMT vmt = {
-  write, read, put, get,
-  putt, gett, writet, readt
+  (size_t)0,
+  _write, _read, _put, _get,
+  _putt, _gett, _writet, _readt,
+  _ctl
 };
 
 /**
- * @brief   Notification of data removed from the input queue.
+ * @brief   Notification of empty buffer released into the input buffers queue.
+ *
+ * @param[in] bqp       the buffers queue pointer.
  */
-static void inotify(GenericQueue *qp) {
-  size_t n, maxsize;
-  BulkUSBDriver *bdup = chQGetLink(qp);
-
-  /* If the USB driver is not in the appropriate state then transactions
-     must not be started.*/
-  if ((usbGetDriverStateI(bdup->config->usbp) != USB_ACTIVE) ||
-      (bdup->state != BDU_READY))
-    return;
-
-  /* If there is in the queue enough space to hold at least one packet and
-     a transaction is not yet started then a new transaction is started for
-     the available space.*/
-  maxsize = bdup->config->usbp->epc[bdup->config->bulk_out]->out_maxsize;
-  if (!usbGetReceiveStatusI(bdup->config->usbp, bdup->config->bulk_out) &&
-      ((n = chIQGetEmptyI(&bdup->iqueue)) >= maxsize)) {
-    chSysUnlock();
-
-    n = (n / maxsize) * maxsize;
-    usbPrepareQueuedReceive(bdup->config->usbp,
-                            bdup->config->bulk_out,
-                            &bdup->iqueue, n);
-
-    chSysLock();
-    usbStartReceiveI(bdup->config->usbp, bdup->config->bulk_out);
-  }
+static void ibnotify(io_buffers_queue_t *bqp) {
+  BulkUSBDriver *bdup = bqGetLinkX(bqp);
+  (void) bdu_start_receive(bdup);
 }
 
 /**
- * @brief   Notification of data inserted into the output queue.
+ * @brief   Notification of filled buffer inserted into the output buffers queue.
+ *
+ * @param[in] bqp       the buffers queue pointer.
  */
-static void onotify(GenericQueue *qp) {
+static void obnotify(io_buffers_queue_t *bqp) {
   size_t n;
-  BulkUSBDriver *bdup = chQGetLink(qp);
+  BulkUSBDriver *bdup = bqGetLinkX(bqp);
 
   /* If the USB driver is not in the appropriate state then transactions
      must not be started.*/
@@ -143,18 +182,13 @@ static void onotify(GenericQueue *qp) {
       (bdup->state != BDU_READY))
     return;
 
-  /* If there is not an ongoing transaction and the output queue contains
-     data then a new transaction is started.*/
-  if (!usbGetTransmitStatusI(bdup->config->usbp, bdup->config->bulk_in) &&
-      ((n = chOQGetFullI(&bdup->oqueue)) > 0)) {
-    chSysUnlock();
-
-    usbPrepareQueuedTransmit(bdup->config->usbp,
-                             bdup->config->bulk_in,
-                             &bdup->oqueue, n);
-
-    chSysLock();
-    usbStartTransmitI(bdup->config->usbp, bdup->config->bulk_in);
+  /* Checking if there is already a transaction ongoing on the endpoint.*/
+  if (!usbGetTransmitStatusI(bdup->config->usbp, bdup->config->bulk_in)) {
+    /* Getting a full buffer, a buffer is available for sure because this
+       callback is invoked when one has been inserted.*/
+    uint8_t *buf = obqGetFullBufferI(&bdup->obqueue, &n);
+    osalDbgAssert(buf != NULL, "buffer not found");
+    usbStartTransmitI(bdup->config->usbp, bdup->config->bulk_in, buf, n);
   }
 }
 
@@ -184,10 +218,14 @@ void bduInit(void) {
 void bduObjectInit(BulkUSBDriver *bdup) {
 
   bdup->vmt = &vmt;
-  chEvtInit(&bdup->event);
+  osalEventObjectInit(&bdup->event);
   bdup->state = BDU_STOP;
-  chIQInit(&bdup->iqueue, bdup->ib, BULK_USB_BUFFERS_SIZE, inotify, bdup);
-  chOQInit(&bdup->oqueue, bdup->ob, BULK_USB_BUFFERS_SIZE, onotify, bdup);
+  ibqObjectInit(&bdup->ibqueue, true, bdup->ib,
+                BULK_USB_BUFFERS_SIZE, BULK_USB_BUFFERS_NUMBER,
+                ibnotify, bdup);
+  obqObjectInit(&bdup->obqueue, true, bdup->ob,
+                BULK_USB_BUFFERS_SIZE, BULK_USB_BUFFERS_NUMBER,
+                obnotify, bdup);
 }
 
 /**
@@ -201,23 +239,22 @@ void bduObjectInit(BulkUSBDriver *bdup) {
 void bduStart(BulkUSBDriver *bdup, const BulkUSBConfig *config) {
   USBDriver *usbp = config->usbp;
 
-  chDbgCheck(bdup != NULL, "bduStart");
+  osalDbgCheck(bdup != NULL);
 
-  chSysLock();
-  chDbgAssert((bdup->state == BDU_STOP) || (bdup->state == BDU_READY),
-              "bduStart(), #1",
-              "invalid state");
-  usbp->in_params[config->bulk_in - 1]   = bdup;
-  usbp->out_params[config->bulk_out - 1] = bdup;
+  osalSysLock();
+  osalDbgAssert((bdup->state == BDU_STOP) || (bdup->state == BDU_READY),
+                "invalid state");
+  usbp->in_params[config->bulk_in - 1U]   = bdup;
+  usbp->out_params[config->bulk_out - 1U] = bdup;
   bdup->config = config;
   bdup->state = BDU_READY;
-  chSysUnlock();
+  osalSysUnlock();
 }
 
 /**
  * @brief   Stops the driver.
  * @details Any thread waiting on the driver's queues will be awakened with
- *          the message @p Q_RESET.
+ *          the message @p MSG_RESET.
  *
  * @param[in] bdup      pointer to a @p BulkUSBDriver object
  *
@@ -226,26 +263,68 @@ void bduStart(BulkUSBDriver *bdup, const BulkUSBConfig *config) {
 void bduStop(BulkUSBDriver *bdup) {
   USBDriver *usbp = bdup->config->usbp;
 
-  chDbgCheck(bdup != NULL, "sdStop");
+  osalDbgCheck(bdup != NULL);
 
-  chSysLock();
+  osalSysLock();
 
-  chDbgAssert((bdup->state == BDU_STOP) || (bdup->state == BDU_READY),
-              "bduStop(), #1",
-              "invalid state");
+  osalDbgAssert((bdup->state == BDU_STOP) || (bdup->state == BDU_READY),
+                "invalid state");
 
   /* Driver in stopped state.*/
-  usbp->in_params[bdup->config->bulk_in - 1]   = NULL;
-  usbp->out_params[bdup->config->bulk_out - 1] = NULL;
+  usbp->in_params[bdup->config->bulk_in - 1U]   = NULL;
+  usbp->out_params[bdup->config->bulk_out - 1U] = NULL;
+  bdup->config = NULL;
   bdup->state = BDU_STOP;
 
-  /* Queues reset in order to signal the driver stop to the application.*/
+  /* Enforces a disconnection.*/
   chnAddFlagsI(bdup, CHN_DISCONNECTED);
-  chIQResetI(&bdup->iqueue);
-  chOQResetI(&bdup->oqueue);
-  chSchRescheduleS();
+  ibqResetI(&bdup->ibqueue);
+  obqResetI(&bdup->obqueue);
+  osalOsRescheduleS();
 
-  chSysUnlock();
+  osalSysUnlock();
+}
+
+/**
+ * @brief   USB device suspend handler.
+ * @details Generates a @p CHN_DISCONNECT event and puts queues in
+ *          non-blocking mode, this way the application cannot get stuck
+ *          in the middle of an I/O operations.
+ * @note    If this function is not called from an ISR then an explicit call
+ *          to @p osalOsRescheduleS() in necessary afterward.
+ *
+ * @param[in] bdup      pointer to a @p BulkUSBDriver object
+ *
+ * @iclass
+ */
+void bduSuspendHookI(BulkUSBDriver *bdup) {
+
+  /* Avoiding events spam.*/
+  if(bqIsSuspendedX(&bdup->ibqueue) && bqIsSuspendedX(&bdup->obqueue)) {
+    return;
+  }
+  chnAddFlagsI(bdup, CHN_DISCONNECTED);
+  bqSuspendI(&bdup->ibqueue);
+  bqSuspendI(&bdup->obqueue);
+}
+
+/**
+ * @brief   USB device wakeup handler.
+ * @details Generates a @p CHN_CONNECT event and resumes normal queues
+ *          operations.
+ *
+ * @note    If this function is not called from an ISR then an explicit call
+ *          to @p osalOsRescheduleS() in necessary afterward.
+ *
+ * @param[in] bdup      pointer to a @p BulkUSBDriver object
+ *
+ * @iclass
+ */
+void bduWakeupHookI(BulkUSBDriver *bdup) {
+
+  chnAddFlagsI(bdup, CHN_CONNECTED);
+  bqResumeX(&bdup->ibqueue);
+  bqResumeX(&bdup->obqueue);
 }
 
 /**
@@ -256,16 +335,13 @@ void bduStop(BulkUSBDriver *bdup) {
  * @iclass
  */
 void bduConfigureHookI(BulkUSBDriver *bdup) {
-  USBDriver *usbp = bdup->config->usbp;
 
-  chIQResetI(&bdup->iqueue);
-  chOQResetI(&bdup->oqueue);
+  ibqResetI(&bdup->ibqueue);
+  bqResumeX(&bdup->ibqueue);
+  obqResetI(&bdup->obqueue);
+  bqResumeX(&bdup->obqueue);
   chnAddFlagsI(bdup, CHN_CONNECTED);
-
-  /* Starts the first OUT transaction immediately.*/
-  usbPrepareQueuedReceive(usbp, bdup->config->bulk_out, &bdup->iqueue,
-                          usbp->epc[bdup->config->bulk_out]->out_maxsize);
-  usbStartReceiveI(usbp, bdup->config->bulk_out);
+  (void) bdu_start_receive(bdup);
 }
 
 /**
@@ -280,13 +356,49 @@ void bduConfigureHookI(BulkUSBDriver *bdup) {
  *
  * @param[in] usbp      pointer to the @p USBDriver object
  * @return              The hook status.
- * @retval TRUE         Message handled internally.
- * @retval FALSE        Message not handled.
+ * @retval true         Message handled internally.
+ * @retval false        Message not handled.
  */
-bool_t bduRequestsHook(USBDriver *usbp) {
+bool bduRequestsHook(USBDriver *usbp) {
 
   (void)usbp;
   return FALSE;
+}
+
+/**
+ * @brief   SOF handler.
+ * @details The SOF interrupt is used for automatic flushing of incomplete
+ *          buffers pending in the output queue.
+ *
+ * @param[in] bdup      pointer to a @p BulkUSBDriver object
+ *
+ * @iclass
+ */
+void bduSOFHookI(BulkUSBDriver *bdup) {
+
+  /* If the USB driver is not in the appropriate state then transactions
+     must not be started.*/
+  if ((usbGetDriverStateI(bdup->config->usbp) != USB_ACTIVE) ||
+      (bdup->state != BDU_READY)) {
+    return;
+  }
+
+  /* If there is already a transaction ongoing then another one cannot be
+     started.*/
+  if (usbGetTransmitStatusI(bdup->config->usbp, bdup->config->bulk_in)) {
+    return;
+  }
+
+  /* Checking if there only a buffer partially filled, if so then it is
+     enforced in the queue and transmitted.*/
+  if (obqTryFlushI(&bdup->obqueue)) {
+    size_t n;
+    uint8_t *buf = obqGetFullBufferI(&bdup->obqueue, &n);
+
+    osalDbgAssert(buf != NULL, "queue is empty");
+
+    usbStartTransmitI(bdup->config->usbp, bdup->config->bulk_in, buf, n);
+  }
 }
 
 /**
@@ -295,44 +407,50 @@ bool_t bduRequestsHook(USBDriver *usbp) {
  *          data endpoint.
  *
  * @param[in] usbp      pointer to the @p USBDriver object
- * @param[in] ep        endpoint number
+ * @param[in] ep        IN endpoint number
  */
 void bduDataTransmitted(USBDriver *usbp, usbep_t ep) {
+  uint8_t *buf;
   size_t n;
-  BulkUSBDriver *bdup = usbp->in_params[ep - 1];
+  BulkUSBDriver *bdup = usbp->in_params[ep - 1U];
 
-  if (bdup == NULL)
+  if (bdup == NULL) {
     return;
+  }
 
-  chSysLockFromISR();
+  osalSysLockFromISR();
+
+  /* Signaling that space is available in the output queue.*/
   chnAddFlagsI(bdup, CHN_OUTPUT_EMPTY);
 
-  if ((n = chOQGetFullI(&bdup->oqueue)) > 0) {
+  /* Freeing the buffer just transmitted, if it was not a zero size packet.*/
+  if (usbp->epc[ep]->in_state->txsize > 0U) {
+    obqReleaseEmptyBufferI(&bdup->obqueue);
+  }
+
+  /* Checking if there is a buffer ready for transmission.*/
+  buf = obqGetFullBufferI(&bdup->obqueue, &n);
+
+  if (buf != NULL) {
     /* The endpoint cannot be busy, we are in the context of the callback,
        so it is safe to transmit without a check.*/
-    chSysUnlockFromISR();
-
-    usbPrepareQueuedTransmit(usbp, ep, &bdup->oqueue, n);
-
-    chSysLockFromISR();
-    usbStartTransmitI(usbp, ep);
+    usbStartTransmitI(usbp, ep, buf, n);
   }
-  else if ((usbp->epc[ep]->in_state->txsize > 0) &&
-           !(usbp->epc[ep]->in_state->txsize &
-             (usbp->epc[ep]->in_maxsize - 1))) {
+  else if ((usbp->epc[ep]->in_state->txsize > 0U) &&
+           ((usbp->epc[ep]->in_state->txsize &
+            ((size_t)usbp->epc[ep]->in_maxsize - 1U)) == 0U)) {
     /* Transmit zero sized packet in case the last one has maximum allowed
        size. Otherwise the recipient may expect more data coming soon and
        not return buffered data to app. See section 5.8.3 Bulk Transfer
        Packet Size Constraints of the USB Specification document.*/
-    chSysUnlockFromISR();
+    usbStartTransmitI(usbp, ep, usbp->setup, 0);
 
-    usbPrepareQueuedTransmit(usbp, ep, &bdup->oqueue, 0);
-
-    chSysLockFromISR();
-    usbStartTransmitI(usbp, ep);
+  }
+  else {
+    /* Nothing to transmit.*/
   }
 
-  chSysUnlockFromISR();
+  osalSysUnlockFromISR();
 }
 
 /**
@@ -341,34 +459,68 @@ void bduDataTransmitted(USBDriver *usbp, usbep_t ep) {
  *          data endpoint.
  *
  * @param[in] usbp      pointer to the @p USBDriver object
- * @param[in] ep        endpoint number
+ * @param[in] ep        OUT endpoint number
  */
 void bduDataReceived(USBDriver *usbp, usbep_t ep) {
-  size_t n, maxsize;
-  BulkUSBDriver *bdup = usbp->out_params[ep - 1];
+  size_t size;
+  BulkUSBDriver *bdup = usbp->out_params[ep - 1U];
 
-  if (bdup == NULL)
+  if (bdup == NULL) {
     return;
-
-  chSysLockFromISR();
-  chnAddFlagsI(bdup, CHN_INPUT_AVAILABLE);
-
-  /* Writes to the input queue can only happen when there is enough space
-     to hold at least one packet.*/
-  maxsize = usbp->epc[ep]->out_maxsize;
-  if ((n = chIQGetEmptyI(&bdup->iqueue)) >= maxsize) {
-    /* The endpoint cannot be busy, we are in the context of the callback,
-       so a packet is in the buffer for sure.*/
-    chSysUnlockFromISR();
-
-    n = (n / maxsize) * maxsize;
-    usbPrepareQueuedReceive(usbp, ep, &bdup->iqueue, n);
-
-    chSysLockFromISR();
-    usbStartReceiveI(usbp, ep);
   }
 
-  chSysUnlockFromISR();
+  osalSysLockFromISR();
+
+  /* Checking for zero-size transactions.*/
+  size = usbGetReceiveTransactionSizeX(bdup->config->usbp,
+                                       bdup->config->bulk_out);
+  if (size > (size_t)0) {
+    /* Signaling that data is available in the input queue.*/
+    chnAddFlagsI(bdup, CHN_INPUT_AVAILABLE);
+
+    /* Posting the filled buffer in the queue.*/
+    ibqPostFullBufferI(&bdup->ibqueue, size);
+  }
+
+  /* The endpoint cannot be busy, we are in the context of the callback,
+     so a packet is in the buffer for sure. Trying to get a free buffer
+     for the next transaction.*/
+  (void) bdu_start_receive(bdup);
+
+  osalSysUnlockFromISR();
+}
+
+/**
+ * @brief   Default data received callback.
+ * @details The application must use this function as callback for the IN
+ *          interrupt endpoint.
+ *
+ * @param[in] usbp      pointer to the @p USBDriver object
+ * @param[in] ep        endpoint number
+ */
+void bduInterruptTransmitted(USBDriver *usbp, usbep_t ep) {
+
+  (void)usbp;
+  (void)ep;
+}
+
+/**
+ * @brief   Control operation on a Bulk USB port.
+ *
+ * @param[in] usbp       pointer to a @p USBDriver object
+ * @param[in] operation control operation code
+ * @param[in,out] arg   operation argument
+ *
+ * @return              The control operation status.
+ * @retval MSG_OK       in case of success.
+ * @retval MSG_TIMEOUT  in case of operation timeout.
+ * @retval MSG_RESET    in case of operation reset.
+ *
+ * @api
+ */
+msg_t bduControl(USBDriver *usbp, unsigned int operation, void *arg) {
+
+  return _ctl((void *)usbp, operation, arg);
 }
 
 #endif /* HAL_USE_BULK_USB */

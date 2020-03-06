@@ -154,8 +154,8 @@ void PExReceiveByte(unsigned char c) {
       else if (c == 'V') { // firmware version
         config.send_usb_bulk = 0;
         chSysLock();
-        if (!chOQIsEmptyI(&BDU1.oqueue)) {
-          chOQResetI(&BDU1.oqueue);
+        if (!obqIsEmptyI(&BDU1.obqueue)) {
+          obqResetI(&BDU1.obqueue);
         }
         chSysUnlock();
         chprintf((BaseSequentialStream *)&BDU1, FWVERSION " %08X%08X%08X\r\n",

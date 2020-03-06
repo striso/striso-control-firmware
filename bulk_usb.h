@@ -35,7 +35,6 @@
 /* Driver constants.                                                         */
 /*===========================================================================*/
 
-
 /*===========================================================================*/
 /* Driver pre-compile time settings.                                         */
 /*===========================================================================*/
@@ -54,15 +53,22 @@
 #if !defined(BULK_USB_BUFFERS_SIZE) || defined(__DOXYGEN__)
 #define BULK_USB_BUFFERS_SIZE     256
 #endif
+
+/**
+ * @brief   Bulk USB number of buffers.
+ * @note    The default is 2 buffers.
+ */
+#if !defined(BULK_USB_BUFFERS_NUMBER) || defined(__DOXYGEN__)
+#define BULK_USB_BUFFERS_NUMBER   2
+#endif
 /** @} */
 
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */
 /*===========================================================================*/
 
-#if !HAL_USE_USB || !CH_USE_QUEUES || !CH_USE_EVENTS
-#error "Bulk USB Driver requires HAL_USE_USB, CH_USE_QUEUES, "
-       "CH_USE_EVENTS"
+#if HAL_USE_USB == FALSE
+#error "Bulk USB Driver requires HAL_USE_USB"
 #endif
 
 /*===========================================================================*/
@@ -110,14 +116,16 @@ typedef struct {
   _base_asynchronous_channel_data                                           \
   /* Driver state.*/                                                        \
   bdustate_t                state;                                          \
-  /* Input queue.*/                                                         \
-  InputQueue                iqueue;                                         \
+  /* Input buffers queue.*/                                                 \
+  input_buffers_queue_t     ibqueue;                                        \
   /* Output queue.*/                                                        \
-  OutputQueue               oqueue;                                         \
+  output_buffers_queue_t    obqueue;                                        \
   /* Input buffer.*/                                                        \
-  uint8_t                   ib[BULK_USB_BUFFERS_SIZE];                    \
+  uint8_t                   ib[BQ_BUFFER_SIZE(BULK_USB_BUFFERS_NUMBER,    \
+                                              BULK_USB_BUFFERS_SIZE)];    \
   /* Output buffer.*/                                                       \
-  uint8_t                   ob[BULK_USB_BUFFERS_SIZE];                    \
+  uint8_t                   ob[BQ_BUFFER_SIZE(BULK_USB_BUFFERS_NUMBER,    \
+                                              BULK_USB_BUFFERS_SIZE)];    \
   /* End of the mandatory fields.*/                                         \
   /* Current configuration data.*/                                          \
   const BulkUSBConfig     *config;
@@ -140,7 +148,7 @@ struct BulkUSBDriverVMT {
 /**
  * @extends BaseAsynchronousChannel
  *
- * @brief   Full duplex serial driver class.
+ * @brief   Full duplex bulk driver class.
  * @details This class extends @p BaseAsynchronousChannel by adding physical
  *          I/O queues.
  */
@@ -162,13 +170,18 @@ struct BulkUSBDriver {
 extern "C" {
 #endif
   void bduInit(void);
-  void bduObjectInit(BulkUSBDriver *sdp);
+  void bduObjectInit(BulkUSBDriver *bdup);
   void bduStart(BulkUSBDriver *bdup, const BulkUSBConfig *config);
   void bduStop(BulkUSBDriver *bdup);
+  void bduSuspendHookI(BulkUSBDriver *bdup);
+  void bduWakeupHookI(BulkUSBDriver *bdup);
   void bduConfigureHookI(BulkUSBDriver *bdup);
-  bool_t bduRequestsHook(USBDriver *usbp);
+  bool bduRequestsHook(USBDriver *usbp);
+  void bduSOFHookI(BulkUSBDriver *bdup);
   void bduDataTransmitted(USBDriver *usbp, usbep_t ep);
   void bduDataReceived(USBDriver *usbp, usbep_t ep);
+  void bduInterruptTransmitted(USBDriver *usbp, usbep_t ep);
+  msg_t bduControl(USBDriver *usbp, unsigned int operation, void *arg);
 #ifdef __cplusplus
 }
 #endif
