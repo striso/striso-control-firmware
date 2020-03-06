@@ -172,7 +172,7 @@ static adcsample_t samples_bas0[102] = {0};
 static adcsample_t samples_bas1[102] = {0};
 static adcsample_t* samples_bas[2] = {samples_bas0, samples_bas1};
 
-static Thread *tpReadButtons = NULL;
+static thread_t *tpReadButtons = NULL;
 
 static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
   (void)adcp;
@@ -736,7 +736,7 @@ static msg_t ThreadReadButtons(void *arg) {
 
     chSysLock();
     tpReadButtons = chThdGetSelfX();
-    chSchGoSleepS(THD_STATE_SUSPENDED);
+    chSchGoSleepS(CH_STATE_SUSPENDED);
     chSysUnlock();
   }
   return 0;

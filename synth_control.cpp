@@ -34,7 +34,7 @@ extern "C" {
 
 #define VOL_TICK (0.0005) // (1.0 / (SAMPLINGFREQ / CHANNEL_BUFFER_SIZE) / 0.5) // decay time of estimated volume
 #define VOL_TICK_FACT (0.998) // 0.5**(1/(SAMPLINGFREQ / CHANNEL_BUFFER_SIZE)/0.1)
-#define CLEAR_TIMER MS2ST(500) // interval to clear dead notes
+#define CLEAR_TIMER TIME_MS2I(500) // interval to clear dead notes
 
 // Schlick power function, approximation of power function
 float powf_schlick(const float a, const float b)

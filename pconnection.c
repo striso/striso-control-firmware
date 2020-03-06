@@ -48,7 +48,7 @@ static THD_WORKING_AREA(waThreadUSBDMidi, 256);
 __attribute__((noreturn))
     static msg_t ThreadUSBDMidi(void *arg) {
   (void)arg;
-#if CH_USE_REGISTRY
+#if CH_CFG_USE_REGISTRY
   chRegSetThreadName("usbdmidi");
 #endif
   uint8_t r[4];

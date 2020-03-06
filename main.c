@@ -135,7 +135,7 @@ static msg_t ThreadSend(void *arg) {
 #ifdef USE_USB
       if (config.send_usb_bulk) {
         //chSequentialStreamWrite((BaseSequentialStream *)&BDU1,cmsg, 2+(size-2)*2);
-        chOQWriteTimeout(&BDU1.oqueue, cmsg, 2+(size-2)*2, TIME_IMMEDIATE);
+        obqWriteTimeout(&BDU1.obqueue, cmsg, 2+(size-2)*2, TIME_IMMEDIATE);
       }
 #endif
     }

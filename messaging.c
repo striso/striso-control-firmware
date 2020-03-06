@@ -23,8 +23,8 @@
 static int msg_buffer[BUFFERSIZE];
 static int msg_read = 0;
 static int msg_write = 0;
-static Mutex msg_lock;
-static Thread *tpMsg = NULL;
+static mutex_t msg_lock;
+static thread_t *tpMsg = NULL;
 int underruns = 0;
 
 int msgSend(int size, int* msg) {
@@ -39,14 +39,14 @@ int msgSend(int size, int* msg) {
       //msg_read = (msg_read + msg_buffer[msg_read] + 1) % BUFFERSIZE;
       msg_write = old_write;
       underruns++;
-      chMtxUnlock();
+      chMtxUnlock(&msg_lock);
       return 1;
     }
     msg_buffer[msg_write] = msg[n];
     msg_write = (msg_write + 1) % BUFFERSIZE;
   }
 
-  chMtxUnlock();
+  chMtxUnlock(&msg_lock);
 
   // Wake up msgGet thread
   chSysLock();
@@ -62,11 +62,11 @@ int msgGet(int maxsize, int* msg) {
   chMtxLock(&msg_lock);
 
   if (msg_read == msg_write) {
-    chMtxUnlock();
+    chMtxUnlock(&msg_lock);
     // wait for new messages to arrive
     chSysLock();
     tpMsg = chThdGetSelfX();
-    chSchGoSleepS(THD_STATE_SUSPENDED);
+    chSchGoSleepS(CH_STATE_SUSPENDED);
     chSysUnlock();
     chMtxLock(&msg_lock);
   }
@@ -74,7 +74,7 @@ int msgGet(int maxsize, int* msg) {
   int size = msg_buffer[msg_read];
 
   if (size > maxsize) {
-    chMtxUnlock();
+    chMtxUnlock(&msg_lock);
     return -10;
   }
   msg_read = (msg_read + 1) % BUFFERSIZE;
@@ -82,14 +82,14 @@ int msgGet(int maxsize, int* msg) {
   int n;
   for (n = 0; n < size; n++) {
     if (msg_read == msg_write) {
-      chMtxUnlock();
+      chMtxUnlock(&msg_lock);
       return -1;
     }
     msg[n] = msg_buffer[msg_read];
     msg_read = (msg_read + 1) % BUFFERSIZE;
   }
 
-  chMtxUnlock();
+  chMtxUnlock(&msg_lock);
   return size;
 }
 
