@@ -1,22 +1,22 @@
 /*
- ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
- 2011,2012,2013 Giovanni Di Sirio.
+    ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
+                 2011,2012,2013 Giovanni Di Sirio.
 
- This file is part of ChibiOS/RT.
+    This file is part of ChibiOS/RT.
 
- ChibiOS/RT is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation; either version 3 of the License, or
- (at your option) any later version.
+    ChibiOS/RT is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 3 of the License, or
+    (at your option) any later version.
 
- ChibiOS/RT is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
+    ChibiOS/RT is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
- You should have received a copy of the GNU General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 /**
  * @file    midi_usb.c
@@ -26,7 +26,6 @@
  * @{
  */
 
-#include "ch.h"
 #include "hal.h"
 #include "midi_usb.h"
 #include "usbcfg.h"
@@ -51,113 +50,149 @@
 /* Driver local functions.                                                   */
 /*===========================================================================*/
 
+static bool mdu_start_receive(MidiUSBDriver *mdup) {
+  uint8_t *buf;
+
+  /* If the USB driver is not in the appropriate state then transactions
+     must not be started.*/
+  if ((usbGetDriverStateI(mdup->config->usbp) != USB_ACTIVE) ||
+      (mdup->state != MDU_READY)) {
+    return true;
+  }
+
+  /* Checking if there is already a transaction ongoing on the endpoint.*/
+  if (usbGetReceiveStatusI(mdup->config->usbp, mdup->config->bulk_in)) {
+    return true;
+  }
+
+  /* Checking if there is a buffer ready for incoming data.*/
+  buf = ibqGetEmptyBufferI(&mdup->ibqueue);
+  if (buf == NULL) {
+    return true;
+  }
+
+  /* Buffer found, starting a new transaction.*/
+  usbStartReceiveI(mdup->config->usbp, mdup->config->bulk_out,
+                   buf, MIDI_USB_BUFFERS_SIZE);
+
+  return false;
+}
+
 /*
  * Interface implementation.
  */
 
-static size_t write(void *ip, const uint8_t *bp, size_t n) {
+static size_t _write(void *ip, const uint8_t *bp, size_t n) {
 
-  return chOQWriteTimeout(&((MidiUSBDriver *)ip)->oqueue, bp, n, TIME_INFINITE);
+  return obqWriteTimeout(&((MidiUSBDriver *)ip)->obqueue, bp,
+                         n, TIME_INFINITE);
 }
 
-static size_t read(void *ip, uint8_t *bp, size_t n) {
+static size_t _read(void *ip, uint8_t *bp, size_t n) {
 
-  return chIQReadTimeout(&((MidiUSBDriver *)ip)->iqueue, bp, n, TIME_INFINITE);
+  return ibqReadTimeout(&((MidiUSBDriver *)ip)->ibqueue, bp,
+                        n, TIME_INFINITE);
 }
 
-static msg_t put(void *ip, uint8_t b) {
+static msg_t _put(void *ip, uint8_t b) {
 
-  return chOQPutTimeout(&((MidiUSBDriver *)ip)->oqueue, b, TIME_INFINITE);
+  return obqPutTimeout(&((MidiUSBDriver *)ip)->obqueue, b, TIME_INFINITE);
 }
 
-static msg_t get(void *ip) {
+static msg_t _get(void *ip) {
 
-  return chIQGetTimeout(&((MidiUSBDriver *)ip)->iqueue, TIME_INFINITE);
+  return ibqGetTimeout(&((MidiUSBDriver *)ip)->ibqueue, TIME_INFINITE);
 }
 
-static msg_t putt(void *ip, uint8_t b, systime_t timeout) {
+static msg_t _putt(void *ip, uint8_t b, sysinterval_t timeout) {
 
-  return chOQPutTimeout(&((MidiUSBDriver *)ip)->oqueue, b, timeout);
+  return obqPutTimeout(&((MidiUSBDriver *)ip)->obqueue, b, timeout);
 }
 
-static msg_t gett(void *ip, systime_t timeout) {
+static msg_t _gett(void *ip, sysinterval_t timeout) {
 
-  return chIQGetTimeout(&((MidiUSBDriver *)ip)->iqueue, timeout);
+  return ibqGetTimeout(&((MidiUSBDriver *)ip)->ibqueue, timeout);
 }
 
-static size_t writet(void *ip, const uint8_t *bp, size_t n, systime_t time) {
+static size_t _writet(void *ip, const uint8_t *bp, size_t n,
+                      sysinterval_t timeout) {
 
-  return chOQWriteTimeout(&((MidiUSBDriver *)ip)->oqueue, bp, n, time);
+  return obqWriteTimeout(&((MidiUSBDriver *)ip)->obqueue, bp, n, timeout);
 }
 
-static size_t readt(void *ip, uint8_t *bp, size_t n, systime_t time) {
+static size_t _readt(void *ip, uint8_t *bp, size_t n,
+                     sysinterval_t timeout) {
 
-  return chIQReadTimeout(&((MidiUSBDriver *)ip)->iqueue, bp, n, time);
+  return ibqReadTimeout(&((MidiUSBDriver *)ip)->ibqueue, bp, n, timeout);
 }
 
-static const struct MidiUSBDriverVMT vmt = {write, read, put, get, putt, gett,
-                                            writet, readt};
+static msg_t _ctl(void *ip, unsigned int operation, void *arg) {
+  MidiUSBDriver *mdup = (MidiUSBDriver *)ip;
 
-/**
- * @brief   Notification of data removed from the input queue.
- */
-static void inotify(GenericQueue *qp) {
-  size_t n, maxsize;
-  MidiUSBDriver *mdup = chQGetLink(qp);
+  osalDbgCheck(mdup != NULL);
 
-  /* If the USB driver is not in the appropriate state then transactions
-   must not be started.*/
-  if ((usbGetDriverStateI(mdup->config->usbp) != USB_ACTIVE)
-      || (mdup->state != MDU_READY))
-    return;
-
-  /* If there is in the queue enough space to hold at least one packet and
-   a transaction is not yet started then a new transaction is started for
-   the available space.*/
-  maxsize = mdup->config->usbp->epc[mdup->config->bulk_out]->out_maxsize;
-  if (!usbGetReceiveStatusI(mdup->config->usbp, mdup->config->bulk_out) && ((n =
-      chIQGetEmptyI(&mdup->iqueue)) >= maxsize)) {
-    chSysUnlock()
-    ;
-
-    n = (n / maxsize) * maxsize;
-    usbPrepareQueuedReceive(mdup->config->usbp, mdup->config->bulk_out,
-                            &mdup->iqueue, n);
-
-    chSysLock()
-    ;
-    usbStartReceiveI(mdup->config->usbp, mdup->config->bulk_out);
+  switch (operation) {
+  case CHN_CTL_NOP:
+    osalDbgCheck(arg == NULL);
+    break;
+  case CHN_CTL_INVALID:
+    osalDbgAssert(false, "invalid CTL operation");
+    break;
+  default:
+#if defined(MDU_LLD_IMPLEMENTS_CTL)
+    /* The MDU driver does not have a LLD but the application can use this
+       hook to implement extra controls by supplying this function.*/ 
+    extern msg_t mdu_lld_control(MidiUSBDriver *mdup,
+                                 unsigned int operation,
+                                 void *arg);
+    return mdu_lld_control(mdup, operation, arg);
+#else
+    break;
+#endif
   }
+  return MSG_OK;
+}
+
+static const struct MidiUSBDriverVMT vmt = {
+  (size_t)0,
+  _write, _read, _put, _get,
+  _putt, _gett, _writet, _readt,
+  _ctl
+};
+
+/**
+ * @brief   Notification of empty buffer released into the input buffers queue.
+ *
+ * @param[in] bqp       the buffers queue pointer.
+ */
+static void ibnotify(io_buffers_queue_t *bqp) {
+  MidiUSBDriver *mdup = bqGetLinkX(bqp);
+  (void) mdu_start_receive(mdup);
 }
 
 /**
- * @brief   Notification of data inserted into the output queue.
+ * @brief   Notification of filled buffer inserted into the output buffers queue.
+ *
+ * @param[in] bqp       the buffers queue pointer.
  */
-static void onotify(GenericQueue *qp) {
+static void obnotify(io_buffers_queue_t *bqp) {
   size_t n;
-  MidiUSBDriver *mdup = chQGetLink(qp);
+  MidiUSBDriver *mdup = bqGetLinkX(bqp);
 
   /* If the USB driver is not in the appropriate state then transactions
-   must not be started.*/
-  if ((usbGetDriverStateI(mdup->config->usbp) != USB_ACTIVE)
-      || (mdup->state != MDU_READY))
+     must not be started.*/
+  if ((usbGetDriverStateI(mdup->config->usbp) != USB_ACTIVE) ||
+      (mdup->state != MDU_READY))
     return;
 
-  /* If there is not an ongoing transaction and the output queue contains
-   data then a new transaction is started.*/
+  /* Checking if there is already a transaction ongoing on the endpoint.*/
   if (!usbGetTransmitStatusI(mdup->config->usbp, mdup->config->bulk_in)) {
-    n = chOQGetFullI(&mdup->oqueue);
-    if ((n > 0) && !(n & 3)) {
-
-      chSysUnlock()
-      ;
-
-      usbPrepareQueuedTransmit(mdup->config->usbp, mdup->config->bulk_in,
-                               &mdup->oqueue, n);
-
-      chSysLock()
-      ;
-      usbStartTransmitI(mdup->config->usbp, mdup->config->bulk_in);
+    /* Getting a full buffer, a buffer is available for sure because this
+       callback is invoked when one has been inserted.*/
+    uint8_t *buf = obqGetFullBufferI(&mdup->obqueue, &n);
+    osalDbgAssert(buf != NULL, "buffer not found");
+    if (!(n & 3)) { // skip if not a multiple of 4 bytes
+      usbStartTransmitI(mdup->config->usbp, mdup->config->bulk_in, buf, n);
     }
   }
 }
@@ -167,7 +202,7 @@ static void onotify(GenericQueue *qp) {
 /*===========================================================================*/
 
 /**
- * @brief   Bulk USB Driver initialization.
+ * @brief   Midi USB Driver initialization.
  * @note    This function is implicitly invoked by @p halInit(), there is
  *          no need to explicitly initialize the driver.
  *
@@ -188,95 +223,135 @@ void mduInit(void) {
 void mduObjectInit(MidiUSBDriver *mdup) {
 
   mdup->vmt = &vmt;
-  chEvtInit(&mdup->event);
+  osalEventObjectInit(&mdup->event);
   mdup->state = MDU_STOP;
-  chIQInit(&mdup->iqueue, mdup->ib, MIDI_USB_BUFFERS_SIZE, inotify, mdup);
-  chOQInit(&mdup->oqueue, mdup->ob, MIDI_USB_BUFFERS_SIZE, onotify, mdup);
+  ibqObjectInit(&mdup->ibqueue, true, mdup->ib,
+                MIDI_USB_BUFFERS_SIZE, MIDI_USB_BUFFERS_NUMBER,
+                ibnotify, mdup);
+  obqObjectInit(&mdup->obqueue, true, mdup->ob,
+                MIDI_USB_BUFFERS_SIZE, MIDI_USB_BUFFERS_NUMBER,
+                obnotify, mdup);
 }
 
 /**
  * @brief   Configures and starts the driver.
  *
- * @param[in] bdup      pointer to a @p MidiUSBDriver object
- * @param[in] config    the Bulk USB driver configuration
+ * @param[in] mdup      pointer to a @p MidiUSBDriver object
+ * @param[in] config    the Midi USB driver configuration
  *
  * @api
  */
 void mduStart(MidiUSBDriver *mdup, const MidiUSBConfig *config) {
   USBDriver *usbp = config->usbp;
 
-  chDbgCheck(mdup != NULL, "mduStart");
+  osalDbgCheck(mdup != NULL);
 
-  chSysLock()
-  ;
-  chDbgAssert((mdup->state == MDU_STOP) || (mdup->state == MDU_READY),
-              "mduStart(), #1", "invalid state");
-  usbp->in_params[config->bulk_in - 1] = mdup;
-  usbp->out_params[config->bulk_out - 1] = mdup;
+  osalSysLock();
+  osalDbgAssert((mdup->state == MDU_STOP) || (mdup->state == MDU_READY),
+                "invalid state");
+  usbp->in_params[config->bulk_in - 1U]   = mdup;
+  usbp->out_params[config->bulk_out - 1U] = mdup;
   mdup->config = config;
   mdup->state = MDU_READY;
-  chSysUnlock()
-  ;
+  osalSysUnlock();
 }
 
 /**
  * @brief   Stops the driver.
  * @details Any thread waiting on the driver's queues will be awakened with
- *          the message @p Q_RESET.
+ *          the message @p MSG_RESET.
  *
- * @param[in] bdup      pointer to a @p MidiUSBDriver object
+ * @param[in] mdup      pointer to a @p MidiUSBDriver object
  *
  * @api
  */
 void mduStop(MidiUSBDriver *mdup) {
   USBDriver *usbp = mdup->config->usbp;
 
-  chDbgCheck(mdup != NULL, "sdStop");
+  osalDbgCheck(mdup != NULL);
 
-  chSysLock()
-  ;
+  osalSysLock();
 
-  chDbgAssert((mdup->state == MDU_STOP) || (mdup->state == MDU_READY),
-              "mduStop(), #1", "invalid state");
+  osalDbgAssert((mdup->state == MDU_STOP) || (mdup->state == MDU_READY),
+                "invalid state");
 
   /* Driver in stopped state.*/
-  usbp->in_params[mdup->config->bulk_in - 1] = NULL;
-  usbp->out_params[mdup->config->bulk_out - 1] = NULL;
+  usbp->in_params[mdup->config->bulk_in - 1U]   = NULL;
+  usbp->out_params[mdup->config->bulk_out - 1U] = NULL;
+  mdup->config = NULL;
   mdup->state = MDU_STOP;
 
-  /* Queues reset in order to signal the driver stop to the application.*/
+  /* Enforces a disconnection.*/
   chnAddFlagsI(mdup, CHN_DISCONNECTED);
-  chIQResetI(&mdup->iqueue);
-  chOQResetI(&mdup->oqueue);
-  chSchRescheduleS();
+  ibqResetI(&mdup->ibqueue);
+  obqResetI(&mdup->obqueue);
+  osalOsRescheduleS();
 
-  chSysUnlock()
-  ;
+  osalSysUnlock();
+}
+
+/**
+ * @brief   USB device suspend handler.
+ * @details Generates a @p CHN_DISCONNECT event and puts queues in
+ *          non-blocking mode, this way the application cannot get stuck
+ *          in the middle of an I/O operations.
+ * @note    If this function is not called from an ISR then an explicit call
+ *          to @p osalOsRescheduleS() in necessary afterward.
+ *
+ * @param[in] mdup      pointer to a @p MidiUSBDriver object
+ *
+ * @iclass
+ */
+void mduSuspendHookI(MidiUSBDriver *mdup) {
+
+  /* Avoiding events spam.*/
+  if(bqIsSuspendedX(&mdup->ibqueue) && bqIsSuspendedX(&mdup->obqueue)) {
+    return;
+  }
+  chnAddFlagsI(mdup, CHN_DISCONNECTED);
+  bqSuspendI(&mdup->ibqueue);
+  bqSuspendI(&mdup->obqueue);
+}
+
+/**
+ * @brief   USB device wakeup handler.
+ * @details Generates a @p CHN_CONNECT event and resumes normal queues
+ *          operations.
+ *
+ * @note    If this function is not called from an ISR then an explicit call
+ *          to @p osalOsRescheduleS() in necessary afterward.
+ *
+ * @param[in] mdup      pointer to a @p MidiUSBDriver object
+ *
+ * @iclass
+ */
+void mduWakeupHookI(MidiUSBDriver *mdup) {
+
+  chnAddFlagsI(mdup, CHN_CONNECTED);
+  bqResumeX(&mdup->ibqueue);
+  bqResumeX(&mdup->obqueue);
 }
 
 /**
  * @brief   USB device configured handler.
  *
- * @param[in] bdup      pointer to a @p MidiUSBDriver object
+ * @param[in] mdup      pointer to a @p MidiUSBDriver object
  *
  * @iclass
  */
 void mduConfigureHookI(MidiUSBDriver *mdup) {
-  USBDriver *usbp = mdup->config->usbp;
 
-  chIQResetI(&mdup->iqueue);
-  chOQResetI(&mdup->oqueue);
+  ibqResetI(&mdup->ibqueue);
+  bqResumeX(&mdup->ibqueue);
+  obqResetI(&mdup->obqueue);
+  bqResumeX(&mdup->obqueue);
   chnAddFlagsI(mdup, CHN_CONNECTED);
-
-  /* Starts the first OUT transaction immediately.*/
-  usbPrepareQueuedReceive(usbp, mdup->config->bulk_out, &mdup->iqueue,
-                          usbp->epc[mdup->config->bulk_out]->out_maxsize);
-  usbStartReceiveI(usbp, mdup->config->bulk_out);
+  (void) mdu_start_receive(mdup);
 }
 
 /**
  * @brief   Default requests hook.
- * @details Applications wanting to use the Bulk USB driver can use
+ * @details Applications wanting to use the Midi USB driver can use
  *          this function as requests hook in the USB configuration.
  *          The following requests are emulated:
  *          - CDC_GET_LINE_CODING.
@@ -286,13 +361,49 @@ void mduConfigureHookI(MidiUSBDriver *mdup) {
  *
  * @param[in] usbp      pointer to the @p USBDriver object
  * @return              The hook status.
- * @retval TRUE         Message handled internally.
- * @retval FALSE        Message not handled.
+ * @retval true         Message handled internally.
+ * @retval false        Message not handled.
  */
-bool_t mduRequestsHook(USBDriver *usbp) {
+bool mduRequestsHook(USBDriver *usbp) {
 
   (void)usbp;
   return FALSE;
+}
+
+/**
+ * @brief   SOF handler.
+ * @details The SOF interrupt is used for automatic flushing of incomplete
+ *          buffers pending in the output queue.
+ *
+ * @param[in] mdup      pointer to a @p MidiUSBDriver object
+ *
+ * @iclass
+ */
+void mduSOFHookI(MidiUSBDriver *mdup) {
+
+  /* If the USB driver is not in the appropriate state then transactions
+     must not be started.*/
+  if ((usbGetDriverStateI(mdup->config->usbp) != USB_ACTIVE) ||
+      (mdup->state != MDU_READY)) {
+    return;
+  }
+
+  /* If there is already a transaction ongoing then another one cannot be
+     started.*/
+  if (usbGetTransmitStatusI(mdup->config->usbp, mdup->config->bulk_in)) {
+    return;
+  }
+
+  /* Checking if there only a buffer partially filled, if so then it is
+     enforced in the queue and transmitted.*/
+  if (obqTryFlushI(&mdup->obqueue)) {
+    size_t n;
+    uint8_t *buf = obqGetFullBufferI(&mdup->obqueue, &n);
+
+    osalDbgAssert(buf != NULL, "queue is empty");
+
+    usbStartTransmitI(mdup->config->usbp, mdup->config->bulk_in, buf, n);
+  }
 }
 
 /**
@@ -301,49 +412,50 @@ bool_t mduRequestsHook(USBDriver *usbp) {
  *          data endpoint.
  *
  * @param[in] usbp      pointer to the @p USBDriver object
- * @param[in] ep        endpoint number
+ * @param[in] ep        IN endpoint number
  */
 void mduDataTransmitted(USBDriver *usbp, usbep_t ep) {
+  uint8_t *buf;
   size_t n;
-  MidiUSBDriver *bdup = usbp->in_params[ep - 1];
+  MidiUSBDriver *mdup = usbp->in_params[ep - 1U];
 
-  if (bdup == NULL)
+  if (mdup == NULL) {
     return;
+  }
 
-  chSysLockFromISR()
-  ;
-  chnAddFlagsI(bdup, CHN_OUTPUT_EMPTY);
+  osalSysLockFromISR();
 
-  if ((n = chOQGetFullI(&bdup->oqueue)) > 0) {
+  /* Signaling that space is available in the output queue.*/
+  chnAddFlagsI(mdup, CHN_OUTPUT_EMPTY);
+
+  /* Freeing the buffer just transmitted, if it was not a zero size packet.*/
+  if (usbp->epc[ep]->in_state->txsize > 0U) {
+    obqReleaseEmptyBufferI(&mdup->obqueue);
+  }
+
+  /* Checking if there is a buffer ready for transmission.*/
+  buf = obqGetFullBufferI(&mdup->obqueue, &n);
+
+  if (buf != NULL) {
     /* The endpoint cannot be busy, we are in the context of the callback,
-     so it is safe to transmit without a check.*/
-    chSysUnlockFromISR()
-    ;
-
-    usbPrepareQueuedTransmit(usbp, ep, &bdup->oqueue, n);
-
-    chSysLockFromISR()
-    ;
-    usbStartTransmitI(usbp, ep);
+       so it is safe to transmit without a check.*/
+    usbStartTransmitI(usbp, ep, buf, n);
   }
-  else if ((usbp->epc[ep]->in_state->txsize > 0)
-      && !(usbp->epc[ep]->in_state->txsize & (usbp->epc[ep]->in_maxsize - 1))) {
+  else if ((usbp->epc[ep]->in_state->txsize > 0U) &&
+           ((usbp->epc[ep]->in_state->txsize &
+            ((size_t)usbp->epc[ep]->in_maxsize - 1U)) == 0U)) {
     /* Transmit zero sized packet in case the last one has maximum allowed
-     size. Otherwise the recipient may expect more data coming soon and
-     not return buffered data to app. See section 5.8.3 Bulk Transfer
-     Packet Size Constraints of the USB Specification document.*/
-    chSysUnlockFromISR()
-    ;
+       size. Otherwise the recipient may expect more data coming soon and
+       not return buffered data to app. See section 5.8.3 Midi Transfer
+       Packet Size Constraints of the USB Specification document.*/
+    usbStartTransmitI(usbp, ep, usbp->setup, 0);
 
-    usbPrepareQueuedTransmit(usbp, ep, &bdup->oqueue, 0);
-
-    chSysLockFromISR()
-    ;
-    usbStartTransmitI(usbp, ep);
+  }
+  else {
+    /* Nothing to transmit.*/
   }
 
-  chSysUnlockFromISR()
-  ;
+  osalSysUnlockFromISR();
 }
 
 /**
@@ -352,38 +464,68 @@ void mduDataTransmitted(USBDriver *usbp, usbep_t ep) {
  *          data endpoint.
  *
  * @param[in] usbp      pointer to the @p USBDriver object
- * @param[in] ep        endpoint number
+ * @param[in] ep        OUT endpoint number
  */
 void mduDataReceived(USBDriver *usbp, usbep_t ep) {
-  size_t n, maxsize;
-  MidiUSBDriver *bdup = usbp->out_params[ep - 1];
+  size_t size;
+  MidiUSBDriver *mdup = usbp->out_params[ep - 1U];
 
-  if (bdup == NULL)
+  if (mdup == NULL) {
     return;
-
-  chSysLockFromISR()
-  ;
-  chnAddFlagsI(bdup, CHN_INPUT_AVAILABLE);
-
-  /* Writes to the input queue can only happen when there is enough space
-   to hold at least one packet.*/
-  maxsize = usbp->epc[ep]->out_maxsize;
-  if ((n = chIQGetEmptyI(&bdup->iqueue)) >= maxsize) {
-    /* The endpoint cannot be busy, we are in the context of the callback,
-     so a packet is in the buffer for sure.*/
-    chSysUnlockFromISR()
-    ;
-
-    n = (n / maxsize) * maxsize;
-    usbPrepareQueuedReceive(usbp, ep, &bdup->iqueue, n);
-
-    chSysLockFromISR()
-    ;
-    usbStartReceiveI(usbp, ep);
   }
 
-  chSysUnlockFromISR()
-  ;
+  osalSysLockFromISR();
+
+  /* Checking for zero-size transactions.*/
+  size = usbGetReceiveTransactionSizeX(mdup->config->usbp,
+                                       mdup->config->bulk_out);
+  if (size > (size_t)0) {
+    /* Signaling that data is available in the input queue.*/
+    chnAddFlagsI(mdup, CHN_INPUT_AVAILABLE);
+
+    /* Posting the filled buffer in the queue.*/
+    ibqPostFullBufferI(&mdup->ibqueue, size);
+  }
+
+  /* The endpoint cannot be busy, we are in the context of the callback,
+     so a packet is in the buffer for sure. Trying to get a free buffer
+     for the next transaction.*/
+  (void) mdu_start_receive(mdup);
+
+  osalSysUnlockFromISR();
+}
+
+/**
+ * @brief   Default data received callback.
+ * @details The application must use this function as callback for the IN
+ *          interrupt endpoint.
+ *
+ * @param[in] usbp      pointer to the @p USBDriver object
+ * @param[in] ep        endpoint number
+ */
+void mduInterruptTransmitted(USBDriver *usbp, usbep_t ep) {
+
+  (void)usbp;
+  (void)ep;
+}
+
+/**
+ * @brief   Control operation on a Midi USB port.
+ *
+ * @param[in] usbp       pointer to a @p USBDriver object
+ * @param[in] operation control operation code
+ * @param[in,out] arg   operation argument
+ *
+ * @return              The control operation status.
+ * @retval MSG_OK       in case of success.
+ * @retval MSG_TIMEOUT  in case of operation timeout.
+ * @retval MSG_RESET    in case of operation reset.
+ *
+ * @api
+ */
+msg_t mduControl(USBDriver *usbp, unsigned int operation, void *arg) {
+
+  return _ctl((void *)usbp, operation, arg);
 }
 
 // the Send etc, work for everything except Sysex
@@ -391,7 +533,6 @@ uint8_t calcDS1(uint8_t b0) {
 // this works for everything bar SysEx,
 // for sysex you need to use 0x4-0x7 to pack messages
   return (b0 & 0xF0) >> 4;
-
 }
 
 uint8_t calcCIN1(uint8_t port, uint8_t b0) {
@@ -427,6 +568,6 @@ void midi_usb_MidiSend3(uint8_t port, uint8_t b0, uint8_t b1, uint8_t b2) {
   writet(&MDU1, &tx[0], 4, MIDISEND_TIMEOUT);
 }
 
-#endif /* HAL_USE_BULK_USB */
+#endif /* HAL_USE_MIDI_USB */
 
 /** @} */

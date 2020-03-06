@@ -29,14 +29,11 @@
 #ifndef _MIDI_USB_H_
 #define _MIDI_USB_H_
 
-#include "midi.h"
-
 #if 1 //HAL_USE_MIDI_USB || defined(__DOXYGEN__)
 
 /*===========================================================================*/
 /* Driver constants.                                                         */
 /*===========================================================================*/
-
 
 /*===========================================================================*/
 /* Driver pre-compile time settings.                                         */
@@ -56,15 +53,22 @@
 #if !defined(MIDI_USB_BUFFERS_SIZE) || defined(__DOXYGEN__)
 #define MIDI_USB_BUFFERS_SIZE     64
 #endif
+
+/**
+ * @brief   Midi USB number of buffers.
+ * @note    The default is 2 buffers.
+ */
+#if !defined(MIDI_USB_BUFFERS_NUMBER) || defined(__DOXYGEN__)
+#define MIDI_USB_BUFFERS_NUMBER   2
+#endif
 /** @} */
 
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */
 /*===========================================================================*/
 
-#if !HAL_USE_USB || !CH_USE_QUEUES || !CH_USE_EVENTS
-#error "Midi USB Driver requires HAL_USE_USB, CH_USE_QUEUES, "
-       "CH_USE_EVENTS"
+#if HAL_USE_USB == FALSE
+#error "Midi USB Driver requires HAL_USE_USB"
 #endif
 
 /*===========================================================================*/
@@ -81,13 +85,13 @@ typedef enum {
 } mdustate_t;
 
 /**
- * @brief   Structure representing a bulk USB driver.
+ * @brief   Structure representing a midi USB driver.
  */
 typedef struct MidiUSBDriver MidiUSBDriver;
 
 /**
- * @brief   Bulk USB Driver configuration structure.
- * @details An instance of this structure must be passed to @p bduStart()
+ * @brief   Midi USB Driver configuration structure.
+ * @details An instance of this structure must be passed to @p mduStart()
  *          in order to configure and start the driver operations.
  */
 typedef struct {
@@ -112,20 +116,22 @@ typedef struct {
   _base_asynchronous_channel_data                                           \
   /* Driver state.*/                                                        \
   mdustate_t                state;                                          \
-  /* Input queue.*/                                                         \
-  InputQueue                iqueue;                                         \
+  /* Input buffers queue.*/                                                 \
+  input_buffers_queue_t     ibqueue;                                        \
   /* Output queue.*/                                                        \
-  OutputQueue               oqueue;                                         \
+  output_buffers_queue_t    obqueue;                                        \
   /* Input buffer.*/                                                        \
-  uint8_t                   ib[MIDI_USB_BUFFERS_SIZE];                    \
+  uint8_t                   ib[BQ_BUFFER_SIZE(MIDI_USB_BUFFERS_NUMBER,    \
+                                              MIDI_USB_BUFFERS_SIZE)];    \
   /* Output buffer.*/                                                       \
-  uint8_t                   ob[MIDI_USB_BUFFERS_SIZE];                    \
+  uint8_t                   ob[BQ_BUFFER_SIZE(MIDI_USB_BUFFERS_NUMBER,    \
+                                              MIDI_USB_BUFFERS_SIZE)];    \
   /* End of the mandatory fields.*/                                         \
   /* Current configuration data.*/                                          \
   const MidiUSBConfig     *config;
 
 /**
- * @brief   @p BulkUSBDriver specific methods.
+ * @brief   @p MidiUSBDriver specific methods.
  */
 #define _midi_usb_driver_methods                                          \
   _base_asynchronous_channel_methods
@@ -133,7 +139,7 @@ typedef struct {
 /**
  * @extends BaseAsynchronousChannelVMT
  *
- * @brief   @p BulkUSBDriver virtual methods table.
+ * @brief   @p MidiUSBDriver virtual methods table.
  */
 struct MidiUSBDriverVMT {
   _midi_usb_driver_methods
@@ -142,7 +148,7 @@ struct MidiUSBDriverVMT {
 /**
  * @extends BaseAsynchronousChannel
  *
- * @brief   Full duplex serial driver class.
+ * @brief   Full duplex midi driver class.
  * @details This class extends @p BaseAsynchronousChannel by adding physical
  *          I/O queues.
  */
@@ -164,13 +170,18 @@ struct MidiUSBDriver {
 extern "C" {
 #endif
   void mduInit(void);
-  void mduObjectInit(MidiUSBDriver *sdp);
+  void mduObjectInit(MidiUSBDriver *mdup);
   void mduStart(MidiUSBDriver *mdup, const MidiUSBConfig *config);
   void mduStop(MidiUSBDriver *mdup);
-  void mduConfigureHookI(MidiUSBDriver *bdup);
-  bool_t mduRequestsHook(USBDriver *usbp);
+  void mduSuspendHookI(MidiUSBDriver *mdup);
+  void mduWakeupHookI(MidiUSBDriver *mdup);
+  void mduConfigureHookI(MidiUSBDriver *mdup);
+  bool mduRequestsHook(USBDriver *usbp);
+  void mduSOFHookI(MidiUSBDriver *mdup);
   void mduDataTransmitted(USBDriver *usbp, usbep_t ep);
   void mduDataReceived(USBDriver *usbp, usbep_t ep);
+  void mduInterruptTransmitted(USBDriver *usbp, usbep_t ep);
+  msg_t mduControl(USBDriver *usbp, unsigned int operation, void *arg);
 
   void midi_usb_MidiSend1(uint8_t port, uint8_t b0);
   void midi_usb_MidiSend2(uint8_t port, uint8_t b0, uint8_t b1);
