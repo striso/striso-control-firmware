@@ -39,8 +39,7 @@ static const I2CConfig i2ccfg_motion = {
  * This is a periodic thread that reads accelerometer and sends messages
  */
 static THD_WORKING_AREA(waThreadAccel, 256);
-__attribute__  ((noreturn))
-static msg_t ThreadAccel(void *arg) {
+static void ThreadAccel(void *arg) {
   (void)arg;
   chRegSetThreadName("motion");
 

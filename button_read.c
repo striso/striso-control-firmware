@@ -174,9 +174,8 @@ static adcsample_t* samples_bas[2] = {samples_bas0, samples_bas1};
 
 static thread_t *tpReadButtons = NULL;
 
-static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
-  (void)adcp;
-  (void)n;
+static void adccallback(ADCDriver *adcp) {
+  adcsample_t *buffer = adcp->samples;
 
   /* Open old channel */
   palSetPort(out_channels_port[cur_channel], out_channels_pad[cur_channel]);
@@ -226,6 +225,8 @@ static const ADCConversionGroup adcgrpcfg1 = {
   0, // SMPR1
   ADC_SMPR2_SMP_AN0(ADC_SAMPLE_DEF)
    | ADC_SMPR2_SMP_AN3(ADC_SAMPLE_DEF), // SMPR2
+  0, // HTR
+  0, // LTR
   ADC_SQR1_NUM_CH(ADC_GRP1_NUM_CHANNELS_PER_ADC), // SQR1
   0, // SQR2
   ADC_SQR3_SQ1_N(ADC_CHANNEL_IN0)
@@ -247,6 +248,8 @@ static const ADCConversionGroup adcgrpcfg2 = {
   0, // CR2
   ADC_SMPR1_SMP_AN12(ADC_SAMPLE_DEF), // SMPR1
   ADC_SMPR2_SMP_AN1(ADC_SAMPLE_DEF), // SMPR2
+  0, // HTR
+  0, // LTR
   ADC_SQR1_NUM_CH(ADC_GRP1_NUM_CHANNELS_PER_ADC), // SQR1
   0, // SQR2
   ADC_SQR3_SQ1_N(ADC_CHANNEL_IN1)
@@ -268,6 +271,8 @@ static const ADCConversionGroup adcgrpcfg3 = {
   0, // CR2
   ADC_SMPR1_SMP_AN10(ADC_SAMPLE_DEF), // SMPR1
   ADC_SMPR2_SMP_AN2(ADC_SAMPLE_DEF), // SMPR2
+  0, // HTR
+  0, // LTR
   ADC_SQR1_NUM_CH(ADC_GRP1_NUM_CHANNELS_PER_ADC), // SQR1
   0, // SQR2
   ADC_SQR3_SQ1_N(ADC_CHANNEL_IN2)
@@ -594,7 +599,7 @@ void update_slider(void) {
  * Read out buttons and create messages.
  */
 static THD_WORKING_AREA(waThreadReadButtons, 128);
-static msg_t ThreadReadButtons(void *arg) {
+static void ThreadReadButtons(void *arg) {
   (void)arg;
 
   chRegSetThreadName("read_buttons");
@@ -739,7 +744,6 @@ static msg_t ThreadReadButtons(void *arg) {
     chSchGoSleepS(CH_STATE_SUSPENDED);
     chSysUnlock();
   }
-  return 0;
 }
 
 void ButtonBoardTest(void) {

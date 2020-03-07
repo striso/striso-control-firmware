@@ -95,5 +95,5 @@ int msgGet(int maxsize, int* msg) {
 
 void MessagingInit(void) {
   // init msg mutex
-  chMtxInit(&msg_lock);
+  chMtxObjectInit(&msg_lock);
 }

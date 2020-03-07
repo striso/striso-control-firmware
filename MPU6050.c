@@ -50,12 +50,12 @@ uint8_t rxbuf[14] = {0};
 void MPU6050_writeReg(uint8_t addr, uint8_t data) {
     txbuf[0]=addr;
     txbuf[1]=data;
-    i2cMasterTransmitTimeout(&I2CD_MOTION, MPU6050_ADDRESS, txbuf, 2, NULL, 0, MS2ST(4));
+    i2cMasterTransmitTimeout(&I2CD_MOTION, MPU6050_ADDRESS, txbuf, 2, NULL, 0, TIME_MS2I(4));
 }
 
 uint8_t MPU6050_readReg(uint8_t addr) {
     txbuf[0]=addr;
-    i2cMasterTransmitTimeout(&I2CD_MOTION, MPU6050_ADDRESS, txbuf, 1, rxbuf, 2, MS2ST(4));
+    i2cMasterTransmitTimeout(&I2CD_MOTION, MPU6050_ADDRESS, txbuf, 1, rxbuf, 2, TIME_MS2I(4));
     return rxbuf[0];
 }
 
@@ -94,7 +94,7 @@ bool MPUtestConnection() {
  */
 void MPUgetMotion6(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz) {
     txbuf[0]=MPU6050_RA_ACCEL_XOUT_H;
-    i2cMasterTransmitTimeout(&I2CD_MOTION, MPU6050_ADDRESS, txbuf, 1, rxbuf, 14, MS2ST(4));
+    i2cMasterTransmitTimeout(&I2CD_MOTION, MPU6050_ADDRESS, txbuf, 1, rxbuf, 14, TIME_MS2I(4));
     *ax = (((int16_t)rxbuf[0]) << 8) | rxbuf[1];
     *ay = (((int16_t)rxbuf[2]) << 8) | rxbuf[3];
     *az = (((int16_t)rxbuf[4]) << 8) | rxbuf[5];
@@ -104,7 +104,7 @@ void MPUgetMotion6(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* 
 }
 void MPUgetMotion6t(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t* t) {
     txbuf[0]=MPU6050_RA_ACCEL_XOUT_H;
-    i2cMasterTransmitTimeout(&I2CD_MOTION, MPU6050_ADDRESS, txbuf, 1, rxbuf, 14, MS2ST(4));
+    i2cMasterTransmitTimeout(&I2CD_MOTION, MPU6050_ADDRESS, txbuf, 1, rxbuf, 14, TIME_MS2I(4));
     *ax = (((int16_t)rxbuf[0]) << 8) | rxbuf[1];
     *ay = (((int16_t)rxbuf[2]) << 8) | rxbuf[3];
     *az = (((int16_t)rxbuf[4]) << 8) | rxbuf[5];
@@ -158,7 +158,7 @@ int MPUgetTemperature(void) {
  */
 void MPUgetAcceleration(int16_t* x, int16_t* y, int16_t* z) {
     txbuf[0]=MPU6050_RA_ACCEL_XOUT_H;
-    i2cMasterTransmitTimeout(&I2CD_MOTION, MPU6050_ADDRESS, txbuf, 1, rxbuf, 6, MS2ST(4));
+    i2cMasterTransmitTimeout(&I2CD_MOTION, MPU6050_ADDRESS, txbuf, 1, rxbuf, 6, TIME_MS2I(4));
     *x = (((int16_t)rxbuf[0]) << 8) | rxbuf[1];
     *y = (((int16_t)rxbuf[2]) << 8) | rxbuf[3];
     *z = (((int16_t)rxbuf[4]) << 8) | rxbuf[5];
@@ -200,7 +200,7 @@ void MPUgetAcceleration(int16_t* x, int16_t* y, int16_t* z) {
  */
 void MPUgetRotation(int16_t* x, int16_t* y, int16_t* z) {
     txbuf[0]=MPU6050_RA_GYRO_XOUT_H;
-    i2cMasterTransmitTimeout(&I2CD_MOTION, MPU6050_ADDRESS, txbuf, 1, rxbuf, 6, MS2ST(4));
+    i2cMasterTransmitTimeout(&I2CD_MOTION, MPU6050_ADDRESS, txbuf, 1, rxbuf, 6, TIME_MS2I(4));
     *x = (((int16_t)rxbuf[0]) << 8) | rxbuf[1];
     *y = (((int16_t)rxbuf[2]) << 8) | rxbuf[3];
     *z = (((int16_t)rxbuf[4]) << 8) | rxbuf[5];

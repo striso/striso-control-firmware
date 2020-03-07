@@ -75,7 +75,7 @@ static SerialConfig ser_cfg = {
  * LED flash thread.
  */
 static THD_WORKING_AREA(waThread1, 128);
-static msg_t Thread1(void *arg) {
+static void Thread1(void *arg) {
 
   (void)arg;
   chRegSetThreadName("blinker");
@@ -90,8 +90,6 @@ static msg_t Thread1(void *arg) {
     //if (!msgSend(3,msg))
       palClearPad(GPIOA, GPIOA_LED1);
   }
-
-  return 0;
 }
 
 static void pack(int *in, uint8_t *out, int n) {
@@ -113,7 +111,7 @@ static void unpack(uint8_t *in, int *out, int n) {
  * Message send thread
  */
 static THD_WORKING_AREA(waThreadSend, 256);
-static msg_t ThreadSend(void *arg) {
+static void ThreadSend(void *arg) {
 
   (void)arg;
   chRegSetThreadName("send messages");
@@ -143,8 +141,6 @@ static msg_t ThreadSend(void *arg) {
     // for compatibility with MIDI usb on Axoloti
     chThdSleep(1);
   }
-
-  return 0;
 }
 
 /*

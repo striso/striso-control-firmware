@@ -45,8 +45,7 @@ void reset_to_uf2_bootloader() {
 }
 
 static THD_WORKING_AREA(waThreadUSBDMidi, 256);
-__attribute__((noreturn))
-    static msg_t ThreadUSBDMidi(void *arg) {
+static void ThreadUSBDMidi(void *arg) {
   (void)arg;
 #if CH_CFG_USE_REGISTRY
   chRegSetThreadName("usbdmidi");

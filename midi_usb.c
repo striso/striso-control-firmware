@@ -547,7 +547,7 @@ void midi_usb_MidiSend1(uint8_t port, uint8_t b0) {
   tx[1] = b0;
   tx[2] = 0;
   tx[3] = 0;
-  writet(&MDU1, &tx[0], 4, MIDISEND_TIMEOUT);
+  _writet(&MDU1, &tx[0], 4, MIDISEND_TIMEOUT);
 }
 
 void midi_usb_MidiSend2(uint8_t port, uint8_t b0, uint8_t b1) {
@@ -556,7 +556,7 @@ void midi_usb_MidiSend2(uint8_t port, uint8_t b0, uint8_t b1) {
   tx[1] = b0;
   tx[2] = b1;
   tx[3] = 0;
-  writet(&MDU1, &tx[0], 4, MIDISEND_TIMEOUT);
+  _writet(&MDU1, &tx[0], 4, MIDISEND_TIMEOUT);
 }
 
 void midi_usb_MidiSend3(uint8_t port, uint8_t b0, uint8_t b1, uint8_t b2) {
@@ -565,7 +565,7 @@ void midi_usb_MidiSend3(uint8_t port, uint8_t b0, uint8_t b1, uint8_t b2) {
   tx[1] = b0;
   tx[2] = b1;
   tx[3] = b2;
-  writet(&MDU1, &tx[0], 4, MIDISEND_TIMEOUT);
+  _writet(&MDU1, &tx[0], 4, MIDISEND_TIMEOUT);
 }
 
 #endif /* HAL_USE_MIDI_USB */
