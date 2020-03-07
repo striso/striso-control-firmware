@@ -29,6 +29,7 @@
 #include "midi_usb.h"
 #include "config.h"
 #include "version.h"
+#include "ws2812.h"
 
 //#define DEBUG_SERIAL 1
 
@@ -38,7 +39,7 @@ void BootLoaderInit(void);
 
 #define BOOT_RTC_SIGNATURE 0x71a21877
 #define BOOT_RTC_REG (*(volatile uint32_t *)(RTC_BASE + 0x50))
-void reset_to_uf2_bootloader() {
+void reset_to_uf2_bootloader(void) {
   BOOT_RTC_REG = BOOT_RTC_SIGNATURE;
 
   NVIC_SystemReset();

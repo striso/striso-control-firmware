@@ -968,6 +968,8 @@ int synth_message(int size, int* msg) {
 
 void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
                       uint8_t data1, uint8_t data2) {
+    (void) dev;
+    (void) port;
     static uint8_t lastRPN_LSB = 0;
     static uint8_t lastRPN_MSB = 0;
     static uint8_t lastNRPN_LSB = 0;
