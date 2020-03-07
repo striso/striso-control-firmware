@@ -113,7 +113,7 @@ include $(CHIBIOS)/os/hal/lib/streams/streams.mk # for chprintf
 
 # Define linker script file here
 #LDSCRIPT= $(STARTUPLD)/STM32F407xG.ld
-LDSCRIPT= STM32F407xG_bootloader.ld
+LDSCRIPT= STM32F407xE_bootloader.ld
 
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.

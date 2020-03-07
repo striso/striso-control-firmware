@@ -15,12 +15,17 @@
 */
 
 /*
- * STM32F407xE memory setup.
+ * STM32F407xE memory setup with bootloader offset.
+ * You will have to
+ * #define CORTEX_VTOR_INIT 0x00010000
+ * in your projects chconf.h
+ *
  * Note: Use of ram1 and ram2 is mutually exclusive with use of ram0.
  */
 MEMORY
 {
-    flash0  : org = 0x08000000, len = 512k
+    fwversion : org = 0x800c000, len = 16k /* firmware version description for bootloader */
+    flash0  : org = 0x08010000, len = 512k - 0x10000 /* offset for bootloader */
     flash1  : org = 0x00000000, len = 0
     flash2  : org = 0x00000000, len = 0
     flash3  : org = 0x00000000, len = 0
@@ -84,3 +89,11 @@ REGION_ALIAS("HEAP_RAM", ram0);
 
 /* Generic rules inclusion.*/
 INCLUDE rules.ld
+
+SECTIONS
+{
+    .fwversion :
+    {
+        KEEP(*(.fwversion))
+    } > fwversion
+}
