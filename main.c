@@ -79,14 +79,14 @@ static void Thread1(void *arg) {
 
   (void)arg;
   chRegSetThreadName("blinker");
-  int msg[8];
-  msg[0] = ID_SYS;
-  msg[1] = ID_SYS_MSGQUE_OVERFLOW_BB;
+  // int msg[8];
+  // msg[0] = ID_SYS;
+  // msg[1] = ID_SYS_MSGQUE_OVERFLOW_BB;
   while (TRUE) {
     chThdSleepMilliseconds(300);
     palSetPad(GPIOA, GPIOA_LED1);
     chThdSleepMilliseconds(300);
-    msg[2] = underruns;
+    // msg[2] = underruns;
     //if (!msgSend(3,msg))
       palClearPad(GPIOA, GPIOA_LED1);
   }
@@ -122,7 +122,7 @@ static void ThreadSend(void *arg) {
   while (TRUE) {
     size = msgGet(9, msg);
     if (size >= 2 && size <= 9) {
-      synth_message(size, &msg);
+      synth_message(size, msg);
 
       cmsg[0] = 0x80 | ((uint8_t)msg[0])<<3 | ((uint8_t)(size-2));
       cmsg[1] = 0x7f & (uint8_t)msg[1];

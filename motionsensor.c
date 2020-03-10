@@ -71,8 +71,6 @@ static void ThreadAccel(void *arg) {
     }
   }
 
-  int n = 0;
-
   /* Reader thread loop.*/
   while (TRUE) {
     //MPUgetMotion6(&ax, &ay, &az, &gx, &gy, &gz);
@@ -98,9 +96,6 @@ static void ThreadAccel(void *arg) {
       acc_y /= acc_abs;
       acc_z /= acc_abs;
     }
-    float rot_x = ((float)gx)*(1.0/32768.0);
-    float rot_y = ((float)gy)*(1.0/32768.0);
-    float rot_z = ((float)gz)*(1.0/32768.0);
 
     msg[2] = ax>>2;
     msg[3] = ay>>2;
@@ -112,6 +107,10 @@ static void ThreadAccel(void *arg) {
     msgSend(9,msg);
 
 #ifdef USE_SYNTH_INTERFACE
+    float rot_x = ((float)gx)*(1.0/32768.0);
+    float rot_y = ((float)gy)*(1.0/32768.0);
+    float rot_z = ((float)gz)*(1.0/32768.0);
+
     *(synth_interface.acc_abs) = acc_abs;
     *(synth_interface.acc_x) = acc_x;
     *(synth_interface.acc_y) = acc_y;
@@ -120,10 +119,6 @@ static void ThreadAccel(void *arg) {
     *(synth_interface.rot_y) = rot_y;
     *(synth_interface.rot_z) = rot_z;
 #endif
-    //if (n-- <= 0) {
-    //  palToggleLine(LINE_LED4);       /* Blue */
-    //  n = 100;
-    //}
 
     /* Waiting until the next 10 milliseconds time interval.*/
     // TODO: wait for interrupt at MPU_READY pin

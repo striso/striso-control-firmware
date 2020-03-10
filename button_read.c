@@ -168,9 +168,11 @@ static adcsample_t samples2[102] = {0};
 static adcsample_t samples3[102] = {0};
 static adcsample_t* samples[4] = {samples0, samples1, samples2, samples3};
 
+#ifdef USE_BAS
 static adcsample_t samples_bas0[102] = {0};
 static adcsample_t samples_bas1[102] = {0};
 static adcsample_t* samples_bas[2] = {samples_bas0, samples_bas1};
+#endif
 
 static thread_t *tpReadButtons = NULL;
 
@@ -192,8 +194,10 @@ static void adccallback(ADCDriver *adcp) {
   samples2[next_conversion] = buffer[2];
   samples3[next_conversion] = buffer[3];
 
+#ifdef USE_BAS
   samples_bas0[next_conversion] = buffer[4];
   samples_bas1[next_conversion] = buffer[5];
+#endif
 
   next_conversion = (next_conversion+1) % 102;
 
