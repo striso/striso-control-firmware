@@ -322,6 +322,9 @@ static void usb_event(USBDriver *usbp, usbevent_t event) {
         must be used.*/
       usbInitEndpointI(usbp, USBD1_DATA_REQUEST_EP, &ep1config);
       usbInitEndpointI(usbp, USBD2_DATA_REQUEST_EP, &ep2config);
+
+      bduConfigureHookI(&BDU1);
+      mduConfigureHookI(&MDU1);
     } else if (usbp->state == USB_SELECTED) {
       usbDisableEndpointsI(usbp);
     }
@@ -334,11 +337,17 @@ static void usb_event(USBDriver *usbp, usbevent_t event) {
   case USB_EVENT_SUSPEND:
     chSysLockFromISR();
     /* Disconnection event on suspend.*/
+    bduSuspendHookI(&BDU1);
+    mduSuspendHookI(&MDU1);
+
     chSysUnlockFromISR();
     return;
   case USB_EVENT_WAKEUP:
     chSysLockFromISR();
     /* Connection event on wakeup.*/
+    bduWakeupHookI(&BDU1);
+    mduWakeupHookI(&MDU1);
+
     chSysUnlockFromISR();
     return;
   case USB_EVENT_STALLED:
@@ -434,13 +443,26 @@ static bool specialRequestsHook(USBDriver *usbp) {
 }
 
 /*
+ * Handles the USB driver global events.
+ */
+static void sof_handler(USBDriver *usbp) {
+
+  (void)usbp;
+
+  osalSysLockFromISR();
+  bduSOFHookI(&BDU1);
+  mduSOFHookI(&MDU1);
+  osalSysUnlockFromISR();
+}
+
+/*
  * USB driver configuration.
  */
 const USBConfig usbcfg = {
   usb_event,
   get_descriptor,
   specialRequestsHook,
-  NULL /* sof_handler */
+  sof_handler
 };
 
 /*
