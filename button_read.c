@@ -144,7 +144,7 @@ static button_t buttons[N_BUTTONS];
 static button_t buttons_bas[N_BUTTONS_BAS];
 static int buttons_pressed[2] = {0};
 static int col_pressed[2][17] = {0};
-static int32_t max_pres, max_pres1;
+static int32_t max_pres = 0, max_pres1 = 0;
 
 #ifdef USE_AUX_BUTTONS
 #define GPIOI_BUTTON_PORT    2
@@ -624,6 +624,7 @@ static void ThreadReadButtons(void *arg) {
              f = 1/7.5
              but for very light touches
          */
+#ifdef BUTTON_FILT
         for (int m = 0; m < 3; m++) {
           int max = samples[0][cur_conv + m];
           for (int n = 1; n < 4; n++) {
@@ -636,16 +637,16 @@ static void ThreadReadButtons(void *arg) {
             if (samples[n][cur_conv + m] > 4095) samples[n][cur_conv + m] = 4095;
           }
         }
-
+#endif
         // Update button in each octave/adc-channel
         for (int n = 0; n < 4; n++) {
           but_id = note_id + n * 17;
           but = &buttons[but_id];
           update_button(but, &samples[n][cur_conv]);
         }
-        
         // Once per cycle, after the last buttons
         if (note_id == 16) {
+#ifdef BUTTON_FILT
           // Find maximum pressure (and second to maximum)
           max_pres1 = 0;
           max_pres = 0;
@@ -687,7 +688,7 @@ static void ThreadReadButtons(void *arg) {
               }
             }
           }
-          
+#endif
 #ifdef USE_AUX_BUTTONS
           int msg[8];
           for (int n = 0; n < 4; n++) {

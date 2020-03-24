@@ -40,6 +40,7 @@
 #endif
 
 //#define CALIBRATION_MODE TRUE
+#define BUTTON_FILT
 
 #define AUX_BUTTON_DEBOUNCE_TIME 5
 
