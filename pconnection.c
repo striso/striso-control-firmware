@@ -23,7 +23,7 @@
 #include "usbcfg.h"
 #include "midi.h"
 //#include "string.h"
-#include "exceptions.h"
+// #include "exceptions.h"
 #include "bulk_usb.h"
 #include "midi.h"
 #include "midi_usb.h"
@@ -104,7 +104,7 @@ void InitPConnection(void) {
 }
 
 void PExReceiveByte(unsigned char c) {
-  ws2812_write_led(0, 0,67,0);
+  // ws2812_write_led(0, 0,67,0);
   static char header = 0;
   static int state = 0;
 
@@ -129,17 +129,17 @@ void PExReceiveByte(unsigned char c) {
     case 3:
       state = 0;
       if (c == 'D') { // go to DFU mode
-        ws2812_write_led(0, 64, 8, 0);
-        ws2812_write_led(1, 64, 8, 0);
-        ws2812_write_led(2, 64, 8, 0);
+        // ws2812_write_led(0, 64, 8, 0);
+        // ws2812_write_led(1, 64, 8, 0);
+        // ws2812_write_led(2, 64, 8, 0);
         chprintf((BaseSequentialStream * )&BDU1, "Resetting to DFU mode...\r\n");
         chThdSleepMilliseconds(2);
-        exception_initiate_dfu();
+        // exception_initiate_dfu();
       }
       else if (c == 'B') { // go to bootloader
-        ws2812_write_led(0, 64, 8, 0);
-        ws2812_write_led(1, 64, 8, 0);
-        ws2812_write_led(2, 64, 8, 0);
+        // ws2812_write_led(0, 64, 8, 0);
+        // ws2812_write_led(1, 64, 8, 0);
+        // ws2812_write_led(2, 64, 8, 0);
         chprintf((BaseSequentialStream * )&BDU1, "Resetting to UF2 bootloader mode...\r\n");
         chThdSleepMilliseconds(2);
         reset_to_uf2_bootloader();

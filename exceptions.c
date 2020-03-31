@@ -56,6 +56,7 @@ typedef struct {
  * @details This will only work before other initializations!
  */
 void BootLoaderInit(void) {
+#ifdef STM32F4XX
   int reg, psp;
   reg = 0;
   asm volatile ("msr     CONTROL, %0" : : "r" (reg));
@@ -90,6 +91,7 @@ void BootLoaderInit(void) {
   // PC @ +4
   asm volatile ("NOP");
   asm volatile ("BX      R0");
+#endif
 }
 
 /**
@@ -97,6 +99,7 @@ void BootLoaderInit(void) {
  * @details Enables access to battery backup SRAM.
  */
 void exception_check_DFU(void) {
+#ifdef STM32F4XX
   RCC->APB1ENR |= RCC_APB1ENR_PWREN;
   PWR->CR |= PWR_CR_DBP;
   RCC->AHB1ENR |= RCC_AHB1ENR_BKPSRAMEN;
@@ -107,6 +110,7 @@ void exception_check_DFU(void) {
     exception_clear();
     BootLoaderInit();
   }
+#endif
 }
 
 int exception_check(void) {
@@ -125,6 +129,7 @@ void exception_clear(void) {
  * @details By writing magic bytes and going through a soft reboot...
  */
 void exception_initiate_dfu(void) {
+#ifdef STM32F4XX
   exceptiondump->r0 = 1;
   exceptiondump->r1 = 2;
   exceptiondump->r2 = 3;
@@ -145,4 +150,5 @@ void exception_initiate_dfu(void) {
   exceptiondump->magicnumber = ERROR_MAGIC_NUMBER;
   exceptiondump->type = goto_DFU;
   NVIC_SystemReset();
+#endif
 }

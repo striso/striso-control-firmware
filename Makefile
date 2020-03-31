@@ -71,7 +71,7 @@ endif
 
 # FPU-related options.
 ifeq ($(USE_FPU_OPT),)
-  USE_FPU_OPT = -mfloat-abi=$(USE_FPU) -mfpu=fpv4-sp-d16
+  USE_FPU_OPT = -mfloat-abi=$(USE_FPU) -mfpu=fpv5-d16
 endif
 
 #
@@ -86,7 +86,7 @@ endif
 PROJECT = striso_control
 
 # Target settings.
-MCU  = cortex-m4
+MCU  = cortex-m7
 
 # Imported source files and paths.
 CHIBIOS  := ./ChibiOS
@@ -97,11 +97,12 @@ DEPDIR   := ./.dep
 # Licensing files.
 include $(CHIBIOS)/os/license/license.mk
 # Startup files.
-include $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_stm32f4xx.mk
+include $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_stm32h7xx.mk
 # HAL-OSAL files (optional).
 include $(CHIBIOS)/os/hal/hal.mk
-include $(CHIBIOS)/os/hal/ports/STM32/STM32F4xx/platform.mk
-include board.mk
+include $(CHIBIOS)/os/hal/ports/STM32/STM32H7xx/platform.mk
+include $(CHIBIOS)/os/hal/boards/ST_NUCLEO144_H743ZI/board.mk
+#include board.mk
 include $(CHIBIOS)/os/hal/osal/rt-nil/osal.mk
 # RTOS files (optional).
 include $(CHIBIOS)/os/rt/rt.mk
@@ -113,7 +114,8 @@ include $(CHIBIOS)/os/hal/lib/streams/streams.mk # for chprintf
 
 # Define linker script file here
 #LDSCRIPT= $(STARTUPLD)/STM32F407xG.ld
-LDSCRIPT= STM32F407xE_bootloader.ld
+#LDSCRIPT= STM32F407xE_bootloader.ld
+LDSCRIPT= $(STARTUPLD)/STM32H743xI.ld
 
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -123,11 +125,6 @@ CSRC = $(ALLCSRC) \
 	pconnection.c \
 	bulk_usb.c \
 	midi_usb.c \
-	exceptions.c \
-	adc_multi.c \
-	MPU6050.c \
-	motionsensor.c \
-	ws2812.c \
 	button_read.c \
 	messaging.c \
 	main.c
@@ -168,7 +165,7 @@ $(shell touch version.h)
 endif
 
 # List all user C define here, like -D_DEBUG=1
-UDEFS = -DFWVERSION=\"$(FWVERSION)\"
+UDEFS = -DFWVERSION=\"$(FWVERSION)\" -DSTM32_ENFORCE_H7_REV_V     # Must be removed for non-Rev-V devices.
 
 # Define ASM defines here
 UADEFS =

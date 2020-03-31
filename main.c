@@ -25,7 +25,7 @@
 #undef CONFIG_HERE
 #include "striso.h"
 #include "usbcfg.h"
-#include "exceptions.h"
+// #include "exceptions.h"
 #include "pconnection.h"
 #include "synth.h"
 #include "button_read.h"
@@ -84,11 +84,11 @@ static void Thread1(void *arg) {
   // msg[1] = ID_SYS_MSGQUE_OVERFLOW_BB;
   while (TRUE) {
     chThdSleepMilliseconds(300);
-    palSetPad(GPIOA, GPIOA_LED1);
+    palSetPad(GPIOB, GPIOB_LED1);
     chThdSleepMilliseconds(300);
     // msg[2] = underruns;
     //if (!msgSend(3,msg))
-      palClearPad(GPIOA, GPIOA_LED1);
+      palClearPad(GPIOB, GPIOB_LED1);
   }
 }
 

@@ -24,8 +24,9 @@
 #include "synth.h"
 
 #include "messaging.h"
+#ifdef STM32F4XX
 #include "adc_multi.h"
-
+#endif
 
 #define INTERNAL_ONE (1<<24)
 #define ADCFACT (1<<12)
@@ -37,6 +38,7 @@
 #define INTEGRATED_PRES_TRESHOLD (INTERNAL_ONE/2)
 #define SENDFACT    config.message_interval
 
+#ifdef STM32F4XX
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_3   // 0.05 ms per cycle
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_15  // 0.11 ms per cycle
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_28  // 0.18 ms per cycle
@@ -45,11 +47,21 @@
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_112 // 0.65 ms per cycle
 #define ADC_SAMPLE_DEF ADC_SAMPLE_144 // 0.83 ms per cycle
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_480 // 2.7 ms per cycle
+#elif defined(STM32H7XX)
+//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_1P5   // 0.05 ms per cycle
+//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_2P5  // 0.11 ms per cycle
+//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_8P5  // 0.18 ms per cycle
+//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_16P5  // 0.33 ms per cycle
+//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_32P5 // 2.7 ms per cycle
+//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_64P5  // 0.50 ms per cycle
+#define ADC_SAMPLE_DEF ADC_SMPR_SMP_384P5 // 0.65 ms per cycle
+//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_810P5 // 0.83 ms per cycle
+#endif
 
 #define ADC_OFFSET (16>>1)
 
 /* Number of ADCs used in multi ADC mode (2 or 3) */
-#define ADC_N_ADCS 3
+#define ADC_N_ADCS 2
 
 /* Total number of channels to be sampled by a single ADC operation.*/
 #define ADC_GRP1_NUM_CHANNELS_PER_ADC   2
@@ -141,7 +153,9 @@ typedef struct struct_slider {
 static slider_t sld;
 
 static button_t buttons[N_BUTTONS];
+#ifdef USE_BAS
 static button_t buttons_bas[N_BUTTONS_BAS];
+#endif
 static int buttons_pressed[2] = {0};
 static int col_pressed[2][17] = {0};
 static int32_t max_pres = 0, max_pres1 = 0;
@@ -202,7 +216,12 @@ static void adccallback(ADCDriver *adcp) {
   next_conversion = (next_conversion+1) % 102;
 
   // start next ADC conversion
+
+#ifdef STM32F4XX
   adcp->adc->CR2 |= ADC_CR2_SWSTART;
+#elif defined(STM32H7XX)
+  adcp->adcm->CR |= ADC_CR_ADSTART;
+#endif
 
   // Wake up processing thread
   chSysLockFromISR();
@@ -213,6 +232,7 @@ static void adccallback(ADCDriver *adcp) {
   chSysUnlockFromISR();
 }
 
+#ifdef STM32F4XX
 /*
  * ADC conversion group for ADC0 as multi ADC mode master.
  * Mode:        Circular buffer, triple ADC mode master, SW triggered.
@@ -282,7 +302,53 @@ static const ADCConversionGroup adcgrpcfg3 = {
   ADC_SQR3_SQ1_N(ADC_CHANNEL_IN2)
    | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN10) // SQR3
 };
+#endif
 
+#ifdef STM32H7XX
+/*
+ * ADC conversion group 1.
+ * Mode:        One shot, 2 channels, SW triggered.
+ * Channels:    IN0, IN5.
+ */
+const ADCConversionGroup adcgrpcfg1 = {
+  .circular     = false,
+  .num_channels = ADC_GRP1_NUM_CHANNELS_PER_ADC,
+  .end_cb       = adccallback,
+  .error_cb     = NULL,
+  .cfgr         = 0U,
+  .cfgr2        = 0U,
+  .ccr          = ADC_CCR_DUAL_FIELD(0b00110) | ADC_CCR_CKMODE_AHB_DIV2,
+  .pcsel        = ADC_SELMASK_IN16 | ADC_SELMASK_IN17 | ADC_SELMASK_IN14 | ADC_SELMASK_IN15,
+  .ltr1         = 0x00000000U,
+  .htr1         = 0x03FFFFFFU,
+  .ltr2         = 0x00000000U,
+  .htr2         = 0x03FFFFFFU,
+  .ltr3         = 0x00000000U,
+  .htr3         = 0x03FFFFFFU,
+  .smpr         = {
+    0U,
+    ADC_SMPR2_SMP_AN16(ADC_SAMPLE_DEF) |
+    ADC_SMPR2_SMP_AN17(ADC_SAMPLE_DEF)
+  },
+  .sqr          = {
+    ADC_SQR1_SQ1_N(ADC_CHANNEL_IN16) | ADC_SQR1_SQ2_N(ADC_CHANNEL_IN17),
+    0U,
+    0U,
+    0U
+  },
+  .ssmpr        = {
+    0U,
+    ADC_SMPR2_SMP_AN14(ADC_SAMPLE_DEF) |
+    ADC_SMPR2_SMP_AN15(ADC_SAMPLE_DEF)
+  },
+  .ssqr         = {
+    ADC_SQR1_SQ1_N(ADC_CHANNEL_IN14) | ADC_SQR1_SQ2_N(ADC_CHANNEL_IN15),
+    0U,
+    0U,
+    0U
+  }
+};
+#endif
 
 // Schlick power function, approximation of power function
 float powf_schlick(const float a, const float b) {
@@ -443,6 +509,7 @@ int slider_interp(int n) {
   }
 }
 
+#ifdef USE_BAS
 void update_slider(void) {
   int n;
   int np = 0;
@@ -598,6 +665,7 @@ void update_slider(void) {
     }
   }*/
 }
+#endif
 
 /*
  * Read out buttons and create messages.
@@ -787,7 +855,11 @@ void ButtonReadStart(void) {
   /*
    * Initializes the ADC driver.
    */
+#ifdef STM32F4XX
   adcMultiStart();
+#elif defined(STM32H7XX)
+  adcStart(&ADCD1, NULL);
+#endif
   
   // Initialize buttons
   for (int n=0; n<N_BUTTONS; n++) {
@@ -797,6 +869,7 @@ void ButtonReadStart(void) {
     buttons[n].c_offset = ADC_OFFSET;
     buttons[n].prev_but = &buttons[(n/17) * 17 + ((n+17-1) % 17)];
   }
+#ifdef USE_BAS
   for (int n=0; n<N_BUTTONS_BAS; n++) {
     buttons_bas[n].but_id = n;
     buttons_bas[n].src_id = ID_BAS;
@@ -804,11 +877,16 @@ void ButtonReadStart(void) {
     buttons_bas[n].c_offset = ADC_OFFSET;
     buttons_bas[n].prev_but = &buttons_bas[(n/17) * 17 + ((n+17-1) % 17)];
   }
+#endif
 
   /*
    * Start first ADC conversion. Next conversions are triggered from the adc callback.
    */
+#ifdef STM32F4XX
   adcMultiStartConversion(&adcgrpcfg1, &adcgrpcfg2, &adcgrpcfg3, adc_samples, ADC_GRP1_BUF_DEPTH);
+#elif defined(STM32H7XX)
+  adcStartConversion(&ADCD1, &adcgrpcfg1, adc_samples, ADC_GRP1_BUF_DEPTH);
+#endif
 
   /*
    * Creates the thread to process the adc samples

@@ -29,6 +29,10 @@ extern "C" {
 #include "striso.h"
 #include "midi_usb.h"
 
+#ifndef USE_WS2812
+#define ws2812_write_led(a,b,c,d)
+#endif
+
 #define BUTTONCOUNT 68
 #define MAX_PORTAMENTO_BUTTONS 8
 

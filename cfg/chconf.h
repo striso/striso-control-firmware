@@ -29,7 +29,7 @@
 #define CHCONF_H
 
 /* Set vector table offset to after bootloader */
-#define CORTEX_VTOR_INIT 0x00010000
+// #define CORTEX_VTOR_INIT 0x00010000
 
 // #define CHPRINTF_USE_FLOAT  TRUE
 
