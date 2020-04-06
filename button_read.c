@@ -161,13 +161,12 @@ static int col_pressed[2][17] = {0};
 static int32_t max_pres = 0, max_pres1 = 0;
 
 #ifdef USE_AUX_BUTTONS
-#define GPIOI_BUTTON_PORT    2
-#define GPIOI_BUTTON_UP      1
-#define GPIOA_BUTTON_DOWN    9 // GPIOA_UART1_TX
-#define GPIOA_BUTTON_ALT    10 // GPIOA_UART1_RX
+#define LINE_BUTTON_PORT   PAL_LINE(GPIOI,  2U)
+#define LINE_BUTTON_UP     PAL_LINE(GPIOI,  1U)
+#define LINE_BUTTON_DOWN   PAL_LINE(GPIOA,  9U) // GPIOA_UART1_TX
+#define LINE_BUTTON_ALT    PAL_LINE(GPIOA, 10U) // GPIOA_UART1_RX
 
-static const ioportid_t aux_buttons_port[4] = {GPIOI, GPIOI, GPIOA, GPIOA};
-static const int aux_buttons_pad[4] = {GPIOI_BUTTON_PORT, GPIOI_BUTTON_UP, GPIOA_BUTTON_DOWN, GPIOA_BUTTON_ALT};
+static const ioline_t aux_buttons_line[4] = {LINE_BUTTON_PORT, LINE_BUTTON_UP, LINE_BUTTON_DOWN, LINE_BUTTON_ALT};
 static const int aux_buttons_msg[4] = {IDC_PORTAMENTO, IDC_OCT_UP, IDC_OCT_DOWN, IDC_ALT};
 static uint32_t aux_buttons_state[4] = {0};
 #endif
@@ -762,7 +761,7 @@ static void ThreadReadButtons(void *arg) {
           for (int n = 0; n < 4; n++) {
             if (aux_buttons_state[n] & 0xff) {
               aux_buttons_state[n]--;
-            } else if ((palReadPad(aux_buttons_port[n], aux_buttons_pad[n])) == !aux_buttons_state[n]) {
+            } else if (palReadLine(aux_buttons_line[n]) == !aux_buttons_state[n]) {
               msg[0] = ID_CONTROL;
               msg[1] = aux_buttons_msg[n];
               if (aux_buttons_state[n]) {
@@ -846,10 +845,10 @@ void ButtonBoardTest(void) {
 void ButtonReadStart(void) {
   
 #ifdef USE_AUX_BUTTONS
-  palSetPadMode(GPIOI, GPIOI_BUTTON_PORT, PAL_MODE_INPUT_PULLDOWN);
-  palSetPadMode(GPIOI, GPIOI_BUTTON_UP,   PAL_MODE_INPUT_PULLDOWN);
-  palSetPadMode(GPIOA, GPIOA_BUTTON_DOWN, PAL_MODE_INPUT_PULLDOWN);
-  palSetPadMode(GPIOA, GPIOA_BUTTON_ALT,  PAL_MODE_INPUT_PULLDOWN);
+  palSetLineMode(LINE_BUTTON_PORT, PAL_MODE_INPUT_PULLDOWN);
+  palSetLineMode(LINE_BUTTON_UP,   PAL_MODE_INPUT_PULLDOWN);
+  palSetLineMode(LINE_BUTTON_DOWN, PAL_MODE_INPUT_PULLDOWN);
+  palSetLineMode(LINE_BUTTON_ALT,  PAL_MODE_INPUT_PULLDOWN);
 #endif
   
   /*
