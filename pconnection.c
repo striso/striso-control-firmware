@@ -33,8 +33,6 @@
 
 //#define DEBUG_SERIAL 1
 
-#define STM32_UUID ((uint32_t *)0x1FFF7A10)
-
 void BootLoaderInit(void);
 
 #define BOOT_RTC_SIGNATURE 0x71a21877
@@ -159,7 +157,7 @@ void PExReceiveByte(unsigned char c) {
         }
         chSysUnlock();
         chprintf((BaseSequentialStream *)&BDU1, FWVERSION " %08X%08X%08X\r\n",
-                 STM32_UUID[0], STM32_UUID[1], STM32_UUID[2]);
+                 ((uint32_t*)UID_BASE)[0], ((uint32_t*)UID_BASE)[1], ((uint32_t*)UID_BASE)[2]);
       }
       else if (c == 'I') { // thread info
         cmd_threads((BaseSequentialStream *)&BDU1);
