@@ -1,0 +1,25 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "ChibiOS/os/ports/common/ARMCMx/CMSIS/include",
+                "ChibiOS/os/ports/common/ARMCMx",
+                "ChibiOS/os/ports/GCC/ARMCMx",
+                "ChibiOS/os/ports/GCC/ARMCMx/STM32F4xx",
+                "ChibiOS/os/kernel/include",
+                "ChibiOS/os/hal/include",
+                "ChibiOS/os/hal/platforms/STM32F4xx",
+                "ChibiOS/os/hal/platforms/STM32/**",
+                "ChibiOS/os/various"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64"
+        }
+    ],
+    "version": 4
+}
