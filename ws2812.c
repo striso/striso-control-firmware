@@ -38,6 +38,7 @@
 #define PIN_WS2812      0
 #define WS2812_TIM_N    5  // timer, 1-11
 #define WS2812_TIM_CH   3  // timer channel, 0-3
+#define WS2812_AF       2
 #define WS2812_DMA_STREAM STM32_DMA_STREAM_ID(1, 0)  // DMA stream for TIMx_UP (look up in reference manual under DMA Channel selection)
 #define WS2812_DMA_CHANNEL 6                  // DMA channel for TIMx_UP
 // The WS2812 expects 5V signal level (or at least 0.7 * VDD). Sometimes it works
@@ -79,7 +80,7 @@
 
 /* --- PRIVATE CONSTANTS ---------------------------------------------------- */
 
-#define WS2812_PWM_FREQUENCY    (STM32_SYSCLK/2)                /**< Clock frequency of PWM, must be valid with respect to system clock! */
+#define WS2812_PWM_FREQUENCY    (STM32_SYS_CK/2)                /**< Clock frequency of PWM, must be valid with respect to system clock! */
 #define WS2812_PWM_PERIOD       (WS2812_PWM_FREQUENCY/800000)   /**< Clock period in ticks. 1 / 800kHz = 1.25 uS (as per datasheet) */
 
 /**

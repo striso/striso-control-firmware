@@ -127,6 +127,7 @@ CSRC = $(ALLCSRC) \
 	midi_usb.c \
 	button_read.c \
 	messaging.c \
+	ws2812.c \
 	main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
