@@ -47,6 +47,18 @@
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_112 // 0.65 ms per cycle
 #define ADC_SAMPLE_DEF ADC_SAMPLE_144 // 0.83 ms per cycle
 //#define ADC_SAMPLE_DEF ADC_SAMPLE_480 // 2.7 ms per cycle
+
+/* Number of ADCs used in multi ADC mode (2 or 3) */
+#define ADC_N_ADCS 3
+
+/* Total number of channels to be sampled by a single ADC operation.*/
+#define ADC_GRP1_NUM_CHANNELS_PER_ADC   2
+
+/* Depth of the conversion buffer, channels are sampled one time each.*/
+#define ADC_GRP1_BUF_DEPTH      (2*ADC_N_ADCS) // must be 1 or even
+
+#define ADC_GRP1_NUM_CHANNELS (ADC_GRP1_NUM_CHANNELS_PER_ADC * ADC_N_ADCS)
+
 #elif defined(STM32H7XX)
 //#define ADC_SAMPLE_DEF ADC_SMPR_SMP_1P5   // 0.05 ms per cycle
 //#define ADC_SAMPLE_DEF ADC_SMPR_SMP_2P5  // 0.11 ms per cycle
@@ -56,18 +68,16 @@
 //#define ADC_SAMPLE_DEF ADC_SMPR_SMP_64P5  // 0.50 ms per cycle
 #define ADC_SAMPLE_DEF ADC_SMPR_SMP_384P5 // 0.65 ms per cycle
 //#define ADC_SAMPLE_DEF ADC_SMPR_SMP_810P5 // 0.83 ms per cycle
+
+/* Total number of channels to be sampled by a single ADC operation.*/
+#define ADC_GRP1_NUM_CHANNELS   4
+
+/* Depth of the conversion buffer, channels are sampled one time each.*/
+#define ADC_GRP1_BUF_DEPTH      2 // must be 1 or even
+
 #endif
 
 #define ADC_OFFSET (16>>1)
-
-/* Number of ADCs used in multi ADC mode (2 or 3) */
-#define ADC_N_ADCS 2
-
-/* Total number of channels to be sampled by a single ADC operation.*/
-#define ADC_GRP1_NUM_CHANNELS_PER_ADC   2
-
-/* Depth of the conversion buffer, channels are sampled one time each.*/
-#define ADC_GRP1_BUF_DEPTH      (2*ADC_N_ADCS) // must be 1 or even
 
 #define OUT_NUM_CHANNELS        51
 #define N_BUTTONS               68
@@ -174,7 +184,7 @@ static uint32_t aux_buttons_state[4] = {0};
 /*
  * ADC samples buffer.
  */
-static adcsample_t adc_samples[ADC_GRP1_NUM_CHANNELS_PER_ADC * ADC_N_ADCS * ADC_GRP1_BUF_DEPTH];
+static adcsample_t adc_samples[ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH];
 static adcsample_t samples0[102] = {0};
 static adcsample_t samples1[102] = {0};
 static adcsample_t samples2[102] = {0};
@@ -304,14 +314,19 @@ static const ADCConversionGroup adcgrpcfg3 = {
 #endif
 
 #ifdef STM32H7XX
+const ADCConfig adccfg1 = {
+  .difsel       = 0U,
+  .calibration  = 0U
+};
+#if STM32_ADC_DUAL_MODE == TRUE
 /*
  * ADC conversion group 1.
  * Mode:        One shot, 2 channels, SW triggered.
  * Channels:    IN0, IN5.
  */
 const ADCConversionGroup adcgrpcfg1 = {
-  .circular     = false,
-  .num_channels = ADC_GRP1_NUM_CHANNELS_PER_ADC,
+  .circular     = TRUE,
+  .num_channels = ADC_GRP1_NUM_CHANNELS,
   .end_cb       = adccallback,
   .error_cb     = NULL,
   .cfgr         = 0U,
@@ -347,6 +362,38 @@ const ADCConversionGroup adcgrpcfg1 = {
     0U
   }
 };
+#else
+const ADCConversionGroup adcgrpcfg1 = {
+  .circular     = TRUE,
+  .num_channels = ADC_GRP1_NUM_CHANNELS,
+  .end_cb       = adccallback,
+  .error_cb     = NULL,
+  .cfgr         = 0U,
+  .cfgr2        = 0U,
+  .ccr          = 0U,
+  .pcsel        = ADC_SELMASK_IN16 | ADC_SELMASK_IN17 | ADC_SELMASK_IN14 | ADC_SELMASK_IN15,
+  .ltr1         = 0x00000000U,
+  .htr1         = 0x03FFFFFFU,
+  .ltr2         = 0x00000000U,
+  .htr2         = 0x03FFFFFFU,
+  .ltr3         = 0x00000000U,
+  .htr3         = 0x03FFFFFFU,
+  .smpr         = {
+    0U,
+    ADC_SMPR2_SMP_AN16(ADC_SAMPLE_DEF) |
+    ADC_SMPR2_SMP_AN17(ADC_SAMPLE_DEF) |
+    ADC_SMPR2_SMP_AN14(ADC_SAMPLE_DEF) |
+    ADC_SMPR2_SMP_AN15(ADC_SAMPLE_DEF)
+  },
+  .sqr          = {
+    ADC_SQR1_SQ1_N(ADC_CHANNEL_IN16) | ADC_SQR1_SQ2_N(ADC_CHANNEL_IN17) |
+    ADC_SQR1_SQ3_N(ADC_CHANNEL_IN14) | ADC_SQR1_SQ4_N(ADC_CHANNEL_IN15),
+    0U,
+    0U,
+    0U
+  }
+};
+#endif // STM32_ADC_DUAL_MODE
 #endif
 
 // Schlick power function, approximation of power function
@@ -857,7 +904,11 @@ void ButtonReadStart(void) {
 #ifdef STM32F4XX
   adcMultiStart();
 #elif defined(STM32H7XX)
-  adcStart(&ADCD1, NULL);
+  palSetPadMode(GPIOA, 0, PAL_MODE_INPUT_ANALOG);
+  palSetPadMode(GPIOA, 1, PAL_MODE_INPUT_ANALOG);
+  palSetPadMode(GPIOA, 2, PAL_MODE_INPUT_ANALOG);
+  palSetPadMode(GPIOA, 3, PAL_MODE_INPUT_ANALOG);
+  adcStart(&ADCD1, &adccfg1);
 #endif
   
   // Initialize buttons
