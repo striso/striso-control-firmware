@@ -134,21 +134,21 @@ class MotionSensor {
                     rot_y = __USAT(64+((rot_y+(1<<5)+d)>>6), 7)&0x7F;
                     d = ((((last_rot_z-64)<<6) > rot_z)<<5)-(1<<4);
                     rot_z = __USAT(64+((rot_z+(1<<5)+d)>>6), 7)&0x7F;
-                    if (acc_x != last_acc_x) {
-                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                           16, acc_x);
-                        last_acc_x = acc_x;
-                    }
-                    if (acc_y != last_acc_y) {
-                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                           17, acc_y);
-                        last_acc_y = acc_y;
-                    }
-                    if (acc_z != last_acc_z) {
-                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
-                                           18, acc_z);
-                        last_acc_z = acc_z;
-                    }
+                    // if (acc_x != last_acc_x) {
+                    //     midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                    //                        16, acc_x);
+                    //     last_acc_x = acc_x;
+                    // }
+                    // if (acc_y != last_acc_y) {
+                    //     midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                    //                        17, acc_y);
+                    //     last_acc_y = acc_y;
+                    // }
+                    // if (acc_z != last_acc_z) {
+                    //     midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                    //                        18, acc_z);
+                    //     last_acc_z = acc_z;
+                    // }
                     if (acc_abs != last_acc_abs) {
                         midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
                                            19, acc_abs);
@@ -929,7 +929,12 @@ int synth_message(int size, int* msg) {
 
     if (src == ID_CONTROL) {
         if (id == IDC_ALT) {
+#ifdef USE_SIMPLE_MODE
+            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                               MIDI_C_DAMPER, msg[0]?127:0);
+#else
             dis.set_altmode(msg[0]);
+#endif
         }
         else if (id == IDC_PORTAMENTO) {
             // Portamento button
@@ -1005,6 +1010,7 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
             } break;
             case  1: { // Fifth (microtonal) tuning
                 dis.set_notegen1(6.80 + (float)data2 * (0.20/64) + (float)lsb_cc1 * (0.20/8192));
+                // dis.set_notegen1(7.20 - (float)data2 * (0.20/64) - (float)lsb_cc1 * (0.20/8192));
             } break;
             case  1|MIDI_C_LSB: lsb_cc1 = data2; break;
             case 16: config.send_motion_interval = data2; break;
