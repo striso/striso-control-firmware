@@ -84,11 +84,11 @@ static void Thread1(void *arg) {
   // msg[1] = ID_SYS_MSGQUE_OVERFLOW_BB;
   while (TRUE) {
     chThdSleepMilliseconds(300);
-    palSetPad(GPIOB, GPIOB_LED1);
+    palSetLine(LINE_LED1);
     chThdSleepMilliseconds(300);
     // msg[2] = underruns;
     //if (!msgSend(3,msg))
-      palClearPad(GPIOB, GPIOB_LED1);
+      palClearLine(LINE_LED1);
   }
 }
 
