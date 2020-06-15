@@ -91,7 +91,15 @@ static const ioportid_t out_channels_port[51] = {
   GPIOE, GPIOE, GPIOE, GPIOE, GPIOE, GPIOG, GPIOG, GPIOF,
   GPIOF, GPIOF, GPIOF, GPIOF, GPIOB, GPIOB, GPIOC, GPIOC, GPIOA,
 };
-static const ioportmask_t out_channels_pad[51] = {
+static const iopadid_t out_channels_pad[51] = {
+   8,  7,  6,  8,  7,  6,  5,  4,
+   3,  2, 15, 14, 13, 12, 11, 10,  9,
+   8, 15, 14, 13, 12, 11, 10,  9,
+   8,  7,  6, 11, 10, 15, 14, 13, 12,
+  11, 10,  9,  8,  7,  1,  0, 15,
+  14, 13, 12, 11,  1,  0,  5,  4,  7,
+};
+static const ioportmask_t out_channels_portmask[51] = {
   1<< 8, 1<< 7, 1<< 6, 1<< 8, 1<< 7, 1<< 6, 1<< 5, 1<< 4,
   1<< 3, 1<< 2, 1<<15, 1<<14, 1<<13, 1<<12, 1<<11, 1<<10, 1<< 9,
   1<< 8, 1<<15, 1<<14, 1<<13, 1<<12, 1<<11, 1<<10, 1<< 9,
@@ -108,7 +116,15 @@ static const ioportid_t out_channels_bas_port[51] = {
   GPIOE, GPIOE, GPIOE, GPIOI, GPIOI, GPIOI, GPIOF, GPIOF, GPIOF,
   GPIOF, GPIOF, GPIOF, GPIOF, GPIOF, GPIOF, GPIOF, GPIOF,
 };
-static const ioportmask_t out_channels_bas_pad[51] = {
+static const iopadid_t out_channels_bas_pad[51] = {
+  15, 10, 11, 12,  0,  1,  2,  3,  4,
+   5,  6,  7,  9, 10, 11, 12, 13,
+  14, 15,  3,  4,  5,  6,  7,  8,  9,
+   0,  1,  4,  5,  6,  7,  2,  3,
+   4,  5,  6,  9, 10, 11,  0,  1,  2,
+   3,  4,  5,  6,  7,  8,  9, 10,
+};
+static const ioportmask_t out_channels_bas_portmask[51] = {
   1<<15, 1<<10, 1<<11, 1<<12, 1<< 0, 1<< 1, 1<< 2, 1<< 3, 1<< 4,
   1<< 5, 1<< 6, 1<< 7, 1<< 9, 1<<10, 1<<11, 1<<12, 1<<13,
   1<<14, 1<<15, 1<< 3, 1<< 4, 1<< 5, 1<< 6, 1<< 7, 1<< 8, 1<< 9,
@@ -203,13 +219,13 @@ static void adccallback(ADCDriver *adcp) {
   adcsample_t *buffer = adcp->samples;
 
   /* Open old channel */
-  palSetPort(out_channels_port[cur_channel], out_channels_pad[cur_channel]);
-  palSetPort(out_channels_bas_port[cur_channel], out_channels_bas_pad[cur_channel]);
+  palSetPort(out_channels_port[cur_channel], out_channels_portmask[cur_channel]);
+  palSetPort(out_channels_bas_port[cur_channel], out_channels_bas_portmask[cur_channel]);
 
   cur_channel = (next_conversion+1) % OUT_NUM_CHANNELS;
   /* Drain new channel */
-  palClearPort(out_channels_port[cur_channel], out_channels_pad[cur_channel]);
-  palClearPort(out_channels_bas_port[cur_channel], out_channels_bas_pad[cur_channel]);
+  palClearPort(out_channels_port[cur_channel], out_channels_portmask[cur_channel]);
+  palClearPort(out_channels_bas_port[cur_channel], out_channels_bas_portmask[cur_channel]);
 
   /* copy adc_samples */
   samples0[next_conversion] = buffer[0];
@@ -898,6 +914,11 @@ void ButtonReadStart(void) {
   palSetLineMode(LINE_BUTTON_ALT,  PAL_MODE_INPUT_PULLDOWN);
 #endif
   
+  for (int n=0; n<OUT_NUM_CHANNELS; n++) {
+    palSetPadMode(out_channels_port[n], out_channels_pad[n], PAL_MODE_OUTPUT_OPENDRAIN | PAL_STM32_OSPEED_HIGHEST);
+    // palSetPadMode(out_channels_port[n], out_channels_pad[n], PAL_MODE_OUTPUT_PUSHPULL | PAL_STM32_OSPEED_HIGHEST);
+  }
+
   /*
    * Initializes the ADC driver.
    */
