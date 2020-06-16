@@ -57,7 +57,7 @@
 #define ADC_GRP1_NUM_CHANNELS_PER_ADC   2
 
 /* Depth of the conversion buffer, channels are sampled one time each.*/
-#define ADC_GRP1_BUF_DEPTH      (2*ADC_N_ADCS) // must be 1 or even
+#define ADC_GRP1_BUF_DEPTH      1 // must be 1 or even
 
 #define ADC_GRP1_NUM_CHANNELS (ADC_GRP1_NUM_CHANNELS_PER_ADC * ADC_N_ADCS)
 
@@ -277,7 +277,7 @@ static void adccallback(ADCDriver *adcp) {
  */
 static const ADCConversionGroup adcgrpcfg1 = {
   TRUE, // Circular conversion
-  ADC_GRP1_NUM_CHANNELS_PER_ADC,
+  ADC_GRP1_NUM_CHANNELS_PER_ADC * ADC_N_ADCS,
   adccallback, /* end of conversion callback */
   NULL, /* error callback */
   /* HW dependent part.*/

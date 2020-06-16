@@ -179,7 +179,7 @@ void adc_multi_lld_start_conversion(ADCDriver *adcp) {
   adcp->adc->SMPR2 = grpp->smpr2;
   adcp->adc->HTR   = grpp->htr;
   adcp->adc->LTR   = grpp->ltr;
-  adcp->adc->SQR1  = grpp->sqr1 | ADC_SQR1_NUM_CH(grpp->num_channels);
+  adcp->adc->SQR1  = grpp->sqr1;
   adcp->adc->SQR2  = grpp->sqr2;
   adcp->adc->SQR3  = grpp->sqr3;
 
