@@ -19,6 +19,8 @@
 #include "ch.h"
 #include "hal.h"
 
+#include "ccportab.h"
+
 #include "config.h"
 #include "striso.h"
 #include "synth.h"
@@ -73,7 +75,7 @@
 #define ADC_GRP1_NUM_CHANNELS   4
 
 /* Depth of the conversion buffer, channels are sampled one time each.*/
-#define ADC_GRP1_BUF_DEPTH      2 // must be 1 or even
+#define ADC_GRP1_BUF_DEPTH      1 // must be 1 or even. Strange behaviour when it is 2.
 
 #endif
 
@@ -200,7 +202,16 @@ static uint32_t aux_buttons_state[4] = {0};
 /*
  * ADC samples buffer.
  */
-static adcsample_t adc_samples[ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH];
+/* Buffers are allocated with size and address aligned to the cache
+   line size.*/
+#if CACHE_LINE_SIZE > 0
+#define CC_CACHE_ALIGN CC_ALIGN(CACHE_LINE_SIZE)
+#else
+#define CC_CACHE_ALIGN
+#endif
+//CC_SECTION(".ram3")
+CC_CACHE_ALIGN static adcsample_t adc_samples[CACHE_SIZE_ALIGN(adcsample_t, ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH)];
+// static adcsample_t adc_samples[ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH];
 static adcsample_t samples0[102] = {0};
 static adcsample_t samples1[102] = {0};
 static adcsample_t samples2[102] = {0};
@@ -227,6 +238,7 @@ static void adccallback(ADCDriver *adcp) {
   palClearPort(out_channels_port[cur_channel], out_channels_portmask[cur_channel]);
   palClearPort(out_channels_bas_port[cur_channel], out_channels_bas_portmask[cur_channel]);
 
+  cacheBufferInvalidate(adc_samples, sizeof (adc_samples) / sizeof (adcsample_t));
   /* copy adc_samples */
   samples0[next_conversion] = buffer[0];
   samples1[next_conversion] = buffer[1];
@@ -335,6 +347,15 @@ const ADCConfig adccfg1 = {
   .calibration  = 0U
 };
 #if STM32_ADC_DUAL_MODE == TRUE
+// #define ADC_CCR_DUAL_INDEPENDENT        (0b00000 << 0U) //: Independent mode
+// #define ADC_CCR_DUAL_SIM_JSIM           (0b00001 << 0U) //: Combined regular simultaneous + injected simultaneous mode
+// #define ADC_CCR_DUAL_SIM_ALTERNATE      (0b00010 << 0U) //: Combined regular simultaneous + alternate trigger mode
+// #define ADC_CCR_DUAL_INTERLEAVED_JSIM   (0b00011 << 0U) //: Combined Interleaved mode + injected simultaneous mode
+// //#define ADC_CCR_DUAL_                   (0b00100 << 0U) //: Reserved.
+// #define ADC_CCR_DUAL_JSIM               (0b00101 << 0U) //: Injected simultaneous mode only
+// #define ADC_CCR_DUAL_SIM                (0b00110 << 0U) //: Regular simultaneous mode only
+// #define ADC_CCR_DUAL_INTERLEAVED        (0b00111 << 0U) //: Interleaved mode only
+// #define ADC_CCR_DUAL_ALTERNATE          (0b01001 << 0U) //: Alternate trigger mode only
 /*
  * ADC conversion group 1.
  * Mode:        One shot, 2 channels, SW triggered.
@@ -345,9 +366,9 @@ const ADCConversionGroup adcgrpcfg1 = {
   .num_channels = ADC_GRP1_NUM_CHANNELS,
   .end_cb       = adccallback,
   .error_cb     = NULL,
-  .cfgr         = 0U,
+  .cfgr         = ADC_CFGR_RES_16BITS,
   .cfgr2        = 0U,
-  .ccr          = ADC_CCR_DUAL_FIELD(0b00110) | ADC_CCR_CKMODE_AHB_DIV2,
+  .ccr          = ADC_CCR_DUAL_SIM,
   .pcsel        = ADC_SELMASK_IN16 | ADC_SELMASK_IN17 | ADC_SELMASK_IN14 | ADC_SELMASK_IN15,
   .ltr1         = 0x00000000U,
   .htr1         = 0x03FFFFFFU,
@@ -384,7 +405,7 @@ const ADCConversionGroup adcgrpcfg1 = {
   .num_channels = ADC_GRP1_NUM_CHANNELS,
   .end_cb       = adccallback,
   .error_cb     = NULL,
-  .cfgr         = 0U,
+  .cfgr         = ADC_CFGR_RES_16BITS,
   .cfgr2        = 0U,
   .ccr          = 0U,
   .pcsel        = ADC_SELMASK_IN16 | ADC_SELMASK_IN17 | ADC_SELMASK_IN14 | ADC_SELMASK_IN15,
@@ -410,7 +431,7 @@ const ADCConversionGroup adcgrpcfg1 = {
   }
 };
 #endif // STM32_ADC_DUAL_MODE
-#endif
+#endif // STM32H7XX
 
 // Schlick power function, approximation of power function
 float powf_schlick(const float a, const float b) {
