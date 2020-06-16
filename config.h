@@ -27,7 +27,7 @@
 // #define USE_MIDI_OUT
 //#define USE_SYNTH_INTERFACE
 // #define USE_MPU6050
-#define USE_WS2812
+// #define USE_WS2812
 #else
 #define USE_BAS
 #define USE_UART
