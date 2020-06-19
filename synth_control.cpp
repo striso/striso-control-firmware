@@ -605,7 +605,7 @@ class Instrument {
             if (buttons[but].state == STATE_OFF && buttons[but].pres > 0.0) {
                 // calculate midinote only at note on
                 if (config.midi_mode == MIDI_MODE_BUTTON) {
-                    buttons[but].midinote = but;
+                    buttons[but].midinote = 17 * buttons[but].coord0 + 10 * buttons[but].coord1 + 30;
                 } else {
                     buttons[but].midinote = buttons[but].midinote_base + start_note_offset;
                 }
