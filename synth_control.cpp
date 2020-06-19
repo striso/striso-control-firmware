@@ -604,7 +604,11 @@ class Instrument {
             // Note on detection
             if (buttons[but].state == STATE_OFF && buttons[but].pres > 0.0) {
                 // calculate midinote only at note on
-                buttons[but].midinote = buttons[but].midinote_base + start_note_offset;
+                if (config.midi_mode == MIDI_MODE_BUTTON) {
+                    buttons[but].midinote = but;
+                } else {
+                    buttons[but].midinote = buttons[but].midinote_base + start_note_offset;
+                }
                 buttons[but].start_note_offset = start_note_offset;
                 
                 if (portamento) {
@@ -1034,7 +1038,11 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
                 }
             } break;
             case 127: {
-                set_midi_mode(MIDI_MODE_POLY);
+                if (data2 <= 1) {
+                    set_midi_mode(MIDI_MODE_POLY);
+                } else if (data2 == 2) {
+                    set_midi_mode(MIDI_MODE_BUTTON);
+                }
             } break;
             default: break;
         }
@@ -1066,6 +1074,16 @@ void set_midi_mode(midi_mode_t mode) {
             dis.voicecount = 1;
             dis.portamento = 1;
             ws2812_write_led(0, 0, 4, 28);
+        } break;
+        case MIDI_MODE_BUTTON: {
+            config.midi_mode = mode;
+            config.midi_bend = 2;
+            dis.bend_sensitivity = 0;
+            dis.midi_bend_range = 96.0;
+            dis.midi_channel_offset = 1;
+            dis.voicecount = 8;
+            dis.portamento = 0;
+            ws2812_write_led(0, 0, 16, 0);
         } break;
     }
 }

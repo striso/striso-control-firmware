@@ -49,6 +49,7 @@ typedef enum {
   MIDI_MODE_MPE,
   MIDI_MODE_POLY,
   MIDI_MODE_MONO,
+  MIDI_MODE_BUTTON,
 } midi_mode_t;
 
 typedef struct struct_config {
