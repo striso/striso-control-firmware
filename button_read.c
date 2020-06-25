@@ -62,14 +62,15 @@
 #define ADC_GRP1_NUM_CHANNELS (ADC_GRP1_NUM_CHANNELS_PER_ADC * ADC_N_ADCS)
 
 #elif defined(STM32H7XX)
-//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_1P5   // 0.05 ms per cycle
-//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_2P5  // 0.11 ms per cycle
-//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_8P5  // 0.18 ms per cycle
-//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_16P5  // 0.33 ms per cycle
-//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_32P5 // 2.7 ms per cycle
-//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_64P5  // 0.50 ms per cycle
-#define ADC_SAMPLE_DEF ADC_SMPR_SMP_384P5 // 0.65 ms per cycle
-//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_810P5 // 0.83 ms per cycle
+// timing calculation: ADCCLK/(SMP+6.5)/51/4 (*2 for dual ADC)
+//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_1P5   //
+//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_2P5   //
+//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_8P5   //
+//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_16P5  //
+#define ADC_SAMPLE_DEF ADC_SMPR_SMP_32P5 // 1174 Hz @10MHz single ADC
+//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_64P5  //
+//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_384P5 // 123.6 Hz @10MHz single ADC
+//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_810P5 //
 
 /* Total number of channels to be sampled by a single ADC operation.*/
 #define ADC_GRP1_NUM_CHANNELS   4
@@ -366,7 +367,7 @@ const ADCConversionGroup adcgrpcfg1 = {
   .num_channels = ADC_GRP1_NUM_CHANNELS,
   .end_cb       = adccallback,
   .error_cb     = NULL,
-  .cfgr         = ADC_CFGR_RES_16BITS,
+  .cfgr         = ADC_CFGR_RES_12BITS,
   .cfgr2        = 0U,
   .ccr          = ADC_CCR_DUAL_SIM,
   .pcsel        = ADC_SELMASK_IN16 | ADC_SELMASK_IN17 | ADC_SELMASK_IN14 | ADC_SELMASK_IN15,
@@ -405,7 +406,7 @@ const ADCConversionGroup adcgrpcfg1 = {
   .num_channels = ADC_GRP1_NUM_CHANNELS,
   .end_cb       = adccallback,
   .error_cb     = NULL,
-  .cfgr         = ADC_CFGR_RES_16BITS,
+  .cfgr         = ADC_CFGR_RES_12BITS,
   .cfgr2        = 0U,
   .ccr          = 0U,
   .pcsel        = ADC_SELMASK_IN16 | ADC_SELMASK_IN17 | ADC_SELMASK_IN14 | ADC_SELMASK_IN15,
