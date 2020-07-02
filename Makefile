@@ -168,7 +168,7 @@ $(shell touch version.h)
 endif
 
 # List all user C define here, like -D_DEBUG=1
-UDEFS = -DFWVERSION=\"$(FWVERSION)\" -DSTM32_ENFORCE_H7_REV_V     # Must be removed for non-Rev-V devices.
+UDEFS = -DFWVERSION=\"$(FWVERSION)\"
 
 # Define ASM defines here
 UADEFS =

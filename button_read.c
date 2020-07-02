@@ -348,15 +348,6 @@ const ADCConfig adccfg1 = {
   .calibration  = 0U
 };
 #if STM32_ADC_DUAL_MODE == TRUE
-// #define ADC_CCR_DUAL_INDEPENDENT        (0b00000 << 0U) //: Independent mode
-// #define ADC_CCR_DUAL_SIM_JSIM           (0b00001 << 0U) //: Combined regular simultaneous + injected simultaneous mode
-// #define ADC_CCR_DUAL_SIM_ALTERNATE      (0b00010 << 0U) //: Combined regular simultaneous + alternate trigger mode
-// #define ADC_CCR_DUAL_INTERLEAVED_JSIM   (0b00011 << 0U) //: Combined Interleaved mode + injected simultaneous mode
-// //#define ADC_CCR_DUAL_                   (0b00100 << 0U) //: Reserved.
-// #define ADC_CCR_DUAL_JSIM               (0b00101 << 0U) //: Injected simultaneous mode only
-// #define ADC_CCR_DUAL_SIM                (0b00110 << 0U) //: Regular simultaneous mode only
-// #define ADC_CCR_DUAL_INTERLEAVED        (0b00111 << 0U) //: Interleaved mode only
-// #define ADC_CCR_DUAL_ALTERNATE          (0b01001 << 0U) //: Alternate trigger mode only
 /*
  * ADC conversion group 1.
  * Mode:        One shot, 2 channels, SW triggered.
@@ -369,7 +360,7 @@ const ADCConversionGroup adcgrpcfg1 = {
   .error_cb     = NULL,
   .cfgr         = ADC_CFGR_RES_12BITS,
   .cfgr2        = 0U,
-  .ccr          = ADC_CCR_DUAL_SIM,
+  .ccr          = ADC_CCR_DUAL_REG_SIMULT, // 6U
   .pcsel        = ADC_SELMASK_IN16 | ADC_SELMASK_IN17 | ADC_SELMASK_IN14 | ADC_SELMASK_IN15,
   .ltr1         = 0x00000000U,
   .htr1         = 0x03FFFFFFU,
