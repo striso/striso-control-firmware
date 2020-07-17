@@ -241,10 +241,17 @@ static void adccallback(ADCDriver *adcp) {
 
   cacheBufferInvalidate(adc_samples, sizeof (adc_samples) / sizeof (adcsample_t));
   /* copy adc_samples */
+#if defined(STM32F4XX)
   samples0[next_conversion] = buffer[0];
   samples1[next_conversion] = buffer[1];
   samples2[next_conversion] = buffer[2];
   samples3[next_conversion] = buffer[3];
+#elif defined(STM32H7XX)
+  samples0[next_conversion] = buffer[0];
+  samples1[next_conversion] = buffer[2];
+  samples2[next_conversion] = buffer[1];
+  samples3[next_conversion] = buffer[3];
+#endif
 
 #ifdef USE_BAS
   samples_bas0[next_conversion] = buffer[4];
@@ -254,8 +261,7 @@ static void adccallback(ADCDriver *adcp) {
   next_conversion = (next_conversion+1) % 102;
 
   // start next ADC conversion
-
-#ifdef STM32F4XX
+#if defined(STM32F4XX)
   adcp->adc->CR2 |= ADC_CR2_SWSTART;
 #elif defined(STM32H7XX)
   adcp->adcm->CR |= ADC_CR_ADSTART;
@@ -415,8 +421,8 @@ const ADCConversionGroup adcgrpcfg1 = {
     ADC_SMPR2_SMP_AN15(ADC_SAMPLE_DEF)
   },
   .sqr          = {
-    ADC_SQR1_SQ1_N(ADC_CHANNEL_IN16) | ADC_SQR1_SQ2_N(ADC_CHANNEL_IN17) |
-    ADC_SQR1_SQ3_N(ADC_CHANNEL_IN14) | ADC_SQR1_SQ4_N(ADC_CHANNEL_IN15),
+    ADC_SQR1_SQ1_N(ADC_CHANNEL_IN16) | ADC_SQR1_SQ2_N(ADC_CHANNEL_IN14) |
+    ADC_SQR1_SQ3_N(ADC_CHANNEL_IN17) | ADC_SQR1_SQ4_N(ADC_CHANNEL_IN15),
     0U,
     0U,
     0U
