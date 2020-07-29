@@ -933,7 +933,7 @@ int synth_message(int size, int* msg) {
 
     if (src == ID_CONTROL) {
         if (id == IDC_ALT) {
-            dis.set_altmode(msg[0]);
+            // dis.set_altmode(msg[0]);
         }
         else if (id == IDC_PORTAMENTO) {
             // Portamento button
