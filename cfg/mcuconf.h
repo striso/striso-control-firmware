@@ -218,11 +218,12 @@
 #define STM32_IRQ_USART6_PRIORITY           12
 #define STM32_IRQ_UART7_PRIORITY            12
 #define STM32_IRQ_UART8_PRIORITY            12
+#define STM32_IRQ_LPUART1_PRIORITY          12
 
 /*
  * ADC driver system settings.
  */
-#define STM32_ADC_DUAL_MODE                 TRUE
+#define STM32_ADC_DUAL_MODE                 FALSE
 #define STM32_ADC_COMPACT_SAMPLES           FALSE
 #define STM32_ADC_USE_ADC12                 TRUE
 #define STM32_ADC_USE_ADC3                  TRUE
@@ -372,6 +373,7 @@
 #define STM32_SERIAL_USE_USART6             FALSE
 #define STM32_SERIAL_USE_UART7              FALSE
 #define STM32_SERIAL_USE_UART8              FALSE
+#define STM32_SERIAL_USE_LPUART1            FALSE
 
 /*
  * SPI driver system settings.
