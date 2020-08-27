@@ -5,6 +5,7 @@
             "includePath": [
                 ".",
                 "cfg",
+                "board",
                 "ChibiOS/os/license",
                 "ChibiOS/os/common/portability/GCC",
                 "ChibiOS/os/common/startup/ARMCMx/compilers/GCC",
@@ -39,13 +40,13 @@
                 "ChibiOS/os/oslib/include",
                 "ChibiOS/os/common/ports/ARMCMx",
                 "ChibiOS/os/common/ports/ARMCMx/compilers/GCC",
-                "ChibiOS/os/hal/lib/stream"
+                "ChibiOS/os/hal/lib/streams",
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/clang",
+            "compilerPath": "/usr/bin/arm-none-eabi-gcc",
             "cStandard": "c11",
             "cppStandard": "c++17",
-            "intelliSenseMode": "clang-x64"
+            "intelliSenseMode": "gcc-arm"
         }
     ],
     "version": 4
