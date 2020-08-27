@@ -196,7 +196,7 @@ int main(void) {
 
   ButtonReadStart();
   
-#ifdef USE_MPU6050
+#ifdef USE_MPU6050 || USE_LSM6DSL
   MotionSensorStart();
 #endif
 

@@ -109,6 +109,8 @@ include $(CHIBIOS)/os/hal/osal/rt-nil/osal.mk
 # RTOS files (optional).
 include $(CHIBIOS)/os/rt/rt.mk
 include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v7m.mk
+# EX files (optional).
+include $(CHIBIOS)/os/ex/devices/ST/lsm6dsl.mk
 # Auto-build files in ./source recursively.
 include $(CHIBIOS)/tools/mk/autobuild.mk
 # Other files (optional).
@@ -130,6 +132,7 @@ CSRC = $(ALLCSRC) \
 	button_read.c \
 	messaging.c \
 	ws2812.c \
+	motionsensor.c \
 	main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global

@@ -41,6 +41,8 @@
                 "ChibiOS/os/common/ports/ARMCMx",
                 "ChibiOS/os/common/ports/ARMCMx/compilers/GCC",
                 "ChibiOS/os/hal/lib/streams",
+                "ChibiOS/os/ex/include",
+                "ChibiOS/os/ex/devices/ST"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/arm-none-eabi-gcc",
