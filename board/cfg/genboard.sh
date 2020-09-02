@@ -6,6 +6,7 @@ then
   echo "aborted"
   exit 1
 else
+  git checkout ../board.mk
   echo
   echo "done"
   exit 0
