@@ -249,8 +249,13 @@ static void adccallback(ADCDriver *adcp) {
 #elif defined(STM32H7XX)
   samples0[next_conversion] = buffer[0];
   samples1[next_conversion] = buffer[2];
+#if STM32_ADC_DUAL_MODE == FALSE
   samples2[next_conversion] = buffer[1];
   samples3[next_conversion] = buffer[3];
+#else // with dual adc mode something's wrong with the DMA timing, try to work around
+  samples2[next_conversion] = buffer[3];
+  samples3[next_conversion] = ADCD1.adcc->CDR;
+#endif
 #endif
 
 #ifdef USE_BAS
@@ -955,7 +960,7 @@ void ButtonReadStart(void) {
   for (int n=0; n<N_BUTTONS; n++) {
     buttons[n].but_id = n;
     buttons[n].src_id = ID_DIS;
-    buttons[n].c_force = (ADCFACT>>6) / 12;//calib_dis[n];//(ADCFACT>>6) / 6;
+    buttons[n].c_force = (ADCFACT>>6) / 6;//calib_dis[n];//(ADCFACT>>6) / 6;
     buttons[n].c_offset = ADC_OFFSET;
     buttons[n].prev_but = &buttons[(n/17) * 17 + ((n+17-1) % 17)];
   }
