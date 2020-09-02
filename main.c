@@ -34,23 +34,6 @@
 #include "ws2812.h"
 #include "version.h"
 
-// next lines are necessary since synth_contol.cpp is included
-// and are copied from ChibiOS/testhal/STM32F4xx/RTC/main.c
-/* libc stub */
-int _getpid(void) {return 1;}
-/* libc stub */
-void _exit(int i) {(void)i;while(1);}
-/* libc stub */
-#include <errno.h>
-#undef errno
-extern int errno;
-int _kill(int pid, int sig) {
-  (void)pid;
-  (void)sig;
-  errno = EINVAL;
-  return -1;
-}
-
 /**
  *  Firmware version description on fixed flash address for bootloader
  */
