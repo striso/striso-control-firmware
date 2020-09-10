@@ -201,7 +201,7 @@
         Mode="Output"
         Alternate="0" />
       <pin6
-        ID="LED_R"
+        ID="LED_G"
         Type="PushPull"
         Level="Low"
         Speed="Minimum"
@@ -209,7 +209,7 @@
         Mode="Output"
         Alternate="0" />
       <pin7
-        ID="LED_G"
+        ID="LED_R"
         Type="PushPull"
         Level="Low"
         Speed="Minimum"
@@ -454,11 +454,11 @@
         Alternate="0" />
       <pin5
         ID="AUX_UART2_TX"
-        Type="PushPull"
-        Level="High"
+        Type="OpenDrain"
+        Level="Low"
         Speed="Minimum"
-        Resistor="PullUp"
-        Mode="Input"
+        Resistor="Floating"
+        Mode="Output"
         Alternate="0" />
       <pin6
         ID="AUX_UART2_RX"
@@ -544,11 +544,11 @@
     <GPIOE>
       <pin0
         ID="AUX_VDD"
-        Type="PushPull"
+        Type="OpenDrain"
         Level="High"
         Speed="Minimum"
-        Resistor="PullUp"
-        Mode="Input"
+        Resistor="Floating"
+        Mode="Output"
         Alternate="0" />
       <pin1
         ID=""

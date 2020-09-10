@@ -111,6 +111,7 @@ static const ioportmask_t out_channels_portmask[51] = {
   1<<14, 1<<13, 1<<12, 1<<11, 1<< 1, 1<< 0, 1<< 5, 1<< 4, 1<< 7,
 };
 
+#ifdef USE_BAS
 static const ioportid_t out_channels_bas_port[51] = {
   GPIOA, GPIOC, GPIOC, GPIOC, GPIOD, GPIOD, GPIOD, GPIOD, GPIOD,
   GPIOD, GPIOD, GPIOD, GPIOG, GPIOG, GPIOG, GPIOG, GPIOG,
@@ -135,6 +136,7 @@ static const ioportmask_t out_channels_bas_portmask[51] = {
   1<< 4, 1<< 5, 1<< 6, 1<< 9, 1<<10, 1<<11, 1<< 0, 1<< 1, 1<< 2,
   1<< 3, 1<< 4, 1<< 5, 1<< 6, 1<< 7, 1<< 8, 1<< 9, 1<<10,
 };
+#endif // USE_BAS
 
 static int cur_channel = 0;
 static int next_conversion = 0;
@@ -190,12 +192,13 @@ static int col_pressed[2][17] = {0};
 static int32_t max_pres = 0, max_pres1 = 0;
 
 #ifdef USE_AUX_BUTTONS
-#define LINE_BUTTON_PORT   PAL_LINE(GPIOI,  2U)
-#define LINE_BUTTON_UP     PAL_LINE(GPIOI,  1U)
-#define LINE_BUTTON_DOWN   PAL_LINE(GPIOA,  9U) // GPIOA_UART1_TX
-#define LINE_BUTTON_ALT    PAL_LINE(GPIOA, 10U) // GPIOA_UART1_RX
+// #define LINE_BUTTON_PORT   PAL_LINE(GPIOI,  2U)
+// #define LINE_BUTTON_UP     PAL_LINE(GPIOI,  1U)
+// #define LINE_BUTTON_DOWN   PAL_LINE(GPIOA,  9U) // GPIOA_UART1_TX
+// #define LINE_BUTTON_ALT    PAL_LINE(GPIOA, 10U) // GPIOA_UART1_RX
 
 static const ioline_t aux_buttons_line[4] = {LINE_BUTTON_PORT, LINE_BUTTON_UP, LINE_BUTTON_DOWN, LINE_BUTTON_ALT};
+static const bool aux_buttons_on[4] = {false, true, false, false};
 static const int aux_buttons_msg[4] = {IDC_PORTAMENTO, IDC_OCT_UP, IDC_OCT_DOWN, IDC_ALT};
 static uint32_t aux_buttons_state[4] = {0};
 #endif
@@ -228,35 +231,39 @@ static adcsample_t* samples_bas[2] = {samples_bas0, samples_bas1};
 static thread_t *tpReadButtons = NULL;
 
 static void adccallback(ADCDriver *adcp) {
-  adcsample_t *buffer = adcp->samples;
+  adcsample_t *buffer = adcp->samples; // = adc_samples
 
   /* Open old channel */
   palSetPort(out_channels_port[cur_channel], out_channels_portmask[cur_channel]);
+#ifdef USE_BAS
   palSetPort(out_channels_bas_port[cur_channel], out_channels_bas_portmask[cur_channel]);
+#endif
 
   cur_channel = (next_conversion+1) % OUT_NUM_CHANNELS;
   /* Drain new channel */
   palClearPort(out_channels_port[cur_channel], out_channels_portmask[cur_channel]);
+#ifdef USE_BAS
   palClearPort(out_channels_bas_port[cur_channel], out_channels_bas_portmask[cur_channel]);
+#endif
 
   cacheBufferInvalidate(adc_samples, sizeof (adc_samples) / sizeof (adcsample_t));
   /* copy adc_samples */
-#if defined(STM32F4XX)
+// #if defined(STM32F4XX)
   samples0[next_conversion] = buffer[0];
   samples1[next_conversion] = buffer[1];
   samples2[next_conversion] = buffer[2];
   samples3[next_conversion] = buffer[3];
-#elif defined(STM32H7XX)
-  samples0[next_conversion] = buffer[0];
-  samples1[next_conversion] = buffer[2];
-#if STM32_ADC_DUAL_MODE == FALSE
-  samples2[next_conversion] = buffer[1];
-  samples3[next_conversion] = buffer[3];
-#else // with dual adc mode something's wrong with the DMA timing, try to work around
-  samples2[next_conversion] = buffer[3];
-  samples3[next_conversion] = ADCD1.adcc->CDR;
-#endif
-#endif
+// #elif defined(STM32H7XX)
+//   samples0[next_conversion] = buffer[0];
+//   samples1[next_conversion] = buffer[2];
+// #if STM32_ADC_DUAL_MODE == FALSE
+//   samples2[next_conversion] = buffer[1];
+//   samples3[next_conversion] = buffer[3];
+// #else // with dual adc mode something's wrong with the DMA timing, try to work around
+//   samples2[next_conversion] = buffer[3];
+//   samples3[next_conversion] = ADCD1.adcc->CDR;
+// #endif
+// #endif
 
 #ifdef USE_BAS
   samples_bas0[next_conversion] = buffer[4];
@@ -402,7 +409,7 @@ const ADCConversionGroup adcgrpcfg1 = {
     0U
   }
 };
-#else
+#else // STM32_ADC_DUAL_MODE == FALSE
 const ADCConversionGroup adcgrpcfg1 = {
   .circular     = TRUE,
   .num_channels = ADC_GRP1_NUM_CHANNELS,
@@ -411,7 +418,7 @@ const ADCConversionGroup adcgrpcfg1 = {
   .cfgr         = ADC_CFGR_RES_12BITS,
   .cfgr2        = 0U,
   .ccr          = 0U,
-  .pcsel        = ADC_SELMASK_IN16 | ADC_SELMASK_IN17 | ADC_SELMASK_IN14 | ADC_SELMASK_IN15,
+  .pcsel        = ADC_SELMASK_IN3 | ADC_SELMASK_IN19 | ADC_SELMASK_IN18 | ADC_SELMASK_IN15,
   .ltr1         = 0x00000000U,
   .htr1         = 0x03FFFFFFU,
   .ltr2         = 0x00000000U,
@@ -419,15 +426,14 @@ const ADCConversionGroup adcgrpcfg1 = {
   .ltr3         = 0x00000000U,
   .htr3         = 0x03FFFFFFU,
   .smpr         = {
-    0U,
-    ADC_SMPR2_SMP_AN16(ADC_SAMPLE_DEF) |
-    ADC_SMPR2_SMP_AN17(ADC_SAMPLE_DEF) |
-    ADC_SMPR2_SMP_AN14(ADC_SAMPLE_DEF) |
+    ADC_SMPR1_SMP_AN3(ADC_SAMPLE_DEF),
+    ADC_SMPR2_SMP_AN19(ADC_SAMPLE_DEF) |
+    ADC_SMPR2_SMP_AN18(ADC_SAMPLE_DEF) |
     ADC_SMPR2_SMP_AN15(ADC_SAMPLE_DEF)
   },
   .sqr          = {
-    ADC_SQR1_SQ1_N(ADC_CHANNEL_IN16) | ADC_SQR1_SQ2_N(ADC_CHANNEL_IN14) |
-    ADC_SQR1_SQ3_N(ADC_CHANNEL_IN17) | ADC_SQR1_SQ4_N(ADC_CHANNEL_IN15),
+    ADC_SQR1_SQ1_N(ADC_CHANNEL_IN15) | ADC_SQR1_SQ2_N(ADC_CHANNEL_IN18) |
+    ADC_SQR1_SQ3_N(ADC_CHANNEL_IN19) | ADC_SQR1_SQ4_N(ADC_CHANNEL_IN3),
     0U,
     0U,
     0U
@@ -852,10 +858,10 @@ static void ThreadReadButtons(void *arg) {
               msg[0] = ID_CONTROL;
               msg[1] = aux_buttons_msg[n];
               if (aux_buttons_state[n]) {
-                msg[2] = 0;
+                msg[2] = !aux_buttons_on[n];
                 aux_buttons_state[n] = AUX_BUTTON_DEBOUNCE_TIME;
               } else {
-                msg[2] = 1;
+                msg[2] = aux_buttons_on[n];
                 aux_buttons_state[n] = AUX_BUTTON_DEBOUNCE_TIME | 0x100;
               }
               msgSend(3, msg);
@@ -910,10 +916,14 @@ void ButtonBoardTest(void) {
   for (int n=1; n<OUT_NUM_CHANNELS; n++) {
     /* Drain channel */
     palClearPad(out_channels_port[n-1], out_channels_pad[n-1]);
+#ifdef USE_BAS
     palClearPad(out_channels_bas_port[n-1], out_channels_bas_pad[n-1]);
+#endif
 
     palSetPadMode(out_channels_port[n], out_channels_pad[n], PAL_MODE_INPUT_PULLUP);
+#ifdef USE_BAS
     palSetPadMode(out_channels_bas_port[n], out_channels_bas_pad[n], PAL_MODE_INPUT_PULLUP);
+#endif
 
     chThdSleep(1);
     if (!palReadPad(out_channels_port[n], out_channels_pad[n])) {
@@ -922,16 +932,20 @@ void ButtonBoardTest(void) {
     }
 
     palSetPadMode(out_channels_port[n], out_channels_pad[n], PAL_MODE_OUTPUT_OPENDRAIN);
+#ifdef USE_BAS
     palSetPadMode(out_channels_bas_port[n], out_channels_bas_pad[n], PAL_MODE_OUTPUT_OPENDRAIN);
+#endif
     /* Open channel */
     palSetPad(out_channels_port[n-1], out_channels_pad[n-1]);
+#ifdef USE_BAS
     palSetPad(out_channels_bas_port[n-1], out_channels_bas_pad[n-1]);
+#endif
   }
 }
 
 void ButtonReadStart(void) {
   
-#ifdef USE_AUX_BUTTONS
+#if defined(USE_AUX_BUTTONS) && defined(STM32F4XX)
   palSetLineMode(LINE_BUTTON_PORT, PAL_MODE_INPUT_PULLDOWN);
   palSetLineMode(LINE_BUTTON_UP,   PAL_MODE_INPUT_PULLDOWN);
   palSetLineMode(LINE_BUTTON_DOWN, PAL_MODE_INPUT_PULLDOWN);
@@ -949,10 +963,6 @@ void ButtonReadStart(void) {
 #ifdef STM32F4XX
   adcMultiStart();
 #elif defined(STM32H7XX)
-  palSetPadMode(GPIOA, 0, PAL_MODE_INPUT_ANALOG);
-  palSetPadMode(GPIOA, 1, PAL_MODE_INPUT_ANALOG);
-  palSetPadMode(GPIOA, 2, PAL_MODE_INPUT_ANALOG);
-  palSetPadMode(GPIOA, 3, PAL_MODE_INPUT_ANALOG);
   adcStart(&ADCD1, &adccfg1);
 #endif
   

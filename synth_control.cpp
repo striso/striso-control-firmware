@@ -933,7 +933,7 @@ int synth_message(int size, int* msg) {
 
     if (src == ID_CONTROL) {
         if (id == IDC_ALT) {
-            // dis.set_altmode(msg[0]);
+            dis.set_altmode(msg[0]);
         }
         else if (id == IDC_PORTAMENTO) {
             // Portamento button
@@ -1089,7 +1089,17 @@ void synth_tick(void) {
     dis.tick();
 }
 
+void status_led(int r, int g, int b) {
+    if (r) palSetLine(LINE_LED_R);
+    else palClearLine(LINE_LED_R);
+    if (g) palSetLine(LINE_LED_G);
+    else palClearLine(LINE_LED_G);
+    if (b) palSetLine(LINE_LED_B);
+    else palClearLine(LINE_LED_B);
+}
+
 void update_leds(void) {
+    status_led(dis.altmode, 1, dis.portamento);
 #ifdef USE_WS2812
     uint8_t r = 0, g = 2, b = 0;
 
@@ -1141,4 +1151,29 @@ void update_leds(void) {
         }
     }
 #endif
+    int oct = (int)((dis.start_note_offset + 4) / 12) - 5;
+    if (oct == 0) {
+        palClearLine(LINE_LED_DOWN);
+        palClearLine(LINE_LED_DOWN2);
+        palSetLine(LINE_LED_UP);
+        palSetLine(LINE_LED_UP2);
+    } else if (oct > 0) {
+        palClearLine(LINE_LED_DOWN);
+        palClearLine(LINE_LED_DOWN2);
+        palClearLine(LINE_LED_UP);
+        if (oct > 1) {
+            palClearLine(LINE_LED_UP2);
+        } else {
+            palSetLine(LINE_LED_UP2);
+        }
+    } else {
+        palSetLine(LINE_LED_UP);
+        palSetLine(LINE_LED_UP2);
+        palSetLine(LINE_LED_DOWN);
+        if (oct < -1) {
+            palSetLine(LINE_LED_DOWN2);
+        } else {
+            palClearLine(LINE_LED_DOWN2);
+        }
+    }
 }
