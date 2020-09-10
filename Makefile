@@ -215,7 +215,7 @@ prog_uart: all
 
 # Upload firmware with Black Magic Probe
 prog_bmp: all
-	arm-none-eabi-gdb --batch $(BUILDDIR)/$(PROJECT).elf \
+	gdb-multiarch --batch $(BUILDDIR)/$(PROJECT).elf \
 		-ex "target extended-remote /dev/ttyACM0" \
 		-ex "monitor swdp_scan" \
 		-ex "attach 1" \
@@ -225,7 +225,13 @@ prog_bmp: all
 
 # Launch GDB via openocd debugger
 gdb: all
-	arm-none-eabi-gdb $(BUILDDIR)/$(PROJECT).elf -ex "tar extended-remote | openocd -f board/stm32f4discovery.cfg -c \"stm32f4x.cpu configure -rtos auto; gdb_port pipe; log_output openocd.log\""
+	gdb-multiarch $(BUILDDIR)/$(PROJECT).elf -ex "tar extended-remote | openocd -f board/stm32f4discovery.cfg -c \"stm32f4x.cpu configure -rtos auto; gdb_port pipe; log_output openocd.log\""
+
+gdb_bmp:
+	gdb-multiarch $(BUILDDIR)/$(PROJECT).elf \
+		-ex "target extended-remote /dev/ttyACM0" \
+		-ex "monitor swdp_scan" \
+		-ex "attach 1"
 
 # Start GDB server for external use (e.g. Eclipse)
 openocd:
