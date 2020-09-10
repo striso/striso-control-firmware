@@ -100,7 +100,11 @@
 #define STM32_PLL2_DIVM_VALUE               4
 #define STM32_PLL2_DIVN_VALUE               400
 #define STM32_PLL2_FRACN_VALUE              0
+#if !defined(STM32_ENFORCE_H7_REV_XY)
 #define STM32_PLL2_DIVP_VALUE               40
+#else /* defined(STM32_ENFORCE_H7_REV_XY) */
+#define STM32_PLL2_DIVP_VALUE               80
+#endif
 #define STM32_PLL2_DIVQ_VALUE               8
 #define STM32_PLL2_DIVR_VALUE               8
 #define STM32_PLL3_ENABLED                  TRUE
