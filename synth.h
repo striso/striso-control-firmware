@@ -23,10 +23,6 @@
 #include "config.h"
 #include "midi.h"
 
-#define SAMPLINGFREQ 44100
-#define CHANNEL_BUFFER_SIZE		32
-#define PLAYBACK_BUFFER_SIZE	(CHANNEL_BUFFER_SIZE*2)
-
 typedef struct struct_synth_interface {
 	float* acc_abs;
 	float* acc_x;

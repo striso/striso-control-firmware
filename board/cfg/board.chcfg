@@ -583,7 +583,7 @@
         Mode="Input"
         Alternate="0" />
       <pin5
-        ID="SAI1_SCL_A"
+        ID="SAI1_SCK_A"
         Type="PushPull"
         Level="High"
         Speed="Minimum"

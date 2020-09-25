@@ -2,6 +2,12 @@
 /*
  * ALSA SoC TLV320AIC3X codec driver
  *
+ * Supported Devices:
+ *  - tlv320aic33
+ *  - tlv320aic3007
+ *  - tlv320aic3106
+ *  - tlv320aic3104
+ *
  * Author:      Vladimir Barinov, <vbarinov@embeddedalley.com>
  * Copyright:   (C) 2007 MontaVista Software, Inc., <source@mvista.com>
  */
