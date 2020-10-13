@@ -1223,7 +1223,7 @@
  * PH10 - DIS28                     (input pullup).
  * PH11 - DIS29                     (input pullup).
  * PH12 - DIS30                     (input pullup).
- * PH13 - MOTION_INT1               (input pullup).
+ * PH13 - MOTION_INT1               (input pulldown).
  * PH14 - PIN14                     (input pullup).
  * PH15 - PIN15                     (input pullup).
  */
@@ -1288,7 +1288,7 @@
                                      PIN_PUPDR_PULLUP(GPIOH_DIS28) |        \
                                      PIN_PUPDR_PULLUP(GPIOH_DIS29) |        \
                                      PIN_PUPDR_PULLUP(GPIOH_DIS30) |        \
-                                     PIN_PUPDR_PULLUP(GPIOH_MOTION_INT1) |  \
+                                     PIN_PUPDR_PULLDOWN(GPIOH_MOTION_INT1) |\
                                      PIN_PUPDR_PULLUP(GPIOH_PIN14) |        \
                                      PIN_PUPDR_PULLUP(GPIOH_PIN15))
 #define VAL_GPIOH_ODR               (PIN_ODR_HIGH(GPIOH_PIN0) |             \
@@ -1333,8 +1333,8 @@
  * PI3  - BUTTON_PORT               (input pullup).
  * PI4  - PIN4                      (input pullup).
  * PI5  - PIN5                      (input pullup).
- * PI6  - HP_EN                     (input pullup).
- * PI7  - CODEC_EN                  (input pullup).
+ * PI6  - HP_EN                     (output pushpull minimum).
+ * PI7  - CODEC_EN                  (output pushpull minimum).
  * PI8  - PIN8                      (input pullup).
  * PI9  - LED1                      (output pushpull minimum).
  * PI10 - PIN10                     (input pullup).
@@ -1350,8 +1350,8 @@
                                      PIN_MODE_INPUT(GPIOI_BUTTON_PORT) |    \
                                      PIN_MODE_INPUT(GPIOI_PIN4) |           \
                                      PIN_MODE_INPUT(GPIOI_PIN5) |           \
-                                     PIN_MODE_INPUT(GPIOI_HP_EN) |          \
-                                     PIN_MODE_INPUT(GPIOI_CODEC_EN) |       \
+                                     PIN_MODE_OUTPUT(GPIOI_HP_EN) |         \
+                                     PIN_MODE_OUTPUT(GPIOI_CODEC_EN) |      \
                                      PIN_MODE_INPUT(GPIOI_PIN8) |           \
                                      PIN_MODE_OUTPUT(GPIOI_LED1) |          \
                                      PIN_MODE_INPUT(GPIOI_PIN10) |          \
@@ -1398,8 +1398,8 @@
                                      PIN_PUPDR_PULLUP(GPIOI_BUTTON_PORT) |  \
                                      PIN_PUPDR_PULLUP(GPIOI_PIN4) |         \
                                      PIN_PUPDR_PULLUP(GPIOI_PIN5) |         \
-                                     PIN_PUPDR_PULLUP(GPIOI_HP_EN) |        \
-                                     PIN_PUPDR_PULLUP(GPIOI_CODEC_EN) |     \
+                                     PIN_PUPDR_FLOATING(GPIOI_HP_EN) |      \
+                                     PIN_PUPDR_FLOATING(GPIOI_CODEC_EN) |   \
                                      PIN_PUPDR_PULLUP(GPIOI_PIN8) |         \
                                      PIN_PUPDR_FLOATING(GPIOI_LED1) |       \
                                      PIN_PUPDR_PULLUP(GPIOI_PIN10) |        \
@@ -1414,8 +1414,8 @@
                                      PIN_ODR_HIGH(GPIOI_BUTTON_PORT) |      \
                                      PIN_ODR_HIGH(GPIOI_PIN4) |             \
                                      PIN_ODR_HIGH(GPIOI_PIN5) |             \
-                                     PIN_ODR_HIGH(GPIOI_HP_EN) |            \
-                                     PIN_ODR_HIGH(GPIOI_CODEC_EN) |         \
+                                     PIN_ODR_LOW(GPIOI_HP_EN) |             \
+                                     PIN_ODR_LOW(GPIOI_CODEC_EN) |          \
                                      PIN_ODR_HIGH(GPIOI_PIN8) |             \
                                      PIN_ODR_HIGH(GPIOI_LED1) |             \
                                      PIN_ODR_HIGH(GPIOI_PIN10) |            \
