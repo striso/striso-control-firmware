@@ -15,6 +15,9 @@
 #ifndef _AIC3X_H
 #define _AIC3X_H
 
+/* AIC3X I2C address */
+#define AIC3X_I2C_ADDR  0x18
+
 /* AIC3X register space */
 #define AIC3X_CACHEREGNUM		110
 
@@ -50,17 +53,14 @@
 /* ADC PGA Gain control registers */
 #define LADC_VOL			15
 #define RADC_VOL			16
-/* MIC3 control registers */
-#define MIC3LR_2_LADC_CTRL		17
-#define MIC3LR_2_RADC_CTRL		18
+/* Line2 Input control registers */
+#define LINE2L_2_LADC_CTRL		17
+#define LINE2R_2_RADC_CTRL		18
 /* Line1 Input control registers */
 #define LINE1L_2_LADC_CTRL		19
 #define LINE1R_2_LADC_CTRL		21
 #define LINE1R_2_RADC_CTRL		22
 #define LINE1L_2_RADC_CTRL		24
-/* Line2 Input control registers */
-#define LINE2L_2_LADC_CTRL		20
-#define LINE2R_2_RADC_CTRL		23
 /* MICBIAS Control Register */
 #define MICBIAS_CTRL			25
 

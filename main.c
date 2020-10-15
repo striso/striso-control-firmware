@@ -177,6 +177,10 @@ int main(void) {
   midi_config();
 #endif
 
+#ifdef USE_INTERNAL_SYNTH
+  codec_init(SAMPLERATE);
+#endif
+
   ButtonReadStart();
   
 #if defined(USE_MPU6050) || defined(USE_LSM6DSL)

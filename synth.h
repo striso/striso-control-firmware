@@ -20,8 +20,12 @@
 
 #include "ch.h"
 #include "hal.h"
+
 #include "config.h"
 #include "midi.h"
+#include "codec.h"
+
+#define VOICECOUNT 4
 
 typedef struct struct_synth_interface {
 	float* acc_abs;
@@ -38,9 +42,8 @@ typedef struct struct_synth_interface {
 	float* but_y[MAX_VOICECOUNT];
 } synth_interface_t;
 
-#ifdef USE_SYNTH_INTERFACE
+#ifdef USE_INTERNAL_SYNTH
 extern synth_interface_t synth_interface;
-extern synth_interface_t synth_interface_bas;
 
 void start_synth_thread(void);
 #endif

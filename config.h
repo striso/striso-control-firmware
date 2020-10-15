@@ -25,7 +25,7 @@
 #define USE_USB
 #define USE_AUX_BUTTONS
 #define USE_MIDI_OUT
-//#define USE_SYNTH_INTERFACE
+#define USE_INTERNAL_SYNTH
 // #define USE_MPU6050
 // #define USE_LSM6DSL
 // #define USE_WS2812
@@ -43,7 +43,7 @@
 //#define USE_USB
 //#define USE_AUX_BUTTONS
 //#define USE_MIDI_OUT
-//#define USE_SYNTH_INTERFACE
+//#define USE_INTERNAL_SYNTH
 //#define USE_MPU6050
 //#define USE_WS2812
 #endif
