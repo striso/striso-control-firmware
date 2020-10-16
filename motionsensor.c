@@ -89,7 +89,7 @@ static float gyrocooked[LSM6DSL_GYRO_NUMBER_OF_AXES];
 static const LSM6DSLConfig lsm6dslcfg = {
   &I2CD_MOTION,
   &i2ccfg_motion,
-  LSM6DSL_SAD_VCC,
+  LSM6DSL_SAD_GND,
   NULL,
   NULL,
   LSM6DSL_ACC_FS_8G,
