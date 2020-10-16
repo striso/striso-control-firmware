@@ -28,6 +28,9 @@
 #ifdef USE_MPU6050
 #include "MPU6050.h"
 #endif
+#ifdef USE_LSM6DSL
+#include "lsm6dsl.h"
+#endif
 
 /* I2C interface #1 */
 #if defined(STM32F4XX)
@@ -63,9 +66,10 @@ def timingr(t):
   STM32_TIMINGR_SCLH(43U)  | STM32_TIMINGR_SCLL(58U),
 */
 static const I2CConfig i2ccfg_motion = {
-  STM32_TIMINGR_PRESC(2U) |
-  STM32_TIMINGR_SCLDEL(13U) | STM32_TIMINGR_SDADEL(8U) |
-  STM32_TIMINGR_SCLH(17U)  | STM32_TIMINGR_SCLL(40U),
+// 100kHz, 300,300 rise,fall:
+  STM32_TIMINGR_PRESC(8U) |
+  STM32_TIMINGR_SCLDEL(6U) | STM32_TIMINGR_SDADEL(3U) |
+  STM32_TIMINGR_SCLH(43U)  | STM32_TIMINGR_SCLL(58U),
   0,
   0
 };
@@ -115,7 +119,6 @@ static const LSM6DSLConfig lsm6dslcfg = {
  */
 static THD_WORKING_AREA(waThreadAccel, 256);
 static void ThreadAccel(void *arg) {
-  (void)arg;
   chRegSetThreadName("motion");
 
   int16_t ax, ay, az, gx, gy, gz;
@@ -182,7 +185,7 @@ static void ThreadAccel(void *arg) {
     msg[8] = gz>>2;
     msgSend(9,msg);
 
-#ifdef USE_SYNTH_INTERFACE
+#ifdef USE_INTERNAL_SYNTH
     float rot_x = ((float)gx)*(1.0/32768.0);
     float rot_y = ((float)gy)*(1.0/32768.0);
     float rot_z = ((float)gz)*(1.0/32768.0);
@@ -227,15 +230,15 @@ static void ThreadAccel(void *arg) {
     msg[8] = gz>>2;
     msgSend(9,msg);
 
-#ifdef USE_SYNTH_INTERFACE
+#ifdef USE_INTERNAL_SYNTH
     float rot_x = ((float)gx)*(1.0/32768.0);
     float rot_y = ((float)gy)*(1.0/32768.0);
     float rot_z = ((float)gz)*(1.0/32768.0);
 
     *(synth_interface.acc_abs) = acc_abs;
-    *(synth_interface.acc_x) = acc_x;
-    *(synth_interface.acc_y) = acc_y;
-    *(synth_interface.acc_z) = acc_z;
+    *(synth_interface.acc_x) = acccooked[0];
+    *(synth_interface.acc_y) = acccooked[1];
+    *(synth_interface.acc_z) = acccooked[2];
     *(synth_interface.rot_x) = rot_x;
     *(synth_interface.rot_y) = rot_y;
     *(synth_interface.rot_z) = rot_z;
@@ -261,8 +264,8 @@ void MotionSensorStart(void) {
     return;
   }
 
-  palSetLineMode(LINE_MOTION_I2C_SCL, PAL_MODE_ALTERNATE(4) | PAL_STM32_OTYPE_OPENDRAIN);
-  palSetLineMode(LINE_MOTION_I2C_SDA, PAL_MODE_ALTERNATE(4) | PAL_STM32_OTYPE_OPENDRAIN);
+  palSetLineMode(LINE_MOTION_I2C_SCL, PAL_MODE_ALTERNATE(4) | PAL_STM32_OTYPE_OPENDRAIN | PAL_STM32_OSPEED_HIGHEST);
+  palSetLineMode(LINE_MOTION_I2C_SDA, PAL_MODE_ALTERNATE(4) | PAL_STM32_OTYPE_OPENDRAIN | PAL_STM32_OSPEED_HIGHEST);
 
 #ifdef USE_MPU6050
   /* I2C interface for MPU-6050 */

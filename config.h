@@ -27,7 +27,7 @@
 #define USE_MIDI_OUT
 #define USE_INTERNAL_SYNTH
 // #define USE_MPU6050
-// #define USE_LSM6DSL
+#define USE_LSM6DSL
 // #define USE_WS2812
 
 #define SAMPLERATE 48000
