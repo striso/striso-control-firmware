@@ -210,7 +210,7 @@ prog: all
 	dfu-util -d0483:df11 -a0 -s0x8000000:leave -D $(BUILDDIR)/$(PROJECT).bin
 
 prog_openocd: all
-	openocd -f "board/stm32f4discovery.cfg"  -c "program $(BUILDDIR)/$(PROJECT).elf reset exit"
+	openocd -f interface/stlink.cfg -f target/stm32h7x.cfg -c "program $(BUILDDIR)/$(PROJECT).elf reset exit"
 
 prog_uart: all
 	./stm32loader.py -e -w -v $(BUILDDIR)/$(PROJECT).bin
@@ -226,8 +226,8 @@ prog_bmp: all
 		-ex "kill"
 
 # Launch GDB via openocd debugger
-gdb: all
-	gdb-multiarch $(BUILDDIR)/$(PROJECT).elf -ex "tar extended-remote | openocd -f board/stm32f4discovery.cfg -c \"stm32f4x.cpu configure -rtos auto; gdb_port pipe; log_output openocd.log\""
+gdb:
+	gdb-multiarch $(BUILDDIR)/$(PROJECT).elf -ex "tar extended-remote | openocd -f interface/stlink.cfg -f target/stm32h7x.cfg -c \"stm32h7x.cpu configure -rtos auto; gdb_port pipe; log_output openocd.log\""
 
 gdb_bmp:
 	gdb-multiarch $(BUILDDIR)/$(PROJECT).elf \
