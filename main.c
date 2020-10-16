@@ -197,6 +197,20 @@ int main(void) {
   while (1) {
     chThdSleepMilliseconds(2);
     synth_tick();
+
+    // Jack detection
+    if (palReadLine(LINE_AUX_JACK_DETECT)) {
+      palSetLine(LINE_LED_ALT);
+      palSetLine(LINE_AUX_UART2_TX);
+    } else {
+      palClearLine(LINE_LED_ALT);
+    }
+    if (palReadLine(LINE_JACK_DETECT)) {
+      // palSetLine(LINE_LED_R);
+    } else {
+      // palClearLine(LINE_LED_R);
+    }
+
 #ifdef USE_USB
     PExReceive();
 #endif
