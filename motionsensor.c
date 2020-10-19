@@ -18,6 +18,8 @@
 #include "ch.h"
 #include "hal.h"
 
+#include "ccportab.h"
+
 #include "motionsensor.h"
 #include "config.h"
 #include "striso.h"
@@ -75,44 +77,65 @@ static const I2CConfig i2ccfg_motion = {
 };
 #endif
 
-#ifdef USE_LSM6DSL
-#include "lsm6dsl.h"
-/* LSM6DSL Driver: This object represent an LSM6DSL instance */
-static  LSM6DSLDriver LSM6DSLD1;
-
-static int32_t accraw[LSM6DSL_ACC_NUMBER_OF_AXES];
-static int32_t gyroraw[LSM6DSL_GYRO_NUMBER_OF_AXES];
-
-static float acccooked[LSM6DSL_ACC_NUMBER_OF_AXES];
-static float gyrocooked[LSM6DSL_GYRO_NUMBER_OF_AXES];
-
-static const LSM6DSLConfig lsm6dslcfg = {
-  &I2CD_MOTION,
-  &i2ccfg_motion,
-  LSM6DSL_SAD_GND,
-  NULL,
-  NULL,
-  LSM6DSL_ACC_FS_8G,
-  LSM6DSL_ACC_ODR_104Hz,
-#if LSM6DSL_USE_ADVANCED
-  LSM6DSL_ACC_LP_ENABLED,
-#endif
-  NULL,
-  NULL,
-  LSM6DSL_GYRO_FS_500DPS,
-  LSM6DSL_GYRO_ODR_104Hz,
-#if LSM6DSL_USE_ADVANCED
-  LSM6DSL_GYRO_LP_ENABLED,
-  LSM6DSL_GYRO_LPF_FTYPE1,
-#endif
-#if LSM6DSL_USE_ADVANCED
-  LSM6DSL_BDU_BLOCKED,
-  LSM6DSL_END_LITTLE
-#endif
-};
-#endif
-
 #define pow2(x) ((x)*(x))
+
+#ifdef USE_LSM6DSL
+/*
+ * I2C TX and RX buffers.
+ */
+CC_ALIGN(CACHE_LINE_SIZE) static uint8_t txbuf[32];
+CC_ALIGN(CACHE_LINE_SIZE) static uint8_t rxbuf[32];
+
+uint8_t lsm6dslReadRegister(uint8_t RegisterAddr) {
+  msg_t status;
+  txbuf[0] = RegisterAddr;
+  cacheBufferFlush(&txbuf[0], sizeof txbuf);
+  status = i2cMasterTransmit(&I2CD_MOTION, LSM6DSL_SAD_GND, txbuf, 1,
+                             rxbuf, 1);
+  cacheBufferInvalidate(&rxbuf[0], sizeof rxbuf);
+  return (rxbuf[0]);
+}
+
+uint8_t lsm6dslReadMotion(int16_t* motion) {
+  msg_t status;
+  txbuf[0] = LSM6DSL_AD_OUTX_L_G;
+  cacheBufferFlush(&txbuf[0], sizeof txbuf);
+  status = i2cMasterTransmit(&I2CD_MOTION, LSM6DSL_SAD_GND, txbuf, 1,
+                             rxbuf, 12);
+  cacheBufferInvalidate(&rxbuf[0], sizeof rxbuf);
+  for (int i = 0; i<6; i++) {
+    motion[i] = ((int16_t*)rxbuf)[i];
+  }
+  return status;
+}
+
+float lsm6dslReadTemp(void) {
+  msg_t status;
+  txbuf[0] = LSM6DSL_AD_OUT_TEMP_L;
+  cacheBufferFlush(&txbuf[0], sizeof txbuf);
+  status = i2cMasterTransmit(&I2CD_MOTION, LSM6DSL_SAD_GND, txbuf, 1,
+                             rxbuf, 2);
+  cacheBufferInvalidate(&rxbuf[0], sizeof rxbuf);
+  return (float)(((int16_t*)rxbuf)[0])/256.0f + 25.0f;
+}
+
+void lsm6dslWriteRegister(uint8_t RegisterAddr, uint8_t RegisterValue) {
+  msg_t status;
+  txbuf[0] = RegisterAddr;
+  txbuf[1] = RegisterValue;
+
+  cacheBufferFlush(&txbuf[0], sizeof txbuf);
+  status = i2cMasterTransmit(&I2CD_MOTION, LSM6DSL_SAD_GND, txbuf, 2,
+                             rxbuf, 0);
+
+  static uint8_t rd;
+  rd = lsm6dslReadRegister(RegisterAddr);
+  if (rd != RegisterValue) {
+//    setErrorFlag(ERROR_CODEC_I2C);
+  } else {
+  }
+}
+#endif USE_LSM6DSL
 
 /*
  * This is a periodic thread that reads accelerometer and sends messages
@@ -205,21 +228,34 @@ static void ThreadAccel(void *arg) {
   }
 #endif
 #ifdef USE_LSM6DSL
-  /* Reader thread loop.*/
-  while (TRUE) {
-    lsm6dslAccelerometerReadCooked(&LSM6DSLD1, acccooked);
-    // gyroscopeReadCooked(&LSM6DSLD1, gyrocooked);
-    lsm6dslGyroscopeReadRaw(&LSM6DSLD1, gyroraw);
-    float acc_abs = sqrtf(pow2(acccooked[0]) + pow2(acccooked[1]) + pow2(acccooked[2]));
-    if (acc_abs>0.001) {
-      acccooked[0] /= acc_abs;
-      acccooked[1] /= acc_abs;
-      acccooked[2] /= acc_abs;
-    }
 
-    ax = -acccooked[0] * 32768.0; gx = -gyroraw[0];
-    ay = -acccooked[1] * 32768.0; gy = -gyroraw[1];
-    az = -acccooked[2] * 32768.0; gz = -gyroraw[2];
+  // motion sensor reset
+  lsm6dslWriteRegister(LSM6DSL_AD_CTRL3_C, LSMDSL_CTRL3_C_IF_INC | LSMDSL_CTRL3_C_SW_RESET);
+
+  chThdSleepMilliseconds(1);
+  lsm6dslWriteRegister(LSM6DSL_AD_CTRL1_XL, LSM6DSL_ACC_ODR_208Hz | LSM6DSL_ACC_FS_4G);
+  lsm6dslWriteRegister(LSM6DSL_AD_CTRL2_G, LSM6DSL_GYRO_ODR_208Hz | LSM6DSL_GYRO_FS_250DPS);
+
+
+
+  /* Reader thread loop.*/
+  uint16_t motion[6];
+  while (TRUE) {
+    lsm6dslReadMotion(motion);
+
+    ax = -motion[3]; gx = -motion[0];
+    ay = -motion[4]; gy = -motion[1];
+    az = -motion[5]; gz = -motion[2];
+
+    float acc_x = ((float)ax)*(8.0/32768.0);
+    float acc_y = ((float)ay)*(8.0/32768.0);
+    float acc_z = ((float)az)*(8.0/32768.0);
+    float acc_abs = sqrtf(pow2(acc_x) + pow2(acc_y) + pow2(acc_z));
+    if (acc_abs>0.001) {
+      acc_x /= acc_abs;
+      acc_y /= acc_abs;
+      acc_z /= acc_abs;
+    }
 
     msg[2] = ax>>2;
     msg[3] = ay>>2;
@@ -236,9 +272,9 @@ static void ThreadAccel(void *arg) {
     float rot_z = ((float)gz)*(1.0/32768.0);
 
     *(synth_interface.acc_abs) = acc_abs;
-    *(synth_interface.acc_x) = acccooked[0];
-    *(synth_interface.acc_y) = acccooked[1];
-    *(synth_interface.acc_z) = acccooked[2];
+    *(synth_interface.acc_x) = acc_x;
+    *(synth_interface.acc_y) = acc_y;
+    *(synth_interface.acc_z) = acc_z;
     *(synth_interface.rot_x) = rot_x;
     *(synth_interface.rot_y) = rot_y;
     *(synth_interface.rot_z) = rot_z;
@@ -267,20 +303,8 @@ void MotionSensorStart(void) {
   palSetLineMode(LINE_MOTION_I2C_SCL, PAL_MODE_ALTERNATE(4) | PAL_STM32_OTYPE_OPENDRAIN | PAL_STM32_OSPEED_HIGHEST);
   palSetLineMode(LINE_MOTION_I2C_SDA, PAL_MODE_ALTERNATE(4) | PAL_STM32_OTYPE_OPENDRAIN | PAL_STM32_OSPEED_HIGHEST);
 
-#ifdef USE_MPU6050
   /* I2C interface for MPU-6050 */
   i2cStart(&I2CD_MOTION, &i2ccfg_motion);
-#endif
-
-#ifdef USE_LSM6DSL
-  /* LSM6DSL Object Initialization.*/
-  lsm6dslObjectInit(&LSM6DSLD1);
-
-  /* Activates the LSM6DSL driver.*/
-  lsm6dslStart(&LSM6DSLD1, &lsm6dslcfg);
-
-  lsm6dslGyroscopeSampleBias(&LSM6DSLD1);
-#endif
 
   chThdCreateStatic(waThreadAccel, sizeof(waThreadAccel), NORMALPRIO, ThreadAccel, NULL);
 }
