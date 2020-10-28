@@ -28,6 +28,16 @@ extern "C" {
 #include "config.h"
 #include "striso.h"
 #include "midi_usb.h"
+#include "midi_serial.h"
+#include "midi.h"
+
+void serial_MidiSend3(uint8_t b0, uint8_t b1, uint8_t b2) {
+  unsigned char tx[3];
+  tx[0] = b0;
+  tx[1] = b1;
+  tx[2] = b2;
+  sdWrite(&SDMIDI, tx, 3);
+}
 
 #ifndef USE_WS2812
 #define ws2812_write_led(a,b,c,d)
@@ -160,6 +170,8 @@ class MotionSensor {
                     }
                     if (rot_x != last_rot_x) {
                         midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                                           80, rot_x);
+                        serial_MidiSend3(MIDI_CONTROL_CHANGE,
                                            80, rot_x);
                         last_rot_x = rot_x;
                     }
@@ -584,6 +596,9 @@ class Instrument {
                         else if (velo < 1) velo = 1;
                         midi_usb_MidiSend3(1, MIDI_NOTE_ON | midi_channel_offset,
                                         buttons[but].midinote, velo);
+#ifdef USE_MIDI_SERIAL
+                        serial_MidiSend3(MIDI_NOTE_ON, buttons[but].midinote, velo);
+#endif
                     }
                     int pres = buttons[but].pres * pres_sensitivity;
                     if (pres > 127) pres = 127;
@@ -600,6 +615,9 @@ class Instrument {
                     else if (velo < 0) velo = 0;
                     midi_usb_MidiSend3(1, MIDI_NOTE_OFF | midi_channel_offset,
                                     buttons[but].midinote, velo);
+#ifdef USE_MIDI_SERIAL
+                    serial_MidiSend3(MIDI_NOTE_OFF, buttons[but].midinote, velo);
+#endif
                 }
                 return;
 #endif
@@ -726,6 +744,9 @@ class Instrument {
                 else if (velo < 0) velo = 0;
                 midi_usb_MidiSend3(1, MIDI_NOTE_OFF | (midi_channel_offset + buttons[but].voice),
                                    buttons[but].midinote, velo);
+#ifdef USE_MIDI_SERIAL
+                serial_MidiSend3(MIDI_NOTE_OFF, buttons[but].midinote, velo);
+#endif
 #endif
             }
         }
@@ -766,6 +787,9 @@ class Instrument {
 
                 midi_usb_MidiSend3(1, MIDI_NOTE_ON | (midi_channel_offset + buttons[but].voice),
                                    buttons[but].midinote, velo);
+#ifdef USE_MIDI_SERIAL
+                serial_MidiSend3(MIDI_NOTE_ON, buttons[but].midinote, velo);
+#endif
                 buttons[but].last_velo = velo;
 #endif
 

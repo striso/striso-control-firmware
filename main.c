@@ -33,6 +33,7 @@
 #include "motionsensor.h"
 #include "ws2812.h"
 #include "version.h"
+#include "midi_serial.h"
 
 /**
  *  Firmware version description on fixed flash address for bootloader
@@ -145,6 +146,10 @@ int main(void) {
    */
 #ifdef USE_UART
   sdStart(&SD1, &ser_cfg);
+#endif
+
+#ifdef USE_MIDI_SERIAL
+  serial_midi_init();
 #endif
 
 #ifdef USE_WS2812

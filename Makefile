@@ -128,6 +128,7 @@ CSRC = $(ALLCSRC) \
 	pconnection.c \
 	bulk_usb.c \
 	midi_usb.c \
+	midi_serial.c \
 	button_read.c \
 	messaging.c \
 	ws2812.c \
