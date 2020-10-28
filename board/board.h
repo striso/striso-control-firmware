@@ -748,7 +748,7 @@
  * PD3  - JACK_DETECT               (input pullup).
  * PD4  - AUX_JACK_DETECT           (input pullup).
  * PD5  - AUX_UART2_TX              (output opendrain minimum).
- * PD6  - AUX_UART2_RX              (input pullup).
+ * PD6  - AUX_UART2_RX              (input floating).
  * PD7  - SPI1_MOSI                 (input pullup).
  * PD8  - DIS34                     (input pullup).
  * PD9  - DIS35                     (input pullup).
@@ -813,7 +813,7 @@
                                      PIN_PUPDR_PULLUP(GPIOD_JACK_DETECT) |  \
                                      PIN_PUPDR_PULLUP(GPIOD_AUX_JACK_DETECT) |\
                                      PIN_PUPDR_FLOATING(GPIOD_AUX_UART2_TX) |\
-                                     PIN_PUPDR_PULLUP(GPIOD_AUX_UART2_RX) | \
+                                     PIN_PUPDR_FLOATING(GPIOD_AUX_UART2_RX) |\
                                      PIN_PUPDR_PULLUP(GPIOD_SPI1_MOSI) |    \
                                      PIN_PUPDR_PULLUP(GPIOD_DIS34) |        \
                                      PIN_PUPDR_PULLUP(GPIOD_DIS35) |        \
