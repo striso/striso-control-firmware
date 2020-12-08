@@ -130,7 +130,6 @@ CSRC = $(ALLCSRC) \
 	midi_usb.c \
 	button_read.c \
 	messaging.c \
-	ws2812.c \
 	motionsensor.c \
 	codec_tlv320aic3x_SAI.c \
 	main.c
