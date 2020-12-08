@@ -88,6 +88,11 @@ CC_ALIGN(CACHE_LINE_SIZE) static uint8_t rxbuf[32];
 
 uint8_t lsm6dslReadRegister(uint8_t RegisterAddr) {
   msg_t status;
+
+  if (I2CD3.state != I2C_READY) {
+    i2cStart(&I2CD_MOTION, &i2ccfg_motion);
+  }
+
   txbuf[0] = RegisterAddr;
   cacheBufferFlush(&txbuf[0], sizeof txbuf);
   status = i2cMasterTransmit(&I2CD_MOTION, LSM6DSL_SAD_GND, txbuf, 1,
@@ -98,6 +103,11 @@ uint8_t lsm6dslReadRegister(uint8_t RegisterAddr) {
 
 uint8_t lsm6dslReadMotion(int16_t* motion) {
   msg_t status;
+
+  if (I2CD3.state != I2C_READY) {
+    i2cStart(&I2CD_MOTION, &i2ccfg_motion);
+  }
+
   txbuf[0] = LSM6DSL_AD_OUTX_L_G;
   cacheBufferFlush(&txbuf[0], sizeof txbuf);
   status = i2cMasterTransmit(&I2CD_MOTION, LSM6DSL_SAD_GND, txbuf, 1,
@@ -121,6 +131,11 @@ float lsm6dslReadTemp(void) {
 
 void lsm6dslWriteRegister(uint8_t RegisterAddr, uint8_t RegisterValue) {
   msg_t status;
+
+  if (I2CD3.state != I2C_READY) {
+    i2cStart(&I2CD_MOTION, &i2ccfg_motion);
+  }
+
   txbuf[0] = RegisterAddr;
   txbuf[1] = RegisterValue;
 
@@ -135,7 +150,7 @@ void lsm6dslWriteRegister(uint8_t RegisterAddr, uint8_t RegisterValue) {
   } else {
   }
 }
-#endif USE_LSM6DSL
+#endif // USE_LSM6DSL
 
 /*
  * This is a periodic thread that reads accelerometer and sends messages
@@ -239,7 +254,7 @@ static void ThreadAccel(void *arg) {
 
 
   /* Reader thread loop.*/
-  uint16_t motion[6];
+  int16_t motion[6];
   while (TRUE) {
     lsm6dslReadMotion(motion);
 
