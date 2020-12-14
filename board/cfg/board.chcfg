@@ -8,7 +8,7 @@
     <output_path>..</output_path>
     <hal_version>5.0.x</hal_version>
   </configuration_settings>
-  <board_name>Striso dis v2.0 H743</board_name>
+  <board_name>Striso dis v2.0.2 H743</board_name>
   <board_id>STRISO_H743</board_id>
   <board_functions></board_functions>
   <headers></headers>
@@ -95,7 +95,7 @@
         Mode="Input"
         Alternate="4" />
       <pin9
-        ID="LED_DOWN"
+        ID="LED_DOWN2"
         Type="PushPull"
         Level="Low"
         Speed="Minimum"
@@ -103,9 +103,9 @@
         Mode="Output"
         Alternate="0" />
       <pin10
-        ID="LED_UP"
+        ID="LED_UP2"
         Type="PushPull"
-        Level="High"
+        Level="Low"
         Speed="Minimum"
         Resistor="Floating"
         Mode="Output"
@@ -185,7 +185,7 @@
         Mode="Input"
         Alternate="0" />
       <pin4
-        ID="LED_DOWN2"
+        ID="LED_DOWN"
         Type="PushPull"
         Level="Low"
         Speed="Minimum"
@@ -193,33 +193,33 @@
         Mode="Output"
         Alternate="0" />
       <pin5
-        ID="LED_UP2"
+        ID="LED_UP"
+        Type="PushPull"
+        Level="Low"
+        Speed="Minimum"
+        Resistor="Floating"
+        Mode="Output"
+        Alternate="0" />
+      <pin6
+        ID="LED_R"
         Type="PushPull"
         Level="High"
         Speed="Minimum"
         Resistor="Floating"
         Mode="Output"
         Alternate="0" />
-      <pin6
-        ID="LED_G"
-        Type="PushPull"
-        Level="Low"
-        Speed="Minimum"
-        Resistor="Floating"
-        Mode="Output"
-        Alternate="0" />
       <pin7
-        ID="LED_R"
+        ID="LED_B"
         Type="PushPull"
-        Level="Low"
+        Level="High"
         Speed="Minimum"
         Resistor="Floating"
         Mode="Output"
         Alternate="0" />
       <pin8
-        ID="LED_B"
+        ID="LED_G"
         Type="PushPull"
-        Level="Low"
+        Level="High"
         Speed="Minimum"
         Resistor="Floating"
         Mode="Output"
@@ -745,12 +745,12 @@
         Mode="Input"
         Alternate="0" />
       <pin9
-        ID="LED_ALT"
+        ID=""
         Type="PushPull"
-        Level="Low"
+        Level="High"
         Speed="Minimum"
-        Resistor="Floating"
-        Mode="Output"
+        Resistor="PullUp"
+        Mode="Input"
         Alternate="0" />
       <pin10
         ID=""

@@ -200,10 +200,10 @@ int main(void) {
 
     // Jack detection
     if (palReadLine(LINE_AUX_JACK_DETECT)) {
-      palSetLine(LINE_LED_ALT);
+      // palSetLine(LINE_LED_ALT);
       palSetLine(LINE_AUX_UART2_TX);
     } else {
-      palClearLine(LINE_LED_ALT);
+      // palClearLine(LINE_LED_ALT);
     }
     if (palReadLine(LINE_JACK_DETECT)) {
       // palSetLine(LINE_LED_R);

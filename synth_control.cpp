@@ -1090,12 +1090,12 @@ void synth_tick(void) {
 }
 
 void status_led(int r, int g, int b) {
-    if (r) palSetLine(LINE_LED_R);
-    else palClearLine(LINE_LED_R);
-    if (g) palSetLine(LINE_LED_G);
-    else palClearLine(LINE_LED_G);
-    if (b) palSetLine(LINE_LED_B);
-    else palClearLine(LINE_LED_B);
+    if (r) palClearLine(LINE_LED_R);
+    else palSetLine(LINE_LED_R);
+    if (g) palClearLine(LINE_LED_G);
+    else palSetLine(LINE_LED_G);
+    if (b) palClearLine(LINE_LED_B);
+    else palSetLine(LINE_LED_B);
 }
 
 void update_leds(void) {
@@ -1155,20 +1155,20 @@ void update_leds(void) {
     if (oct == 0) {
         palClearLine(LINE_LED_DOWN);
         palClearLine(LINE_LED_DOWN2);
-        palSetLine(LINE_LED_UP);
-        palSetLine(LINE_LED_UP2);
+        palClearLine(LINE_LED_UP);
+        palClearLine(LINE_LED_UP2);
     } else if (oct > 0) {
         palClearLine(LINE_LED_DOWN);
         palClearLine(LINE_LED_DOWN2);
-        palClearLine(LINE_LED_UP);
+        palSetLine(LINE_LED_UP);
         if (oct > 1) {
-            palClearLine(LINE_LED_UP2);
-        } else {
             palSetLine(LINE_LED_UP2);
+        } else {
+            palClearLine(LINE_LED_UP2);
         }
     } else {
-        palSetLine(LINE_LED_UP);
-        palSetLine(LINE_LED_UP2);
+        palClearLine(LINE_LED_UP);
+        palClearLine(LINE_LED_UP2);
         palSetLine(LINE_LED_DOWN);
         if (oct < -1) {
             palSetLine(LINE_LED_DOWN2);
