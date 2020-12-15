@@ -34,11 +34,19 @@
 #include "ws2812.h"
 #include "version.h"
 
+const char confightm[] = "Test bla die bla die bla";
+
 /**
  *  Firmware version description on fixed flash address for bootloader
  */
-__attribute__ ((section(".fwversion"))) __attribute__((used))
-const char fwversion[] = "Firmware version: striso_control_" FWVERSION "\r\n";
+__attribute__ ((section(".fwinfo"))) __attribute__((used))
+const struct {
+  char fwversion[512];
+  uint32_t confightm[16];
+} fwinfo = {
+  .fwversion = "Firmware version: striso_control_" FWVERSION "\r\n",
+  .confightm = {confightm, sizeof(confightm)}, // sizeof() -1?
+};
 
 // force sqrtf to use FPU, the standard one apparently doesn't
 float vsqrtf(float op1) {

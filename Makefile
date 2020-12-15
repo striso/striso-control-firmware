@@ -118,7 +118,8 @@ include $(CHIBIOS)/os/hal/lib/streams/streams.mk # for chprintf
 # Define linker script file here
 #LDSCRIPT= $(STARTUPLD)/STM32F407xG.ld
 #LDSCRIPT= STM32F407xE_bootloader.ld
-LDSCRIPT= $(STARTUPLD)/STM32H743xI.ld
+#LDSCRIPT= $(STARTUPLD)/STM32H743xI.ld
+LDSCRIPT= STM32H743xI_uf2.ld
 
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -197,7 +198,7 @@ ULIBS = -lm
 uf2: $(BUILDDIR)/$(PROJECT).uf2
 
 %.uf2: %.bin
-	python uf2/utils/uf2conv.py -c -f 0x2fca8c7e -b 0x0800c000 $(BUILDDIR)/$(PROJECT).bin -o $(BUILDDIR)/$(PROJECT).uf2
+	python uf2/utils/uf2conv.py -c -f 0xa21e1295 -b 0x08040000 $(BUILDDIR)/$(PROJECT).bin -o $(BUILDDIR)/$(PROJECT).uf2
 
 release: uf2
 	cp $(BUILDDIR)/$(PROJECT).uf2 releases/$(PROJECT)_$(FWVERSION).uf2
@@ -205,7 +206,7 @@ release: uf2
 prog: all
 	@# first put striso in DFU mode if it isn't (the - ignores striso_util failure)
 	@-./striso_util -d && echo Resetting Striso in DFU mode... && sleep 3
-	dfu-util -d0483:df11 -a0 -s0x8000000:leave -D $(BUILDDIR)/$(PROJECT).bin
+	dfu-util -d0483:df11 -a0 -s0x8040000:leave -D $(BUILDDIR)/$(PROJECT).bin
 
 prog_openocd: all
 	openocd -f interface/stlink.cfg -f target/stm32h7x.cfg -c "program $(BUILDDIR)/$(PROJECT).elf reset exit"

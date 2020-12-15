@@ -16,9 +16,6 @@
 
 /*
  * STM32F407xE memory setup with bootloader offset.
- * You will have to
- * #define CORTEX_VTOR_INIT 0x00010000
- * in your projects chconf.h
  *
  * Note: Use of ram1 and ram2 is mutually exclusive with use of ram0.
  */
