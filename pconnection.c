@@ -43,20 +43,6 @@ void reset_to_uf2_bootloader(void) {
   NVIC_SystemReset();
 }
 
-static THD_WORKING_AREA(waThreadUSBDMidi, 256);
-static void ThreadUSBDMidi(void *arg) {
-  (void)arg;
-#if CH_CFG_USE_REGISTRY
-  chRegSetThreadName("usbdmidi");
-#endif
-  uint8_t r[4];
-  while (1) {
-    chnReadTimeout(&MDU1, &r[0], 4, TIME_INFINITE);
-    MidiInMsgHandler(MIDI_DEVICE_USB_DEVICE, ((r[0] & 0xF0) >> 4) + 1, r[1],
-                    r[2], r[3]);
-  }
-}
-
 static void cmd_threads(BaseSequentialStream *chp) {
   static const char *states[] = {CH_STATE_NAMES};
   thread_t *tp;
@@ -96,9 +82,6 @@ void InitPConnection(void) {
   chThdSleepMilliseconds(500);
   usbStart(midiusbcfg.usbp, &usbcfg);
   usbConnectBus(midiusbcfg.usbp);
-
-  chThdCreateStatic(waThreadUSBDMidi, sizeof(waThreadUSBDMidi), NORMALPRIO,
-                    ThreadUSBDMidi, NULL);
 }
 
 void PExReceiveByte(unsigned char c) {
@@ -168,9 +151,18 @@ void PExReceiveByte(unsigned char c) {
 }
 
 void PExReceive(void) {
+  // get USB bulk bytes from host
   unsigned char received;
   while (chnReadTimeout(&BDU1, &received, 1, TIME_IMMEDIATE)) {
     PExReceiveByte(received);
+  }
+
+  // get USB MIDI bytes from host
+  // TODO: check if midi buffer is alligned with 4 bytes
+  uint8_t r[4];
+  while (chnReadTimeout(&MDU1, &r[0], 4, TIME_IMMEDIATE)) {
+    MidiInMsgHandler(MIDI_DEVICE_USB_DEVICE, ((r[0] & 0xF0) >> 4) + 1, r[1],
+                    r[2], r[3]);
   }
 }
 
