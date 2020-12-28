@@ -248,8 +248,9 @@ static void ThreadAccel(void *arg) {
   lsm6dslWriteRegister(LSM6DSL_AD_CTRL3_C, LSMDSL_CTRL3_C_IF_INC | LSMDSL_CTRL3_C_SW_RESET);
 
   chThdSleepMilliseconds(1);
-  lsm6dslWriteRegister(LSM6DSL_AD_CTRL1_XL, LSM6DSL_ACC_ODR_208Hz | LSM6DSL_ACC_FS_4G);
-  lsm6dslWriteRegister(LSM6DSL_AD_CTRL2_G, LSM6DSL_GYRO_ODR_208Hz | LSM6DSL_GYRO_FS_250DPS);
+#define ACC_FS 2.0f
+  lsm6dslWriteRegister(LSM6DSL_AD_CTRL1_XL, LSM6DSL_ACC_ODR_208Hz | LSM6DSL_ACC_FS_2G); // TODO: setting sensitivity doesn't seem to work
+  lsm6dslWriteRegister(LSM6DSL_AD_CTRL2_G, LSM6DSL_GYRO_ODR_208Hz | LSM6DSL_GYRO_FS_500DPS);
 
 
 
@@ -262,9 +263,9 @@ static void ThreadAccel(void *arg) {
     ay = -motion[4]; gy = -motion[1];
     az = -motion[5]; gz = -motion[2];
 
-    float acc_x = ((float)ax)*(8.0/32768.0);
-    float acc_y = ((float)ay)*(8.0/32768.0);
-    float acc_z = ((float)az)*(8.0/32768.0);
+    float acc_x = ((float)ax)*(ACC_FS/32768.0);
+    float acc_y = ((float)ay)*(ACC_FS/32768.0);
+    float acc_z = ((float)az)*(ACC_FS/32768.0);
     float acc_abs = sqrtf(pow2(acc_x) + pow2(acc_y) + pow2(acc_z));
     if (acc_abs>0.001) {
       acc_x /= acc_abs;
@@ -275,7 +276,7 @@ static void ThreadAccel(void *arg) {
     msg[2] = ax>>2;
     msg[3] = ay>>2;
     msg[4] = az>>2;
-    msg[5] = ((int16_t)(acc_abs * 32768.0/8.0))>>2;
+    msg[5] = ((int16_t)(acc_abs * 32768.0/ACC_FS))>>2;
     msg[6] = gx>>2;
     msg[7] = gy>>2;
     msg[8] = gz>>2;
