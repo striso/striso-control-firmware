@@ -40,6 +40,8 @@ extern "C" {
 #define VOL_TICK_FACT (0.998) // 0.5**(1/(SAMPLINGFREQ / CHANNEL_BUFFER_SIZE)/0.1)
 #define CLEAR_TIMER TIME_MS2I(500) // interval to clear dead notes
 
+#define VOLUME_FACTOR 0.015f;
+
 // Schlick power function, approximation of power function
 float powf_schlick(const float a, const float b)
 {
@@ -269,7 +271,7 @@ class Instrument {
         int port_voice = -1;
         int portamento_button = -1;
         synth_interface_t* synth_interface;
-        int voicecount = 8;
+        int voicecount = VOICECOUNT;
         int midi_channel_offset = 1;
         float midi_bend_range = 48.0;
         float bend_sensitivity = 0.25;
@@ -503,46 +505,55 @@ class Instrument {
                         case (51): {
                             midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
                                                 MIDI_C_MAIN_VOLUME, 7);
+                            volume = 7.0 * VOLUME_FACTOR;
                             ws2812_write_led(0, 1, 1, 1);
                         } return;
                         case (53): {
                             midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
                                                 MIDI_C_MAIN_VOLUME, 15);
+                            volume = 15.0 * VOLUME_FACTOR;
                             ws2812_write_led(0, 2, 2, 2);
                         } return;
                         case (55): {
                             midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
                                                 MIDI_C_MAIN_VOLUME, 31);
+                            volume = 31.0 * VOLUME_FACTOR;
                             ws2812_write_led(0, 3, 3, 3);
                         } return;
                         case (40): {
                             midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
                                                 MIDI_C_MAIN_VOLUME, 47);
+                            volume = 47.0 * VOLUME_FACTOR;
                             ws2812_write_led(0, 4, 4, 4);
                         } return;
                         case (42): {
                             midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
                                                 MIDI_C_MAIN_VOLUME, 63);
+                            volume = 63.0 * VOLUME_FACTOR;
                             ws2812_write_led(0, 6, 6, 6);
                         } return;
                         case (44): {
                             midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
                                                 MIDI_C_MAIN_VOLUME, 79);
+                            volume = 79.0 * VOLUME_FACTOR;
                             ws2812_write_led(0, 8, 8, 8);
                         } return;
                         case (46): {
                             midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
                                                 MIDI_C_MAIN_VOLUME, 95);
+                            volume = 95.0 * VOLUME_FACTOR;
                             ws2812_write_led(0, 10, 10, 10);
                         } return;
                         case (48): {
                             midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
                                                 MIDI_C_MAIN_VOLUME, 111);
+                            volume = 111.0 * VOLUME_FACTOR;
                             ws2812_write_led(0, 14, 14, 14);
                         } return;
                         case (50): {
                             midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
                                                 MIDI_C_MAIN_VOLUME, 127);
+                            volume = 127.0 * VOLUME_FACTOR;
                             ws2812_write_led(0, 18, 18, 18);
                         } return;
 
@@ -775,7 +786,8 @@ class Instrument {
         }
 
         void update_voice(int but) {
-#ifdef SYNTH_INTERFACE
+#ifdef USE_INTERNAL_SYNTH
+            int voice = buttons[but].voice;
             *(synth_interface->note[voice])  = buttons[but].note;
             *(synth_interface->pres[voice])  = buttons[but].pres;
             *(synth_interface->vpres[voice]) = buttons[but].vpres;
@@ -880,7 +892,7 @@ class Instrument {
                     && buttons[voices[n]].timer < now)
                 {
                     release_voice(voices[n]);
-                    #ifdef SYNTH_INTERFACE
+                    #ifdef USE_INTERNAL_SYNTH
                     *(synth_interface->pres[n])  = 0.0;
                     *(synth_interface->vpres[n]) = 0.0;
                     *(synth_interface->but_x[n]) = 0.0;
@@ -915,7 +927,11 @@ int c1_dis[68] = {
     -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8,
     -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8};
 
+#ifdef USE_INTERNAL_SYNTH
+Instrument dis(c0_dis, c1_dis, BUTTONCOUNT, &synth_interface);
+#else
 Instrument dis(c0_dis, c1_dis, BUTTONCOUNT, NULL);
+#endif
 MotionSensor motion;
 
 void int2float(int *msg, float *fmsg, int n) {

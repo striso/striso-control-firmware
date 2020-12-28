@@ -197,6 +197,9 @@ ULIBS = -lm
 # default: build .uf2 file for use with uf2 bootloader
 uf2: $(BUILDDIR)/$(PROJECT).uf2
 
+synth.cpp: synth.dsp faust_synth_template.cpp faust2striso.py
+	./faust2striso.py
+
 %.uf2: %.bin
 	python uf2/utils/uf2conv.py -c -f 0xa21e1295 -b 0x08040000 $(BUILDDIR)/$(PROJECT).bin -o $(BUILDDIR)/$(PROJECT).uf2
 
@@ -236,7 +239,7 @@ gdb_bmp:
 
 # Start GDB server for external use (e.g. Eclipse)
 openocd:
-	openocd -f "board/stm32f4discovery.cfg" -c "stm32f4x.cpu configure -rtos auto;"
+	openocd -f interface/stlink.cfg -f target/stm32h7x.cfg -c "stm32h7x.cpu configure -rtos auto;"
 
 version:
 	@echo $(FWVERSION)

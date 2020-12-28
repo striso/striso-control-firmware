@@ -187,6 +187,7 @@ int main(void) {
 
 #ifdef USE_INTERNAL_SYNTH
   codec_init(SAMPLERATE);
+  start_synth_thread();
 #endif
 
   ButtonReadStart();
