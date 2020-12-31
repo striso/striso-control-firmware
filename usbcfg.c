@@ -110,7 +110,9 @@ static const uint8_t vcom_configuration_descriptor_data[]=
 
 };
 
-
+/*
+ * Configuration Descriptor wrapper.
+ */
 static const USBDescriptor vcom_configuration_descriptor = {
   sizeof vcom_configuration_descriptor_data,
   vcom_configuration_descriptor_data
@@ -144,26 +146,9 @@ static const uint8_t vcom_string2[] = {
   'b', 0, 'o', 0, 'a', 0, 'r', 0, 'd', 0
 };
 
-/*
- * Serial Number string.
- */
-static const uint8_t vcom_string3[] = {
-  USB_DESC_BYTE(8),                     /* bLength.                         */
-  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  '0' + CH_KERNEL_MAJOR, 0,
-  '0' + CH_KERNEL_MINOR, 0,
-  '0' + CH_KERNEL_PATCH, 0
-};
-
 static uint8_t descriptor_serial_string[] = {
   USB_DESC_BYTE(50),                    /* bLength.                         */
   USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  '0', 0, '0', 0, '0', 0, '0', 0,
-  '0', 0, '0', 0, '0', 0, '0', 0,
-  '0', 0, '0', 0, '0', 0, '0', 0,
-  '0', 0, '0', 0, '0', 0, '0', 0,
-  '0', 0, '0', 0, '0', 0, '0', 0,
-  '0', 0, '0', 0, '0', 0, '0', 0,
   '0', 0, '0', 0, '0', 0, '0', 0,
   '0', 0, '0', 0, '0', 0, '0', 0,
   '0', 0, '0', 0, '0', 0, '0', 0,
@@ -204,7 +189,7 @@ static const USBDescriptor vcom_strings[] = {
   {sizeof vcom_string0, vcom_string0},
   {sizeof vcom_string1, vcom_string1},
   {sizeof vcom_string2, vcom_string2},
-  {sizeof vcom_string3, vcom_string3},
+  {sizeof descriptor_serial_string, descriptor_serial_string},
   {sizeof vcom_string4, vcom_string4}
 };
 
@@ -239,6 +224,7 @@ static const USBDescriptor *get_descriptor(USBDriver *usbp,
     return &vcom_configuration_descriptor;
   case USB_DESCRIPTOR_STRING:
     if (dindex == 3) {
+      // use microcontroller unique ID as serial number
       inttohex(((uint32_t*)UID_BASE)[0],&descriptor_serial_string[2]);
       inttohex(((uint32_t*)UID_BASE)[1],&descriptor_serial_string[2+16]);
       inttohex(((uint32_t*)UID_BASE)[2],&descriptor_serial_string[2+32]);
