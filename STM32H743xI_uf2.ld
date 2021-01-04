@@ -16,7 +16,7 @@
 
 /*
  * STM32H743xI generic setup.
- * 
+ *
  * AXI SRAM     - BSS, Data, Heap.
  * SRAM1+SRAM2  - None.
  * SRAM3        - NOCACHE, ETH.
@@ -30,7 +30,8 @@ MEMORY
     bootloader(rx) : org = 0x08000000, len = 128k   /* First sector for bootloader */
     config (rx) : org = 0x08020000, len = 128k      /* Second sector for persistent firmware configuration */
     fwinfo (rx) : org = 0x08040000, len = 4k        /* Add firmware version at the start for identification */
-    flash0 (rx) : org = 0x08041000, len = 2M - 0x41000 /* Flash bank1+bank2 minus bootloader*/
+    flash0 (rx) : org = 0x08041000, len = 2M - 0x41000 - 128k /* Flash bank1+bank2 minus bootloader minus devspec */
+    devspec(rx) : org = 0x081e0000, len = 128k      /* device specific information like serial number or calibration data */
     flash1 (rx) : org = 0x08000000, len = 1M        /* Flash bank 1 */
     flash2 (rx) : org = 0x08100000, len = 1M        /* Flash bank 2 */
     flash3 (rx) : org = 0x00000000, len = 0
