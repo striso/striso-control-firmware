@@ -67,9 +67,9 @@
 //#define ADC_SAMPLE_DEF ADC_SMPR_SMP_2P5   //
 //#define ADC_SAMPLE_DEF ADC_SMPR_SMP_8P5   //
 //#define ADC_SAMPLE_DEF ADC_SMPR_SMP_16P5  //
-#define ADC_SAMPLE_DEF ADC_SMPR_SMP_32P5 // 1174 Hz @10MHz single ADC
-//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_64P5  //
-//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_384P5 // 123.6 Hz @10MHz single ADC
+//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_32P5 // 1174 Hz @10MHz single ADC measured (1257 Hz calculated)
+#define ADC_SAMPLE_DEF ADC_SMPR_SMP_64P5  // 1289 Hz @10MHz dual ADC measured (1380 Hz calculated)
+//#define ADC_SAMPLE_DEF ADC_SMPR_SMP_384P5 // 123.6 Hz @10MHz single ADC measured (125.4 Hz calculated) 245 Hz dual ADC
 //#define ADC_SAMPLE_DEF ADC_SMPR_SMP_810P5 //
 
 /* Total number of channels to be sampled by a single ADC operation.*/
@@ -248,22 +248,10 @@ static void adccallback(ADCDriver *adcp) {
 
   cacheBufferInvalidate(adc_samples, sizeof (adc_samples) / sizeof (adcsample_t));
   /* copy adc_samples */
-// #if defined(STM32F4XX)
   samples0[next_conversion] = buffer[0];
   samples1[next_conversion] = buffer[1];
   samples2[next_conversion] = buffer[2];
   samples3[next_conversion] = buffer[3];
-// #elif defined(STM32H7XX)
-//   samples0[next_conversion] = buffer[0];
-//   samples1[next_conversion] = buffer[2];
-// #if STM32_ADC_DUAL_MODE == FALSE
-//   samples2[next_conversion] = buffer[1];
-//   samples3[next_conversion] = buffer[3];
-// #else // with dual adc mode something's wrong with the DMA timing, try to work around
-//   samples2[next_conversion] = buffer[3];
-//   samples3[next_conversion] = ADCD1.adcc->CDR;
-// #endif
-// #endif
 
 #ifdef USE_BAS
   samples_bas0[next_conversion] = buffer[4];
@@ -379,7 +367,7 @@ const ADCConversionGroup adcgrpcfg1 = {
   .cfgr         = ADC_CFGR_RES_12BITS,
   .cfgr2        = 0U,
   .ccr          = ADC_CCR_DUAL_REG_SIMULT, // 6U
-  .pcsel        = ADC_SELMASK_IN16 | ADC_SELMASK_IN17 | ADC_SELMASK_IN14 | ADC_SELMASK_IN15,
+  .pcsel        = ADC_SELMASK_IN3 | ADC_SELMASK_IN19 | ADC_SELMASK_IN18 | ADC_SELMASK_IN15,
   .ltr1         = 0x00000000U,
   .htr1         = 0x03FFFFFFU,
   .ltr2         = 0x00000000U,
@@ -388,22 +376,20 @@ const ADCConversionGroup adcgrpcfg1 = {
   .htr3         = 0x03FFFFFFU,
   .smpr         = {
     0U,
-    ADC_SMPR2_SMP_AN16(ADC_SAMPLE_DEF) |
-    ADC_SMPR2_SMP_AN17(ADC_SAMPLE_DEF)
+    ADC_SMPR2_SMP_AN15(ADC_SAMPLE_DEF) | ADC_SMPR2_SMP_AN19(ADC_SAMPLE_DEF)
   },
   .sqr          = {
-    ADC_SQR1_SQ1_N(ADC_CHANNEL_IN16) | ADC_SQR1_SQ2_N(ADC_CHANNEL_IN17),
+    ADC_SQR1_SQ1_N(ADC_CHANNEL_IN15) | ADC_SQR1_SQ2_N(ADC_CHANNEL_IN19),
     0U,
     0U,
     0U
   },
   .ssmpr        = {
-    0U,
-    ADC_SMPR2_SMP_AN14(ADC_SAMPLE_DEF) |
-    ADC_SMPR2_SMP_AN15(ADC_SAMPLE_DEF)
+    ADC_SMPR1_SMP_AN3(ADC_SAMPLE_DEF),
+    ADC_SMPR2_SMP_AN18(ADC_SAMPLE_DEF)
   },
   .ssqr         = {
-    ADC_SQR1_SQ1_N(ADC_CHANNEL_IN14) | ADC_SQR1_SQ2_N(ADC_CHANNEL_IN15),
+    ADC_SQR1_SQ1_N(ADC_CHANNEL_IN18) | ADC_SQR1_SQ2_N(ADC_CHANNEL_IN3),
     0U,
     0U,
     0U
