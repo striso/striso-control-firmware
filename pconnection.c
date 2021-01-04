@@ -56,7 +56,7 @@ static void cmd_threads(BaseSequentialStream *chp) {
   static const char *states[] = {CH_STATE_NAMES};
   thread_t *tp;
 
-  chprintf(chp, "stklimit    stack     addr refs prio     state         name\r\n");
+  chprintf(chp, "stklimit    stack     addr   unused refs prio     state         name\r\n");
   tp = chRegFirstThread();
   do {
 #if (CH_DBG_ENABLE_STACK_CHECK == TRUE) || (CH_CFG_USE_DYNAMIC == TRUE)
@@ -64,8 +64,18 @@ static void cmd_threads(BaseSequentialStream *chp) {
 #else
     uint32_t stklimit = 0U;
 #endif
-    chprintf(chp, "%08lx %08lx %08lx %4lu %4lu %9s %12s\r\n",
-             stklimit, (uint32_t)tp->ctx.sp, (uint32_t)tp,
+#if CH_DBG_FILL_THREADS
+    char *stk = (char *)(tp->wabase);
+    int nfree = 0;
+    while(*stk == 0x55){
+      nfree++;
+      stk++;
+    }
+#else
+    int nfree -1;
+#endif
+    chprintf(chp, "%08lx %08lx %08lx %8lu %4lu %4lu %9s %12s\r\n",
+             stklimit, (uint32_t)tp->ctx.sp, (uint32_t)tp, nfree,
              (uint32_t)tp->refs - 1, (uint32_t)tp->prio, states[tp->state],
              tp->name == NULL ? "" : tp->name);
     tp = chRegNextThread(tp);
