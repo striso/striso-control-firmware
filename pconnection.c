@@ -35,10 +35,19 @@
 
 void BootLoaderInit(void);
 
-#define BOOT_RTC_SIGNATURE 0x71a21877
-#define BOOT_RTC_REG (*(volatile uint32_t *)(RTC_BASE + 0x50))
+#define BOOTLOADER_RTC_SIGNATURE   0x71a21877
+
+/**
+ * Set boot signature and reset
+ */
 void reset_to_uf2_bootloader(void) {
-  BOOT_RTC_REG = BOOT_RTC_SIGNATURE;
+  // Enable writing to backup domain
+  // STM32F4:
+  // PWR->CR |= PWR_CR_DBP;
+  // STM32H7:
+  PWR->CR1 |= PWR_CR1_DBP;
+  // Set boot signature in RTC backup register
+  RTC->BKP0R = BOOTLOADER_RTC_SIGNATURE;
 
   NVIC_SystemReset();
 }
