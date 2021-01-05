@@ -240,6 +240,11 @@ static void adccallback(ADCDriver *adcp) {
 #endif
 
   cur_channel = (next_conversion+1) % OUT_NUM_CHANNELS;
+#ifdef TWO_WAY_SAMPLING
+  if ((next_conversion+1) % 102 > 51) {
+    cur_channel -= ((cur_channel % 3) - 1) * 2;
+  }
+#endif
   /* Drain new channel */
   palClearPort(out_channels_port[cur_channel], out_channels_portmask[cur_channel]);
 #ifdef USE_BAS
@@ -468,18 +473,33 @@ int32_t calibrate(int32_t s, int32_t c, int32_t offset) {
   return s;
 }
 
+#define max(x,y) (x>y?x:y)
+#define min(x,y) (x<y?x:y)
+
 void update_button(button_t* but, adcsample_t* inp) {
   int but_id = but->but_id;
   int32_t s_new;
   int msg[8];
   msg[0] = but->src_id;
 
+#ifdef TWO_WAY_SAMPLING
+  s_new = max(inp[0], inp[53]);
+  s_new = calibrate(s_new, but->c_force, but->c_offset);
+  update_and_filter(&but->s0, &but->v0, s_new);
+  s_new = max(inp[1], inp[52]);
+  s_new = calibrate(s_new, but->c_force, but->c_offset);
+  update_and_filter(&but->s1, &but->v1, s_new);
+  s_new = max(inp[2], inp[51]);
+  s_new = calibrate(s_new, but->c_force, but->c_offset);
+  update_and_filter(&but->s2, &but->v2, s_new);
+#else
   s_new = calibrate(inp[0], but->c_force, but->c_offset);
   update_and_filter(&but->s0, &but->v0, s_new);
   s_new = calibrate(inp[1], but->c_force, but->c_offset);
   update_and_filter(&but->s1, &but->v1, s_new);
   s_new = calibrate(inp[2], but->c_force, but->c_offset);
   update_and_filter(&but->s2, &but->v2, s_new);
+#endif
   but->p = but->s0 + but->s1 + but->s2;
 
 #ifdef BUTTON_FILT
@@ -793,7 +813,11 @@ static void ThreadReadButtons(void *arg) {
         for (int n = 0; n < 4; n++) {
           but_id = note_id + n * 17;
           but = &buttons[but_id];
+#ifdef TWO_WAY_SAMPLING
+          update_button(but, &samples[n][cur_conv % 51]);
+#else
           update_button(but, &samples[n][cur_conv]);
+#endif
         }
         // Once per cycle, after the last buttons
         if (note_id == 16) {
