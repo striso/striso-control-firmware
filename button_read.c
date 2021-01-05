@@ -482,9 +482,14 @@ void update_button(button_t* but, adcsample_t* inp) {
   update_and_filter(&but->s2, &but->v2, s_new);
   but->p = but->s0 + but->s1 + but->s2;
 
+#ifdef BUTTON_FILT
   int min_pres1 = ((but->prev_but->s2 > MSGFACT) + (but->prev_but->s2 > INTERNAL_ONE/4)) * (INTERNAL_ONE/64) // stop ADC reaction time phantom presses
     + max_pres/32;   // stop three nearby corner phantom presses TODO: fix for bas
   int min_pres = min_pres1 + __USAT(buttons_pressed[0], 2) * (INTERNAL_ONE/256); // reduce sensitivity a bit when many buttons are pressed TODO: fix for bas
+#else
+  int min_pres1 = max_pres/32;
+  int min_pres = min_pres1;
+#endif
   if (but->s0 > MSGFACT + min_pres || but->s1 > MSGFACT + min_pres || but->s2 > MSGFACT + min_pres) {
     // if button is off start integration timer
     if (but->status == OFF) {
