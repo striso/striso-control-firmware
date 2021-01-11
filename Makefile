@@ -202,19 +202,24 @@ uf2: $(BUILDDIR)/$(PROJECT).uf2
 synth.cpp: synth.dsp faust_synth_template.cpp faust2striso.py
 	./faust2striso.py
 
-%.uf2: %.bin
-	@python3 uf2/utils/uf2conv.py -c -f 0xa21e1295 -b 0x08040000 $(BUILDDIR)/$(PROJECT).bin -o $(BUILDDIR)/$(PROJECT).uf2
+$(BUILDDIR)/$(PROJECT).uf2: $(BUILDDIR)/$(PROJECT).bin
+	@BINSTART=`readelf -l $(BUILDDIR)/$(PROJECT).elf | grep LOAD -m1 | awk '{print $$3}'` ;\
+	python3 uf2/utils/uf2conv.py -c -f 0xa21e1295 -b $$BINSTART $(BUILDDIR)/$(PROJECT).bin -o $(BUILDDIR)/$(PROJECT).uf2
 
-prog_uf2: uf2
-	@python3 uf2/utils/uf2conv.py -f 0xa21e1295 -b 0x08040000 $(BUILDDIR)/$(PROJECT).bin
+prog_uf2: all
+	@# first put striso in UF2 mode if it isn't (the - ignores striso_util failure)
+	@-./utils/striso_util -B && sleep 5
+	@BINSTART=`readelf -l $(BUILDDIR)/$(PROJECT).elf | grep LOAD -m1 | awk '{print $$3}'` ;\
+	python3 uf2/utils/uf2conv.py -f 0xa21e1295 -b $$BINSTART $(BUILDDIR)/$(PROJECT).bin -o $(BUILDDIR)/$(PROJECT).uf2
 
 release: uf2
 	mkdir -p releases
 	cp $(BUILDDIR)/$(PROJECT).uf2 releases/$(PROJECT)_$(FWVERSION).uf2
 
-prog: all
+prog_dfu: all
 	@# first put striso in DFU mode if it isn't (the - ignores striso_util failure)
-	@-./striso_util -d && echo Resetting Striso in DFU mode... && sleep 3
+	@-./utils/striso_util -d && echo Resetting Striso in DFU mode... && sleep 3
+	@echo $(BUILDDIR)/$(PROJECT).bin start address: `readelf -l $(BUILDDIR)/$(PROJECT).elf | grep LOAD -m1 | awk '{print $$3}'` # $$ to escape $ in makefile
 	dfu-util -d0483:df11 -a0 -s0x8040000:leave -D $(BUILDDIR)/$(PROJECT).bin
 
 prog_openocd: all
