@@ -33,8 +33,7 @@
 #include "motionsensor.h"
 #include "ws2812.h"
 #include "version.h"
-
-const char confightm[] = "Test bla die bla die bla";
+#include "config_editor.h"
 
 /**
  *  Firmware version description on fixed flash address for bootloader
@@ -45,7 +44,10 @@ const struct {
   uint32_t confightm[16];
 } fwinfo = {
   .fwversion = "Firmware version: striso_control_" FWVERSION "\r\n",
-  .confightm = {confightm, sizeof(confightm)}, // sizeof() -1?
+  .confightm = {(uint32_t)confightm_pre, sizeof(confightm_pre),
+                (uint32_t)default_config, sizeof(default_config),
+                (uint32_t)flash_config, sizeof(default_config),
+                (uint32_t)confightm_post, sizeof(confightm_post)}
 };
 
 // force sqrtf to use FPU, the standard one apparently doesn't

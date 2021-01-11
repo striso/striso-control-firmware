@@ -77,7 +77,16 @@ typedef struct struct_config {
   int midi_contvelo;
   midi_mode_t midi_mode;
 } config_t;
+
 extern config_t config;
+
+typedef struct {
+    char name[8];
+    char value[8];
+} ConfigParam;
+
+extern ConfigParam* const flash_config;
+extern const ConfigParam default_config[];
 
 #ifdef CONFIG_HERE
 config_t config = {
@@ -91,8 +100,50 @@ config_t config = {
   .midi_contvelo = 0,         // 0 = disable, 1 = enable
   .midi_mode = MIDI_MODE_MPE,
 };
+
+ConfigParam* const flash_config = (ConfigParam*)0x08020000;
+
+// __attribute__ ((section(".config"))) __attribute__((used))
+// const ConfigParam flash_config[] = {
+//     {"MConfig ", 0, 0},
+//     {"iAltbutt", 1, 0},
+//     {"iPedal  ", 3, 0},
+//     {"fTune1C ", 0.0f, 0},
+//     {"fTune1Ab", 800.0f, 0},
+//     {"fTune1A ", 900.0f, 0},
+//     {"fTune1A#", 1000.0f, 0},
+//     {"itest   ", 0x55555555, 0},
+//     {"MCfgEnd ", 0x55555555, 0},
+// };
+
+// const ConfigParam default_config[] = {
+//     {"MConfig ", 0, 0},
+//     {"iAltbutt", 1, 0},
+//     {"iPedal  ", 3, 0},
+//     {"fTune1C ", 0.0f, 0},
+//     {"fTune1Ab", 800.0f, 0},
+//     {"fTune1A ", 900.0f, 0},
+//     {"fTune1A#", 1000.0f, 0},
+//     {"itest   ", 0x55555555, 0},
+//     {"MCfgEnd ", 0x55555555, 0},
+// };
+
+const ConfigParam default_config[] = {
+    {"MConfig ", "v1.0    "},
+    {"sAltbutt", "config  "},
+    {"sPedal  ", "sustain "},
+    {"fTune1C ", "0.0     "},
+    {"fTune1Ab", "800.0   "},
+    {"fTune1A ", "900.0   "},
+    {"fTune1A#", "1000.0  "},
+    {"itest   ", "1       "},
+    {"MCfgEnd ", "        "},
+};
+
 #endif
 
 #define DEVSPEC_FLASH_START 0x081e0000
+
+uint64_t* getConfigSetting(char* name);
 
 #endif

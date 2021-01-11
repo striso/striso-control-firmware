@@ -133,6 +133,7 @@ CSRC = $(ALLCSRC) \
 	messaging.c \
 	motionsensor.c \
 	codec_tlv320aic3x_SAI.c \
+	config.c \
 	main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
@@ -200,15 +201,25 @@ uf2: $(BUILDDIR)/$(PROJECT).uf2
 synth.cpp: synth.dsp faust_synth_template.cpp faust2striso.py
 	./faust2striso.py
 
-%.uf2: %.bin
-	python uf2/utils/uf2conv.py -c -f 0xa21e1295 -b 0x08040000 $(BUILDDIR)/$(PROJECT).bin -o $(BUILDDIR)/$(PROJECT).uf2
+config_editor.h: config_editor/config.htm
+	python3 config_editor/config_editor.py
+
+$(BUILDDIR)/$(PROJECT).uf2: $(BUILDDIR)/$(PROJECT).bin
+	@echo $(BUILDDIR)/$(PROJECT).bin start address: `readelf -l $(BUILDDIR)/$(PROJECT).elf | grep LOAD -m1 | awk '{print $$3}'` # $$ to escape $ in makefile
+	BINSTART=`readelf -l $(BUILDDIR)/$(PROJECT).elf | grep LOAD -m1 | awk '{print $$3}'` ;\
+	python3 uf2/utils/uf2conv.py -c -f 0xa21e1295 -b $$BINSTART $(BUILDDIR)/$(PROJECT).bin -o $(BUILDDIR)/$(PROJECT).uf2
 
 release: uf2
 	cp $(BUILDDIR)/$(PROJECT).uf2 releases/$(PROJECT)_$(FWVERSION).uf2
 
-prog: all
+prog_uf2: all
+	@-./striso_util -B && sleep 5
+	python3 uf2/utils/uf2conv.py -f 0xa21e1295 -b 0x08040000 $(BUILDDIR)/$(PROJECT).bin -o $(BUILDDIR)/$(PROJECT).uf2
+
+prog_dfu: all
 	@# first put striso in DFU mode if it isn't (the - ignores striso_util failure)
 	@-./striso_util -d && echo Resetting Striso in DFU mode... && sleep 3
+	@echo $(BUILDDIR)/$(PROJECT).bin start address: `readelf -l $(BUILDDIR)/$(PROJECT).elf | grep LOAD -m1 | awk '{print $$3}'` # $$ to escape $ in makefile
 	dfu-util -d0483:df11 -a0 -s0x8040000:leave -D $(BUILDDIR)/$(PROJECT).bin
 
 prog_openocd: all
