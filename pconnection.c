@@ -159,7 +159,7 @@ void PExReceiveByte(unsigned char c) {
         }
         chSysUnlock();
         chprintf((BaseSequentialStream *)&BDU1, FWVERSION " %08X%08X%08X\r\n",
-                 ((uint32_t*)UID_BASE)[0], ((uint32_t*)UID_BASE)[1], ((uint32_t*)UID_BASE)[2]);
+                 ((uint32_t*)UID_BASE)[2], ((uint32_t*)UID_BASE)[1], ((uint32_t*)UID_BASE)[0]);
       }
       else if (c == 'I') { // thread info
         cmd_threads((BaseSequentialStream *)&BDU1);
