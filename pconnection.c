@@ -30,6 +30,7 @@
 #include "config.h"
 #include "version.h"
 #include "ws2812.h"
+#include "button_read.h"
 
 //#define DEBUG_SERIAL 1
 
@@ -163,6 +164,10 @@ void PExReceiveByte(unsigned char c) {
       }
       else if (c == 'I') { // thread info
         cmd_threads((BaseSequentialStream *)&BDU1);
+      }
+      else if (c == 'C') { // Calibration mode
+        buttonSetCalibration(CALIB_FORCE, CALIB_OFFSET);
+        chprintf((BaseSequentialStream *)&BDU1, "c_force: %d c_offset: %d\r\n", CALIB_FORCE, CALIB_OFFSET);
       }
       break;
     }

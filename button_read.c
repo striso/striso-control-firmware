@@ -468,7 +468,7 @@ int32_t calibrate(int32_t s, int32_t c, int32_t offset) {
   /* convert adc value to force */
   // c is the normalisation value for the force
   //    2^18   * 2^12 / 2^12 * ADCFACT/2^6 / c
-  s = ((1<<18) * (4095-s)/s) * c;
+  s = (c * (4095-s)/s) * (ADCFACT>>6);
   #endif
   return s;
 }
@@ -958,6 +958,13 @@ void ButtonBoardTest(void) {
   }
 }
 
+void buttonSetCalibration(uint32_t c_force, uint32_t c_offset) {
+  for (int n=0; n<N_BUTTONS; n++) {
+    buttons[n].c_force = c_force;
+    buttons[n].c_offset = c_offset;
+  }
+}
+
 void ButtonReadStart(void) {
   
 #if defined(USE_AUX_BUTTONS) && defined(STM32F4XX)
@@ -980,13 +987,13 @@ void ButtonReadStart(void) {
 #elif defined(STM32H7XX)
   adcStart(&ADCD1, &adccfg1);
 #endif
-  
+
   // Initialize buttons
   for (int n=0; n<N_BUTTONS; n++) {
     buttons[n].but_id = n;
     buttons[n].src_id = ID_DIS;
-    buttons[n].c_force = (ADCFACT>>6) / 6;//calib_dis[n];//(ADCFACT>>6) / 6;
-    buttons[n].c_offset = ADC_OFFSET;
+    buttons[n].c_force = CALIB_FORCE;
+    buttons[n].c_offset = CALIB_OFFSET;
     buttons[n].prev_but = &buttons[(n/17) * 17 + ((n+17-1) % 17)];
   }
 #ifdef USE_BAS
@@ -998,6 +1005,26 @@ void ButtonReadStart(void) {
     buttons_bas[n].prev_but = &buttons_bas[(n/17) * 17 + ((n+17-1) % 17)];
   }
 #endif
+
+  uint32_t* const UID = (uint32_t*)UID_BASE;
+
+  typedef struct {
+    uint32_t UID[3];
+    uint16_t calib[N_BUTTONS];
+  } calib_t;
+  calib_t* const calib_dis_force = (calib_t*)(DEVSPEC_FLASH_START + 256);
+  calib_t* const calib_dis_offset = (calib_t*)(DEVSPEC_FLASH_START + 512);
+
+  if (calib_dis_force->UID[0] == UID[0] &&
+      calib_dis_force->UID[1] == UID[1] &&
+      calib_dis_force->UID[2] == UID[2]) {
+    for (int n=0; n<N_BUTTONS; n++) {
+      buttons[n].c_force = calib_dis_force->calib[n];
+    }
+  } else {
+    palClearLine(LINE_LED_R);
+    chThdSleepMilliseconds(200);
+  }
 
   /*
    * Start first ADC conversion. Next conversions are triggered from the adc callback.

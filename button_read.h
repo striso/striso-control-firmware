@@ -18,6 +18,9 @@
 #ifndef _BUTTON_READ_H_
 #define _BUTTON_READ_H_
 
+#include "ch.h"
+
 void ButtonReadStart(void);
+void buttonSetCalibration(uint32_t c_force, uint32_t c_offset);
 
 #endif

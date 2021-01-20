@@ -52,6 +52,9 @@
 #define BUTTON_FILT
 #define TWO_WAY_SAMPLING
 
+#define CALIB_OFFSET 8
+#define CALIB_FORCE  ((1<<18)/128)
+
 #define AUX_BUTTON_DEBOUNCE_TIME 5
 
 #define MAX_VOICECOUNT 15
@@ -88,5 +91,7 @@ config_t config = {
   .midi_mode = MIDI_MODE_MPE,
 };
 #endif
+
+#define DEVSPEC_FLASH_START 0x081e0000
 
 #endif
