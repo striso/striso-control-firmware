@@ -37,7 +37,7 @@
 #define MSGFACT_VELO (MSGFACT/VELOFACT)
 #define FILT 8  // max:  1<<32 / INTERNAL_ONE = 64
 
-#define INTEGRATED_PRES_TRESHOLD (INTERNAL_ONE/2)
+#define INTEGRATED_PRES_TRESHOLD (INTERNAL_ONE/8)
 #define SENDFACT    config.message_interval
 
 #ifdef STM32F4XX
@@ -460,15 +460,14 @@ void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
 }
 
 int32_t calibrate(int32_t s, int32_t c, int32_t offset) {
-  s = s + offset;
   #ifdef CALIBRATION_MODE
   /* keep linear voltage for calibration */
-  s = ADCFACT * (4095-s);
+  s = ADCFACT * (4095-s-offset);
   #else
   /* convert adc value to force */
   // c is the normalisation value for the force
   //    2^18   * 2^12 / 2^12 * ADCFACT/2^6 / c
-  s = (c * (4095-s)/s) * (ADCFACT>>6);
+  s = (c * (4095-s-offset)/(s+1)) * (ADCFACT>>6);
   #endif
   return s;
 }
@@ -781,6 +780,52 @@ static void ThreadReadButtons(void *arg) {
   int cur_conv, but_id, note_id;
   button_t* but;
 
+#ifdef DETECT_STUCK_NOTES
+  for (int n=0; n<N_BUTTONS; n++) {
+    buttons[n].p = 0;
+  }
+  int count = 0;
+  while (count < 100) {
+    while (count < 100 && proc_conversion != next_conversion) {
+      // process 3 buttons if all 3 values * 3 buttons are available
+      if ((proc_conversion % 3) == 2) {
+        note_id = (proc_conversion / 3) % 17;
+        cur_conv = (proc_conversion - 2);
+        for (int n = 0; n < 4; n++) {
+          but_id = note_id + n * 17;
+          but = &buttons[but_id];
+          but->p += (4095-samples[n][cur_conv])
+                  + (4095-samples[n][cur_conv+1])
+                  + (4095-samples[n][cur_conv+2]);
+        }
+        // Once per cycle, after the last buttons
+        if (note_id == 16) {
+          count++;
+        }
+      }
+      proc_conversion = (proc_conversion+1) % 102;
+    }
+
+    chSysLock();
+    tpReadButtons = chThdGetSelfX();
+    chSchGoSleepS(CH_STATE_SUSPENDED);
+    chSysUnlock();
+  }
+  for (int n=0; n<N_BUTTONS; n++) {
+    but = &buttons[n];
+    int avg = but->p / (count * 3);
+    if (avg > but->c_offset) {
+      avg = but->c_offset + (avg - but->c_offset) * 3;//150 / 128;
+      but->c_force = but->c_force * 4095 / (4095 + but->c_offset - avg);
+      but->c_offset = avg;
+      palSetLine(LINE_LED_UP2);
+      chThdSleepMilliseconds(100);
+      palClearLine(LINE_LED_UP2);
+      chThdSleepMilliseconds(100);
+    }
+  }
+#endif
+
   while (TRUE) {
     while (proc_conversion != next_conversion) {
       // process 3 buttons if all 3 values * 3 buttons are available
@@ -884,7 +929,7 @@ static void ThreadReadButtons(void *arg) {
           }
 #endif // USE_AUX_BUTTONS
         }
-        
+
 #ifdef USE_BAS
         // bas side
         but_id = note_id;
@@ -966,14 +1011,14 @@ void buttonSetCalibration(uint32_t c_force, uint32_t c_offset) {
 }
 
 void ButtonReadStart(void) {
-  
+
 #if defined(USE_AUX_BUTTONS) && defined(STM32F4XX)
   palSetLineMode(LINE_BUTTON_PORT, PAL_MODE_INPUT_PULLDOWN);
   palSetLineMode(LINE_BUTTON_UP,   PAL_MODE_INPUT_PULLDOWN);
   palSetLineMode(LINE_BUTTON_DOWN, PAL_MODE_INPUT_PULLDOWN);
   palSetLineMode(LINE_BUTTON_ALT,  PAL_MODE_INPUT_PULLDOWN);
 #endif
-  
+
   for (int n=0; n<OUT_NUM_CHANNELS; n++) {
     palSetPadMode(out_channels_port[n], out_channels_pad[n], PAL_MODE_OUTPUT_OPENDRAIN | PAL_STM32_OSPEED_HIGHEST);
     // palSetPadMode(out_channels_port[n], out_channels_pad[n], PAL_MODE_OUTPUT_PUSHPULL | PAL_STM32_OSPEED_HIGHEST);

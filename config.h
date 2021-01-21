@@ -51,6 +51,7 @@
 //#define CALIBRATION_MODE TRUE
 #define BUTTON_FILT
 #define TWO_WAY_SAMPLING
+#define DETECT_STUCK_NOTES
 
 #define CALIB_OFFSET 8
 #define CALIB_FORCE  ((1<<18)/128)
