@@ -1,13 +1,14 @@
-import("music.lib");
-//ml = library("music.lib");  // SR, ...
-oscillator = library("oscillator.lib");
-fl = library("filter.lib");
-instrument = library("instrument.lib");
-maxmsp = library("maxmsp.lib");
-effect = library("effect.lib");
-music = library("music.lib");
+import("stdfaust.lib");
+SR = ma.SR;
 
-import("fast.lib");
+maxmsp = library("maxmsp.lib");
+
+fast = library("fast.lib");
+K_f0 = fast.K_f0;
+HPF = fast.HPF;
+LPF = fast.LPF;
+BPF = fast.BPF;
+note2freq = fast.note2freq;
 
 voicecount = 4;
 
@@ -23,8 +24,8 @@ dotpart(x) = x - int(x);
 
 oscss(freq, even_harm) = even_harm*saw-(1-even_harm)*square
 with {
-    square = oscillator.lf_squarewave(freq)*0.5;
-    saw = oscillator.saw2(freq);
+    square = os.lf_squarewave(freq)*0.5;
+    saw = os.saw2(freq);
 };
 
 note = vslider("[0]note[style:knob]",69,0,127,.01);
@@ -104,7 +105,7 @@ voice_sine(note,pres,vpres,but_x,but_y) = vosc * level
 with {
     pitchbend = but_x^3;
     freq = note2freq(note+pitchbend*bendRange);
-    vosc = oscillator.oscw(freq);
+    vosc = os.oscw(freq);
     level = pres : LPF(K_f0(20),1);
 };
 
@@ -112,7 +113,7 @@ with {
 peak(f0, dBgain, Q) = biquad(a0,a1,a2,b1,b2)
     with {
         V = 10^(abs(dBgain) / 20);
-        K = tan(PI * f0 / SR);
+        K = tan(ma.PI * f0 / SR);
 
         if (peakGain >= 0) {
             norm = 1 / (1 + 1/Q * K + K * K);
@@ -140,7 +141,7 @@ impulse = _ ~ (_ == 0);
 //myrandom = seed : impulse : (_,_: + : +(12345)) ~ *(1103515245);
 //myrandom = (+(12345) *(1103515245)) ~ _;
 //myrandom = (impulse(seed-12345) + 12345) : + ~ (*(1103515245));
-//RANDMAX = 2147483647.0;
+RANDMAX = 2147483647.0;
 
 //myrandom = prefix(seed,0) : + ~ (*(1078318381));
 myrandom = ffunction(int rand_hoaglin (), "fastpow.h", "");
@@ -163,7 +164,7 @@ with {
     d = dotpart(phase);
 };
 
-// osc_white = oscillator.saw2;
+// osc_white = os.saw2;
 osc_white = osc_white1;
 
 // white oscilator test to reduce clicks on frequency change
@@ -171,7 +172,7 @@ inco = hslider("v:[2]config3/inc[style:knob]", 1, 0, 2, 0.01);
 osc_white2(freq) = s1 + d * (s2 - s1)
 with {
     tablesize = 1 << 12; // enough for notes as low as 11 Hz
-    whitetable = rdtable(tablesize, noise*2);
+    whitetable = rdtable(tablesize, mynoise*2);
     periodf = float(SR)/freq;
     inc = inco;
     period = periodf*inc;
@@ -191,7 +192,7 @@ mystereoizer(periodDuration) = _ <: _,widthdelay : stereopanner
 with {
     W = 0.5; //hslider("v:Spat/spatial width", 0.5, 0, 1, 0.01);
     A = 0.5; //hslider("v:Spat/pan angle", 0.6, 0, 1, 0.01);
-    widthdelay = delay(4096,W*periodDuration/2);
+    widthdelay = de.delay(4096,W*periodDuration/2);
     stereopanner = _,_ : *(1.0-A), *(A);
 };
 
@@ -202,4 +203,4 @@ envelop = abs : max ~ -(20.0/SR);
 
 process = hgroup("strisy",
         sum(n, voicecount, vgroup("v%n", (note,pres,vpres,but_x,but_y)) : voice) // : vgroup("v%n", vmeter))
-        : HPF(K_f0(80),1.31) );// : fl.dcblocker;: stereo:bodyFilter;
+        : HPF(K_f0(80),1.31) );// : fi.dcblocker;: stereo:bodyFilter;
