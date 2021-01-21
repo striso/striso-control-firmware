@@ -655,8 +655,8 @@ class Instrument {
                     float temp_pres = buttons[but].pres; // save pres for note off detection
                     
                     float sw = buttons[but].pres;
+                    float vpres = buttons[but].vpres;
                     float note  = sw * buttons[but].note;
-                    float vpres = sw * buttons[but].vpres;
                     float but_x = sw * buttons[but].but_x;
                     float but_y = sw * buttons[but].but_y;
                     for (int n = 0; n < MAX_PORTAMENTO_BUTTONS; n++) {
@@ -675,7 +675,7 @@ class Instrument {
                     if (note > 0.1) {
                         buttons[but].note = note / sw;
                     }
-                    buttons[but].vpres = vpres / sw;
+                    buttons[but].vpres = vpres;
                     buttons[but].but_x = but_x / sw;
                     buttons[but].but_y = but_y / sw;
                     
