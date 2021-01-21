@@ -71,8 +71,9 @@ bfQ = hslider("v:[2]config3/bfQ[style:knob]",8,0,20,0.01);
 voice(note,pres,vpres,but_x,but_y) = vosc <: filt, filt2 :> _ * level
 with {
     even_harm = (acc_x+1)/2;
-    pitchbend = but_x^3;
-    freq = note2freq(note+pitchbend*bendRange);
+    // pitchbend = but_x^3;
+    // freq = note2freq(note+pitchbend*bendRange);
+    freq = note2freq(note);
     //vosc = oscss(freq, even_harm);
     vosc = osc_white(freq);
     resetni = abs(note-note')<1.0;

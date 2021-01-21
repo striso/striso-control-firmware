@@ -786,9 +786,10 @@ class Instrument {
         }
 
         void update_voice(int but) {
+            float pb = bend_sensitivity * pow3(buttons[but].but_x);
 #ifdef USE_INTERNAL_SYNTH
             int voice = buttons[but].voice;
-            *(synth_interface->note[voice])  = buttons[but].note;
+            *(synth_interface->note[voice])  = buttons[but].note + pb;
             *(synth_interface->pres[voice])  = buttons[but].pres;
             *(synth_interface->vpres[voice]) = buttons[but].vpres;
             *(synth_interface->but_x[voice]) = buttons[but].but_x;
@@ -807,7 +808,7 @@ class Instrument {
             if (tilt > 127) tilt = 127;
             else if (tilt < 0) tilt = 0;
 
-            float pb = (bend_sensitivity * pow3(buttons[but].but_x)
+            pb = (pb
                 + buttons[but].note - buttons[but].midinote)
                 * (0x2000 / midi_bend_range) + 0x2000;
             d = (buttons[but].last_pitchbend > pb) * 0.5 - 0.25;
