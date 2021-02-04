@@ -241,7 +241,7 @@ static void adccallback(ADCDriver *adcp) {
 
   cur_channel = (next_conversion+1) % OUT_NUM_CHANNELS;
 #ifdef TWO_WAY_SAMPLING
-  if ((next_conversion+1) % 102 > 51) {
+  if ((next_conversion+1) % 102 >= 51) {
     cur_channel -= ((cur_channel % 3) - 1) * 2;
   }
 #endif
