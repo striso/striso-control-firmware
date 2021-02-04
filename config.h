@@ -54,7 +54,7 @@
 #define DETECT_STUCK_NOTES
 
 #define CALIB_OFFSET 16
-#define CALIB_FORCE  ((1<<18)/128)
+#define CALIB_FORCE  ((1<<18)/64)
 
 #define AUX_BUTTON_DEBOUNCE_TIME 5
 
