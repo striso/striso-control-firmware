@@ -77,7 +77,7 @@ static void cmd_threads(BaseSequentialStream *chp) {
 #endif
     chprintf(chp, "%08lx %08lx %08lx %8lu %4lu %4lu %9s %12s\r\n",
              stklimit, (uint32_t)tp->ctx.sp, (uint32_t)tp, nfree,
-             (uint32_t)tp->refs - 1, (uint32_t)tp->prio, states[tp->state],
+             (uint32_t)tp->refs - 1, (uint32_t)tp->hdr.pqueue.prio, states[tp->state],
              tp->name == NULL ? "" : tp->name);
     tp = chRegNextThread(tp);
   } while (tp != NULL);
