@@ -1067,7 +1067,7 @@ void ButtonReadStart(void) {
       buttons[n].c_force = calib_dis_force->calib[n];
     }
   } else {
-    palClearLine(LINE_LED_R);
+    led_rgb(0xff0000);
     chThdSleepMilliseconds(200);
   }
 

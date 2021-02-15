@@ -23,6 +23,7 @@
 extern "C" {
     #include "synth.h"
     #include "ws2812.h"
+    #include "led.h"
 }
 
 #include "config.h"
@@ -30,7 +31,7 @@ extern "C" {
 #include "midi_usb.h"
 
 #ifndef USE_WS2812
-#define ws2812_write_led(a,b,c,d)
+#define ws2812_write_led(n,r,g,b) led_rgb3(14*r,14*g,14*b)
 #endif
 
 #define BUTTONCOUNT 68
@@ -999,7 +1000,7 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
     
     uint8_t channel = status & 0x0f;
     status &= 0xf0;
-    ws2812_write_led(0, 102, 0, 42);
+    ws2812_write_led(0, 18, 0, 9);
     
     if (status == MIDI_CONTROL_CHANGE) {
         switch (data1) {
@@ -1086,7 +1087,7 @@ void set_midi_mode(midi_mode_t mode) {
             dis.midi_channel_offset = 0;
             dis.voicecount = 1;
             dis.portamento = 1;
-            ws2812_write_led(0, 0, 4, 28);
+            ws2812_write_led(0, 0, 1, 18);
         } break;
     }
 }
@@ -1106,18 +1107,7 @@ void synth_tick(void) {
     dis.tick();
 }
 
-void status_led(int r, int g, int b) {
-    if (r) palClearLine(LINE_LED_R);
-    else palSetLine(LINE_LED_R);
-    if (g) palClearLine(LINE_LED_G);
-    else palSetLine(LINE_LED_G);
-    if (b) palClearLine(LINE_LED_B);
-    else palSetLine(LINE_LED_B);
-}
-
 void update_leds(void) {
-    status_led(dis.altmode, 1, dis.portamento);
-#ifdef USE_WS2812
     uint8_t r = 0, g = 2, b = 0;
 
     // base color depending on tuning system
@@ -1128,7 +1118,10 @@ void update_leds(void) {
     else if (dis.notegen1 < 7.03)  {r = 1; g = 1; b = 0;}
     else                           {r = 2; g = 0; b = 0;}
 
-    int m = 1 + dis.altmode + dis.portamento;
+    int m = 21 * (4 + dis.altmode + dis.portamento);
+    led_rgb3(m*r, m*g, m*b);
+
+#ifdef USE_WS2812
     ws2812_write_led(0, m*r, m*g, m*b);
 
     if (dis.altmode) {
@@ -1168,29 +1161,11 @@ void update_leds(void) {
         }
     }
 #endif
-    int oct = (int)((dis.start_note_offset + 4) / 12) - 5;
-    if (oct == 0) {
-        palClearLine(LINE_LED_DOWN);
-        palClearLine(LINE_LED_DOWN2);
-        palClearLine(LINE_LED_UP);
-        palClearLine(LINE_LED_UP2);
-    } else if (oct > 0) {
-        palClearLine(LINE_LED_DOWN);
-        palClearLine(LINE_LED_DOWN2);
-        palSetLine(LINE_LED_UP);
-        if (oct > 1) {
-            palSetLine(LINE_LED_UP2);
-        } else {
-            palClearLine(LINE_LED_UP2);
-        }
-    } else {
-        palClearLine(LINE_LED_UP);
-        palClearLine(LINE_LED_UP2);
-        palSetLine(LINE_LED_DOWN);
-        if (oct < -1) {
-            palSetLine(LINE_LED_DOWN2);
-        } else {
-            palClearLine(LINE_LED_DOWN2);
-        }
-    }
+
+    int note_offset = dis.start_note_offset - 62;
+    if      (note_offset < -12) led_updown(0x1100);
+    else if (note_offset <   0) led_updown(0x0100);
+    else if (note_offset >  12) led_updown(0x0011);
+    else if (note_offset >   0) led_updown(0x0010);
+    else                        led_updown(0x0000);
 }

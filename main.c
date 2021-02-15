@@ -33,6 +33,7 @@
 #include "motionsensor.h"
 #include "ws2812.h"
 #include "version.h"
+#include "led.h"
 
 const char confightm[] = "Test bla die bla die bla";
 
@@ -162,6 +163,8 @@ int main(void) {
   ws2812_write_led(2, 15, 31,  0);
   ws2812_write_led(3,  0, 15, 15);
 #endif
+  led_init();
+  led_rgb(0x000800);
 
 #ifdef USE_USB
   InitPConnection();
@@ -181,7 +184,11 @@ int main(void) {
 
 #ifdef USE_MIDI_OUT
   // Send initial configuration MIDI
-  chThdSleepMilliseconds(200);
+  // chThdSleepMilliseconds(200);
+  for (int i=8; i<168; i++) {
+    led_rgb3(0,i,0);
+    chThdSleepMilliseconds(1);
+  }
   midi_config();
 #endif
 

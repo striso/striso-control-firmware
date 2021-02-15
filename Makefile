@@ -133,6 +133,7 @@ CSRC = $(ALLCSRC) \
 	messaging.c \
 	motionsensor.c \
 	codec_tlv320aic3x_SAI.c \
+	led.c \
 	main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
