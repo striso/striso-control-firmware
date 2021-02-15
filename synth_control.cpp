@@ -362,7 +362,7 @@ class Instrument {
             if ((altmode && buttons[but].state == STATE_OFF)
                 || (buttons[but].state == STATE_ALT)) {
                 // only handle on new press
-                if (buttons[but].state == STATE_OFF && buttons[but].pres > 0.0) {
+                if (buttons[but].state == STATE_OFF && buttons[but].pres > 0.05) {
                     buttons[but].state = STATE_ALT;
                     switch (but) {
                         // row 1:  0  2  4
@@ -560,7 +560,7 @@ class Instrument {
 
                         // row 8:       56 58 60 62 47 49
                         // row 9:                   63 65 67
-                        case (63): { // request config
+                        case (63): { // panic/request config
 #ifdef USE_MIDI_OUT
                             midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
                                                 MIDI_C_ALL_NOTES_OFF, 0);
@@ -573,12 +573,18 @@ class Instrument {
                             ws2812_write_led(0, 16, 0, 0);
 #endif
                         } return;
+                        case (67): { // system reset
+                            led_rgb(0xff0000);
+                            chThdSleepMilliseconds(500);
+                            NVIC_SystemReset();
+                        } return;
                     }
                     return;
                 } else if (buttons[but].pres == 0.0) {
                     buttons[but].state = STATE_OFF;
                     return;
                 }
+                return;
             }
 
             if (config.midi_mode == MIDI_MODE_POLY) {
