@@ -104,6 +104,16 @@ void InitPConnection(void) {
   usbConnectBus(midiusbcfg.usbp);
 }
 
+/*
+ * String length up to ascii char above 128 or 0, max length len
+ */
+int strlenmax(const char* s, int len) {
+    const char *s0 = s;
+    while (*s++ && *s < 0xf8 && s <= s0 + len)
+        ;
+    return (s - s0) - 1;
+}
+
 void PExReceiveByte(unsigned char c) {
   // ws2812_write_led(0, 0,67,0);
   static char header = 0;
@@ -159,8 +169,11 @@ void PExReceiveByte(unsigned char c) {
           obqResetI(&BDU1.obqueue);
         }
         chSysUnlock();
-        chprintf((BaseSequentialStream *)&BDU1, FWVERSION " %08X%08X%08X\r\n",
+        chprintf((BaseSequentialStream *)&BDU1, FWVERSION " %08X%08X%08X ",
                  ((uint32_t*)UID_BASE)[2], ((uint32_t*)UID_BASE)[1], ((uint32_t*)UID_BASE)[0]);
+        int n = strlenmax(devspec_id->id, 16);
+        if (n) streamWrite((BaseSequentialStream *)&BDU1, devspec_id->id, n);
+        chprintf((BaseSequentialStream *)&BDU1, "\r\n");
       }
       else if (c == 'I') { // thread info
         cmd_threads((BaseSequentialStream *)&BDU1);

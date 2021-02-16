@@ -1053,13 +1053,6 @@ void ButtonReadStart(void) {
 
   uint32_t* const UID = (uint32_t*)UID_BASE;
 
-  typedef struct {
-    uint32_t UID[3];
-    uint16_t calib[N_BUTTONS];
-  } calib_t;
-  calib_t* const calib_dis_force = (calib_t*)(DEVSPEC_FLASH_START + 256);
-  calib_t* const calib_dis_offset = (calib_t*)(DEVSPEC_FLASH_START + 512);
-
   if (calib_dis_force->UID[0] == UID[0] &&
       calib_dis_force->UID[1] == UID[1] &&
       calib_dis_force->UID[2] == UID[2]) {

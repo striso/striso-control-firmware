@@ -95,4 +95,18 @@ config_t config = {
 
 #define DEVSPEC_FLASH_START 0x081e0000
 
+typedef struct {
+  const uint32_t UID[3];
+  const char id[16];
+  const char model[32];
+} devspec_id_t;
+#define devspec_id ((devspec_id_t*)(DEVSPEC_FLASH_START))
+
+typedef struct {
+  const uint32_t UID[3];
+  const uint16_t calib[68];
+} calib_t;
+#define calib_dis_force ((calib_t*)(DEVSPEC_FLASH_START + 256))
+#define calib_dis_offset ((calib_t*)(DEVSPEC_FLASH_START + 512))
+
 #endif
