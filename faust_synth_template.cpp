@@ -95,7 +95,8 @@ static void synthThread(void *arg) {  // THE SYNTH THREAD
 		//	n = 100;
 		//}
 
-		synth_tick();
+		// TODO: synth_tick better called here or in main?
+		// synth_tick();
 
 		if (chThdShouldTerminateX()) break;
 	}

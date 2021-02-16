@@ -1,7 +1,7 @@
 //----------------------------------------------------------
 // name: "synth.dsp.tmp"
 //
-// Code generated with Faust 2.27.2 (https://faust.grame.fr)
+// Code generated with Faust 2.30.5 (https://faust.grame.fr)
 //----------------------------------------------------------
 
 /* link with : "" */
@@ -604,7 +604,8 @@ static void synthThread(void *arg) {  // THE SYNTH THREAD
 		//	n = 100;
 		//}
 
-		synth_tick();
+		// TODO: synth_tick better called here or in main?
+		// synth_tick();
 
 		if (chThdShouldTerminateX()) break;
 	}
