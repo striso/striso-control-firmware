@@ -662,7 +662,8 @@ class Instrument {
                     // calculate average of portamento buttons
                     float temp_pres = buttons[but].pres; // save pres for note off detection
                     
-                    float sw = buttons[but].pres;
+                    float pres = buttons[but].pres;
+                    float sw = pres*pres;
                     float vpres = buttons[but].vpres;
                     float note  = sw * buttons[but].note;
                     float but_x = sw * buttons[but].but_x;
@@ -671,14 +672,16 @@ class Instrument {
                         int b = portamento_buttons[n];
                         if (b >= 0) {
                             float w = buttons[b].pres;
+                            w = w*w;
                             sw += w;
+                            pres  += buttons[b].pres;
                             vpres += buttons[b].vpres;
                             note  += w * buttons[b].note;
                             but_x += w * buttons[b].but_x;
                             but_y += w * buttons[b].but_y;
                         }
                     }
-                    buttons[but].pres = sw;
+                    buttons[but].pres = pres;
                     if (sw == 0) sw = 1;
                     if (note > 0.1) {
                         buttons[but].note = note / sw;
