@@ -125,16 +125,17 @@ class MotionSensor {
                     midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
                                     82, (64+(rot_z>>7))&0x7F);
                 } else {
-                    // +(1<<5) for rounding correctly
+                    // for binary protocol the max is +/-8g, for MIDI max 2g feels better
+                    // -(1<<3) for rounding correctly
                     int d; // calculate direction for hysteresis
-                    d = ((((last_acc_x-64)<<6) > acc_x)<<5)-(1<<4);
-                    acc_x = __USAT(64+((acc_x+(1<<5)+d)>>6), 7)&0x7F;
-                    d = ((((last_acc_y-64)<<6) > acc_y)<<5)-(1<<4);
-                    acc_y = __USAT(64+((acc_y+(1<<5)+d)>>6), 7)&0x7F;
-                    d = ((((last_acc_z-64)<<6) > acc_z)<<5)-(1<<4);
-                    acc_z = __USAT(64+((acc_z+(1<<5)+d)>>6), 7)&0x7F;
-                    d = (((last_acc_abs<<5) > acc_abs)<<4)-(1<<3);
-                    acc_abs = __USAT((acc_abs+(1<<4)+d)>>5, 7)&0x7F;
+                    d = ((((last_acc_x-64)<<6) > acc_x)<<4)-(1<<3);
+                    acc_x = __USAT(64+((acc_x+(1<<5)+d)>>5), 7)&0x7F;
+                    d = ((((last_acc_y-64)<<6) > acc_y)<<4)-(1<<3);
+                    acc_y = __USAT(64+((acc_y+(1<<5)+d)>>5), 7)&0x7F;
+                    d = ((((last_acc_z-64)<<6) > acc_z)<<4)-(1<<3);
+                    acc_z = __USAT(64+((acc_z+(1<<5)+d)>>5), 7)&0x7F;
+                    d = (((last_acc_abs<<5) > acc_abs)<<3)-(1<<2);
+                    acc_abs = __USAT((acc_abs+(1<<4)+d)>>4, 7)&0x7F;
                     d = ((((last_rot_x-64)<<6) > rot_x)<<5)-(1<<4);
                     rot_x = __USAT(64+((rot_x+(1<<5)+d)>>6), 7)&0x7F;
                     d = ((((last_rot_y-64)<<6) > rot_y)<<5)-(1<<4);

@@ -248,7 +248,7 @@ static void ThreadAccel(void *arg) {
   lsm6dslWriteRegister(LSM6DSL_AD_CTRL3_C, LSMDSL_CTRL3_C_IF_INC | LSMDSL_CTRL3_C_SW_RESET);
 
   chThdSleepMilliseconds(1);
-#define ACC_FS 2.0f
+#define ACC_FS 2
   lsm6dslWriteRegister(LSM6DSL_AD_CTRL1_XL, LSM6DSL_ACC_ODR_208Hz | LSM6DSL_ACC_FS_2G); // TODO: setting sensitivity doesn't seem to work
   lsm6dslWriteRegister(LSM6DSL_AD_CTRL2_G, LSM6DSL_GYRO_ODR_208Hz | LSM6DSL_GYRO_FS_500DPS);
 
@@ -263,9 +263,9 @@ static void ThreadAccel(void *arg) {
     ay = -motion[4]; gy = -motion[1];
     az = -motion[5]; gz = -motion[2];
 
-    float acc_x = ((float)ax)*(ACC_FS/32768.0);
-    float acc_y = ((float)ay)*(ACC_FS/32768.0);
-    float acc_z = ((float)az)*(ACC_FS/32768.0);
+    float acc_x = ((float)ax)*(ACC_FS/32768.0f);
+    float acc_y = ((float)ay)*(ACC_FS/32768.0f);
+    float acc_z = ((float)az)*(ACC_FS/32768.0f);
     float acc_abs = sqrtf(pow2(acc_x) + pow2(acc_y) + pow2(acc_z));
     if (acc_abs>0.001) {
       acc_x /= acc_abs;
@@ -273,19 +273,21 @@ static void ThreadAccel(void *arg) {
       acc_z /= acc_abs;
     }
 
-    msg[2] = ax>>2;
-    msg[3] = ay>>2;
-    msg[4] = az>>2;
-    msg[5] = ((int16_t)(acc_abs * 32768.0/ACC_FS))>>2;
+    // acceleration in message has maximum range 8g (16g for acc_abs)
+    // TODO: make /4 dependent on ACC_FS
+    msg[2] = (ax/4)>>2;
+    msg[3] = (ay/4)>>2;
+    msg[4] = (az/4)>>2;
+    msg[5] = ((int16_t)(acc_abs * 32768.0f/8.0f))>>2;
     msg[6] = gx>>2;
     msg[7] = gy>>2;
     msg[8] = gz>>2;
     msgSend(9,msg);
 
 #ifdef USE_INTERNAL_SYNTH
-    float rot_x = ((float)gx)*(1.0/32768.0);
-    float rot_y = ((float)gy)*(1.0/32768.0);
-    float rot_z = ((float)gz)*(1.0/32768.0);
+    float rot_x = ((float)gx)*(1.0f/32768.0f);
+    float rot_y = ((float)gy)*(1.0f/32768.0f);
+    float rot_z = ((float)gz)*(1.0f/32768.0f);
 
     *(synth_interface.acc_abs) = acc_abs;
     *(synth_interface.acc_x) = acc_x;
