@@ -41,7 +41,7 @@ extern "C" {
 #define VOL_TICK_FACT (0.998) // 0.5**(1/(SAMPLINGFREQ / CHANNEL_BUFFER_SIZE)/0.1)
 #define CLEAR_TIMER TIME_MS2I(500) // interval to clear dead notes
 
-#define VOLUME_FACTOR 0.015f;
+#define VOLUME_FACTOR 0.005f;
 
 // Schlick power function, approximation of power function
 float powf_schlick(const float a, const float b)
@@ -300,6 +300,7 @@ class Instrument {
                 portamento_buttons[n] = -1;
             }
             synth_interface = si;
+            volume = 79.0 * VOLUME_FACTOR;
         }
 
         void set_portamento(int p) {
@@ -1082,7 +1083,7 @@ void set_midi_mode(midi_mode_t mode) {
         case MIDI_MODE_MPE: {
             config.midi_mode = mode;
             dis.midi_channel_offset = 1;
-            dis.voicecount = 8;
+            dis.voicecount = VOICECOUNT;
             dis.portamento = 0;
             ws2812_write_led(0, 0, 16, 0);
         } break;

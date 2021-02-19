@@ -25,7 +25,7 @@
 #include "midi.h"
 #include "codec.h"
 
-#define VOICECOUNT 4
+#define VOICECOUNT 6
 
 typedef struct struct_synth_interface {
 	float* acc_abs;

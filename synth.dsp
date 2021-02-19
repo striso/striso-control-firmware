@@ -10,7 +10,7 @@ LPF = fast.LPF;
 BPF = fast.BPF;
 note2freq = fast.note2freq;
 
-voicecount = 4;
+voicecount = 6;
 
 halftime2fac(x) = 0.5^(1./(SR*x));
 halftime2fac_fast(x) = 1-0.7*(1./(SR*x));
@@ -67,9 +67,11 @@ resfact = hslider("v:[2]config3/resfact[style:knob]", 0.03, 0, 1, 0.01);
 ppOffset = hslider("v:[2]config3/ppOffset[style:knob]", 48, 0, 100, 0.1);
 ppRange = hslider("v:[2]config3/ppRange[style:knob]", 18, 0, 36, 0.1);
 
-bfQ = hslider("v:[2]config3/bfQ[style:knob]",8,0,20,0.01);
+bfQ1 = hslider("v:[2]config3/bfQ1[style:knob]",5,0.3,20,0.01);
+bfQ2 = hslider("v:[2]config3/bfQ2[style:knob]",8,0.3,20,0.01);
+bflevel = hslider("v:[2]config3/bflevel[style:knob]",6,0.1,20,0.01);
 
-voice(note,pres,vpres,but_x,but_y) = vosc <: filt, filt2 :> _ * level
+voice(note,pres,vpres,but_x,but_y1) = vosc <: filt, filt2, bfs * bflevel :> _ * level
 with {
     even_harm = (acc_x+1)/2;
     // pitchbend = but_x^3;
@@ -79,8 +81,9 @@ with {
     vosc = osc_white(freq);
     resetni = abs(note-note')<1.0;
 
-    pluck = but_y^2 : envdecay(select2(pres==0, halftime2fac_fast(0.02), 1));
-    //decaytime = max(max(min(pluck * 8 - 0.4, 0.5+pluck), min(pres * 16, 0.5+pres)), 0.05) * 64 / note;
+    but_y = but_y1 : LPF(K_f0(20),0.71);
+    pluck = but_y^2 : envdecay(select2(pres==0, halftime2fac_fast(0.01), 1));
+    // decaytime = max(max(min(pluck * 2 - 0.4, 0.5+pluck), min(pres * 16, 0.5+pres)), 0.05) * 64 / note;
     decaytime = max(min(pres * 16, 0.5+pres*0.5), 0.05) * 64 / note;
     vpres1 = max(vpres - 0.001, 0);
     vplev = vpres1 / (0.5+vpres1) + 0.6 * max(pres-0.3,0)^2;// + min(pres, 0.001);
@@ -88,16 +91,21 @@ with {
     level = max(vplev : envdecay(resetni*halftime2fac_fast(decaytime)), rotlev) : LPF(K_f0(100), 1);// / (0.2 + note/24);
 
     vdacc = min(acc_abs,2):envdecay(accDecay);
-    K = K_f0(max(freq,minFreq)) + filtFF*(level*(1-max(-but_y,0))+max(vdacc-1,0))^2^2;
-    filt = LPF(K, filtQ+max(-but_y,0)*8) * (1-max(-but_y,0)/2)^2;
+    // K = K_f0(max(freq,minFreq)) + filtFF*(level*(1-max(-but_y,0))+max(vdacc-1,0))^2^2;
+    // filt = LPF(K, filtQ+max(-but_y,0)*8) * (1-max(-but_y,0)/2)^2;
+    f = min(max(freq,minFreq) * (1 + filtFF*(level*(1-max(-but_y,0))+max(vdacc-1,0))^2^2), 16000);
+    filt = fi.svf.lp(f, filtQ+max(-but_y,0)*8) * (1-max(-but_y,0)/2)^2;
 
     filt2lev = max(but_y,0) * but_y * pres;
-    filt2 = BPF(K_f0(filt2Freq*filt2lev+minFreq), filt2Q) * filt2level * filt2lev;
+    // filt2 = BPF(K_f0(filt2Freq*filt2lev+minFreq), filt2Q) * filt2level * filt2lev;
+    filt2 = fi.svf.bp(filt2Freq*filt2lev+minFreq, filt2Q) * filt2level * filt2lev;
 
-    K1 = select2(rot_y>0, K_f0(7000), K_f0(3000)) * (1+0.5*abs(rot_y));
-    b1 = BPF(K1, bfQ) * (rot_y^2);
-    K2 = select2(rot_z>0, K_f0(5000), K_f0(2000)) * (1+0.5*abs(rot_z));
-    b2 = BPF(K2, bfQ) * (rot_z^2);
+    K1 = select2(rot_y>0, K_f0(900), K_f0(1700)) * (1+0.5*abs(rot_y));
+    b1 = BPF(K1, bfQ1) * abs(rot_y);
+    K2 = select2(rot_x>0, K_f0(300), K_f0(600)) * (1+0.5*abs(rot_x));
+    b2 = BPF(K2, bfQ2) * abs(rot_x);
+    K3 = select2(rot_x>0, K_f0(300), K_f0(600)) * (1+0.5*abs(rot_x));
+    b3 = BPF(K2, bfQ2) * abs(rot_x);
     bfs = _ <: b1, b2 :> _;
 };
 
