@@ -184,11 +184,7 @@ int main(void) {
 
 #ifdef USE_MIDI_OUT
   // Send initial configuration MIDI
-  // chThdSleepMilliseconds(200);
-  for (int i=8; i<168; i++) {
-    led_rgb3(0,i,0);
-    chThdSleepMilliseconds(1);
-  }
+  chThdSleepMilliseconds(200);
   midi_config();
 #endif
 
@@ -202,6 +198,11 @@ int main(void) {
 #if defined(USE_MPU6050) || defined(USE_LSM6DSL)
   MotionSensorStart();
 #endif
+
+  for (int i=8; i<168; i++) {
+    led_rgb3(0,i,0);
+    chThdSleepMilliseconds(1);
+  }
 
 #ifdef USE_WS2812
   ws2812_write_led(0,  0,  1,  0);
