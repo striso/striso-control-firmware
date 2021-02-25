@@ -24,6 +24,7 @@
 #include "config.h"
 #include "striso.h"
 #include "synth.h"
+#include "usbcfg.h"
 
 #include "messaging.h"
 #ifdef STM32F4XX
@@ -36,6 +37,8 @@
 #define MSGFACT (1<<11)
 #define MSGFACT_VELO (MSGFACT/VELOFACT)
 #define FILT 8  // max:  1<<32 / INTERNAL_ONE = 64
+#define ZERO_LEVEL_OFFSET 4
+#define ZERO_LEVEL_MAX_VELO 500
 
 #define INTEGRATED_PRES_TRESHOLD (INTERNAL_ONE/8)
 #define SENDFACT    config.message_interval
@@ -160,6 +163,8 @@ struct struct_button {
   int32_t v2;
   int32_t c_force;
   int32_t c_offset;
+  int32_t zero_time;
+  int32_t zero_max;
   enum button_status status;
   int timer;
   int but_id;
@@ -478,17 +483,21 @@ int32_t calibrate(int32_t s, int32_t c, int32_t offset) {
 void update_button(button_t* but, adcsample_t* inp) {
   int but_id = but->but_id;
   int32_t s_new;
+  int32_t s_min = 4095;
   int msg[8];
   msg[0] = but->src_id;
 
 #ifdef TWO_WAY_SAMPLING
   s_new = max(inp[0], inp[53]);
+  if (s_new < s_min) s_min = s_new;
   s_new = calibrate(s_new, but->c_force, but->c_offset);
   update_and_filter(&but->s0, &but->v0, s_new);
   s_new = max(inp[1], inp[52]);
+  if (s_new < s_min) s_min = s_new;
   s_new = calibrate(s_new, but->c_force, but->c_offset);
   update_and_filter(&but->s1, &but->v1, s_new);
   s_new = max(inp[2], inp[51]);
+  if (s_new < s_min) s_min = s_new;
   s_new = calibrate(s_new, but->c_force, but->c_offset);
   update_and_filter(&but->s2, &but->v2, s_new);
 #else
@@ -500,6 +509,21 @@ void update_button(button_t* but, adcsample_t* inp) {
   update_and_filter(&but->s2, &but->v2, s_new);
 #endif
   but->p = but->s0 + but->s1 + but->s2;
+
+  // adjust zero pressure level dynamically
+  if (but->p < (INTERNAL_ONE/32)
+      && (but->v0 + but->v1 + but->v2) < ZERO_LEVEL_MAX_VELO
+      && (but->v0 + but->v1 + but->v2) > -ZERO_LEVEL_MAX_VELO) {
+    if (s_min < but->zero_max) but->zero_max = s_min;
+    but->zero_time++;
+    if (but->zero_time > 1000) {
+      but->zero_time = 0;
+      but->c_offset = (4095 - but->zero_max) + ZERO_LEVEL_OFFSET;
+    }
+  } else {
+    but->zero_time = 0;
+    but->zero_max = 4095;
+  }
 
 #ifdef BUTTON_FILT
 #ifdef TWO_WAY_SAMPLING
@@ -786,7 +810,7 @@ static void ThreadReadButtons(void *arg) {
 
 #ifdef DETECT_STUCK_NOTES
   for (int n=0; n<N_BUTTONS; n++) {
-    buttons[n].p = 0;
+    buttons[n].p = 4095;
   }
   int count = 0;
   while (count < 100) {
@@ -798,9 +822,12 @@ static void ThreadReadButtons(void *arg) {
         for (int n = 0; n < 4; n++) {
           but_id = note_id + n * 17;
           but = &buttons[but_id];
-          but->p += (4095-samples[n][cur_conv])
-                  + (4095-samples[n][cur_conv+1])
-                  + (4095-samples[n][cur_conv+2]);
+          int s = samples[n][cur_conv];
+          if (s < but->p) but->p = s;
+          s = samples[n][cur_conv+1];
+          if (s < but->p) but->p = s;
+          s = samples[n][cur_conv+2];
+          if (s < but->p) but->p = s;
         }
         // Once per cycle, after the last buttons
         if (note_id == 16) {
@@ -817,15 +844,9 @@ static void ThreadReadButtons(void *arg) {
   }
   for (int n=0; n<N_BUTTONS; n++) {
     but = &buttons[n];
-    int avg = but->p / (count * 3);
-    if (avg > but->c_offset) {
-      avg = but->c_offset + (avg - but->c_offset) * 3;//150 / 128;
-      but->c_force = but->c_force * 4095 / (4095 + but->c_offset - avg);
-      but->c_offset = avg;
-      palSetLine(LINE_LED_UP2);
-      chThdSleepMilliseconds(100);
-      palClearLine(LINE_LED_UP2);
-      chThdSleepMilliseconds(100);
+    int maxp = 4095 - but->p;
+    if (maxp > but->c_offset) {
+      but->c_offset = maxp + ZERO_LEVEL_OFFSET;
     }
   }
 #endif
@@ -1009,6 +1030,7 @@ void ButtonBoardTest(void) {
 
 void buttonSetCalibration(uint32_t c_force, uint32_t c_offset) {
   for (int n=0; n<N_BUTTONS; n++) {
+    chprintf((BaseSequentialStream *)&BDU1, "but[%d] c_force: %d c_offset: %d\r\n", n, buttons[n].c_force, buttons[n].c_offset);
     buttons[n].c_force = c_force;
     buttons[n].c_offset = c_offset;
   }
@@ -1044,6 +1066,8 @@ void ButtonReadStart(void) {
     buttons[n].c_force = CALIB_FORCE;
     buttons[n].c_offset = CALIB_OFFSET;
     buttons[n].prev_but = &buttons[(n/17) * 17 + ((n+17-1) % 17)];
+    buttons[n].zero_time = 0;
+    buttons[n].zero_max = 4095;
   }
 #ifdef USE_BAS
   for (int n=0; n<N_BUTTONS_BAS; n++) {
