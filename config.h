@@ -99,7 +99,7 @@ config_t config = {
 typedef struct {
   const uint32_t UID[3];
   const char id[16];
-  const char model[32];
+  const char model[64];
 } devspec_id_t;
 #define devspec_id ((devspec_id_t*)(DEVSPEC_FLASH_START))
 

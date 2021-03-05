@@ -171,7 +171,7 @@ void PExReceiveByte(unsigned char c) {
         chSysUnlock();
         chprintf((BaseSequentialStream *)&BDU1, FWVERSION " %08X%08X%08X ",
                  ((uint32_t*)UID_BASE)[2], ((uint32_t*)UID_BASE)[1], ((uint32_t*)UID_BASE)[0]);
-        int n = strlenmax(devspec_id->id, 16);
+        int n = strlenmax(devspec_id->id, sizeof(devspec_id->id) + sizeof(devspec_id->model));
         if (n) streamWrite((BaseSequentialStream *)&BDU1, devspec_id->id, n);
         chprintf((BaseSequentialStream *)&BDU1, "\r\n");
       }
