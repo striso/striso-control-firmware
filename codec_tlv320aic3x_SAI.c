@@ -202,7 +202,7 @@ void codec_i2s_init(uint16_t sampleRate) {
 // SAI1_A is master transmitter
 // SAI1_B is synchronous slave receiver
   SAI1_Block_A->CR1 = SAI_xCR1_DS_32
-      | SAI_xCR1_MCKDIV_(14) // should be 4 for 48kHz, 2 for 44.1kHz // TODO: find out why it's 3.5 times faster than it should be, and the clock dividers doesn't seem to have influence.
+      | SAI_xCR1_MCKDIV_(16) // should be 4 for 48kHz, 2 for 44.1kHz // TODO: find out why it's 3.5 times faster than it should be, and the clock dividers doesn't seem to have influence.
       | SAI_xCR1_DMAEN | SAI_xCR1_CKSTR;
   SAI1_Block_B->CR1 = SAI_xCR1_DS_32
       | SAI_xCR1_SYNCEN_SYNCINT | SAI_xCR1_MODE_SLAVE_RX // synchronous slave receiver
