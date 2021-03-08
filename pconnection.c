@@ -107,8 +107,8 @@ void InitPConnection(void) {
 /*
  * String length up to ascii char above 128 or 0, max length len
  */
-int strlenmax(const char* s, int len) {
-    const char *s0 = s;
+int strlenmax(const unsigned char* s, int len) {
+    const unsigned char *s0 = s;
     while (*s++ && *s < 0xf8 && s <= s0 + len)
         ;
     return (s - s0) - 1;
@@ -174,6 +174,12 @@ void PExReceiveByte(unsigned char c) {
         int n = strlenmax(devspec_id->id, sizeof(devspec_id->id) + sizeof(devspec_id->model));
         if (n) streamWrite((BaseSequentialStream *)&BDU1, devspec_id->id, n);
         chprintf((BaseSequentialStream *)&BDU1, "\r\n");
+        n = strlenmax(calib_dis_force->date, sizeof(calib_dis_force->date));
+        if (n) {
+          chprintf((BaseSequentialStream *)&BDU1, "Calibration date: ");
+          streamWrite((BaseSequentialStream *)&BDU1, calib_dis_force->date, n);
+          chprintf((BaseSequentialStream *)&BDU1, "\r\n");
+        }
       }
       else if (c == 'I') { // thread info
         cmd_threads((BaseSequentialStream *)&BDU1);

@@ -98,14 +98,16 @@ config_t config = {
 
 typedef struct {
   const uint32_t UID[3];
-  const char id[16];
-  const char model[64];
+  const unsigned char id[16];
+  const unsigned char model[64];
 } devspec_id_t;
 #define devspec_id ((devspec_id_t*)(DEVSPEC_FLASH_START))
 
 typedef struct {
   const uint32_t UID[3];
   const uint16_t calib[68];
+  const unsigned char reserved[256-3*4-68*2-16];
+  const unsigned char date[16];
 } calib_t;
 #define calib_dis_force ((calib_t*)(DEVSPEC_FLASH_START + 256))
 #define calib_dis_offset ((calib_t*)(DEVSPEC_FLASH_START + 512))
