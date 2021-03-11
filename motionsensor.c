@@ -285,17 +285,19 @@ static void ThreadAccel(void *arg) {
     msgSend(9,msg);
 
 #ifdef USE_INTERNAL_SYNTH
-    float rot_x = ((float)gx)*(1.0f/32768.0f);
-    float rot_y = ((float)gy)*(1.0f/32768.0f);
-    float rot_z = ((float)gz)*(1.0f/32768.0f);
+    if (config.send_motion_interval) {
+      float rot_x = ((float)gx)*(1.0f/32768.0f);
+      float rot_y = ((float)gy)*(1.0f/32768.0f);
+      float rot_z = ((float)gz)*(1.0f/32768.0f);
 
-    *(synth_interface.acc_abs) = acc_abs;
-    *(synth_interface.acc_x) = acc_x;
-    *(synth_interface.acc_y) = acc_y;
-    *(synth_interface.acc_z) = acc_z;
-    *(synth_interface.rot_x) = rot_x;
-    *(synth_interface.rot_y) = rot_y;
-    *(synth_interface.rot_z) = rot_z;
+      *(synth_interface.acc_abs) = acc_abs;
+      *(synth_interface.acc_x) = acc_x;
+      *(synth_interface.acc_y) = acc_y;
+      *(synth_interface.acc_z) = acc_z;
+      *(synth_interface.rot_x) = rot_x;
+      *(synth_interface.rot_y) = rot_y;
+      *(synth_interface.rot_z) = rot_z;
+    }
 #endif
 
     /* Waiting until the next 10 milliseconds time interval.*/

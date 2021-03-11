@@ -277,9 +277,8 @@ class Instrument {
         int midi_channel_offset = 1;
         float midi_bend_range = 48.0;
         float bend_sensitivity = 0.25;
-        int pres_sensitivity = 127;
-        int velo_sensitivity = 256;
-        int rvelo_sensitivity = 256;
+        float pres_sensitivity = 1.5f;
+        float velo_sensitivity = 1.0f;
 
         Instrument(int* c0, int* c1, int n_buttons, synth_interface_t* si) {
             int n;
@@ -396,34 +395,38 @@ class Instrument {
                         } return;
                         case (9): {
                             config.send_motion_interval = 0;
+                            *(synth_interface->acc_abs) = 1.0f;
+                            *(synth_interface->acc_x) = 0.0f;
+                            *(synth_interface->acc_y) = 0.0f;
+                            *(synth_interface->acc_z) = 0.0f;
+                            *(synth_interface->rot_x) = 0.0f;
+                            *(synth_interface->rot_y) = 0.0f;
+                            *(synth_interface->rot_z) = 0.0f;
                             ws2812_write_led(0, 3, 0, 0);
                         } return;
                         // row 3: 17 19 21  6  8 10 12 14 16
                         case (17): {
-                            pres_sensitivity = 127;
+                            pres_sensitivity = 1.0f;
                             ws2812_write_led(0, 1, 1, 0);
                         } return;
                         case (19): {
-                            pres_sensitivity = 192;
+                            pres_sensitivity = 1.5f;
                             ws2812_write_led(0, 4, 4, 0);
                         } return;
                         case (21): {
-                            pres_sensitivity = 288;
+                            pres_sensitivity = 2.0f;
                             ws2812_write_led(0, 12, 12, 0);
                         } return;
                         case (6): {
-                            velo_sensitivity = 174;
-                            rvelo_sensitivity = 174;
+                            velo_sensitivity = 0.67f;
                             ws2812_write_led(0, 1, 0, 1);
                         } return;
                         case (8): {
-                            velo_sensitivity = 256;
-                            rvelo_sensitivity = 256;
+                            velo_sensitivity = 1.0f;
                             ws2812_write_led(0, 4, 0, 4);
                         } return;
                         case (10): {
-                            velo_sensitivity = 384;
-                            rvelo_sensitivity = 384;
+                            velo_sensitivity = 1.5f;
                             ws2812_write_led(0, 12, 0, 12);
                         } return;
                         case (12): {
@@ -431,11 +434,11 @@ class Instrument {
                             ws2812_write_led(0, 1, 0, 0);
                         } return;
                         case (14): {
-                            bend_sensitivity = 0.125f;
+                            bend_sensitivity = 0.25f;
                             ws2812_write_led(0, 4, 0, 0);
                         } return;
                         case (16): {
-                            bend_sensitivity = 0.25f;
+                            bend_sensitivity = 0.5f;
                             ws2812_write_led(0, 12, 0, 0);
                         } return;
                         // row 4: 18 20 22 24 26 28 13 15
@@ -599,13 +602,13 @@ class Instrument {
                         buttons[but].state = STATE_ON;
                         buttons[but].midinote = buttons[but].midinote_base + start_note_offset;
                         buttons[but].start_note_offset = start_note_offset;
-                        int velo = 0 + buttons[but].vpres * velo_sensitivity;
+                        int velo = 0 + buttons[but].vpres * velo_sensitivity * 256;
                         if (velo > 127) velo = 127;
                         else if (velo < 1) velo = 1;
                         midi_usb_MidiSend3(1, MIDI_NOTE_ON | midi_channel_offset,
                                         buttons[but].midinote, velo);
                     }
-                    int pres = buttons[but].pres * pres_sensitivity;
+                    int pres = buttons[but].pres * pres_sensitivity * 127;
                     if (pres > 127) pres = 127;
                     else if (pres < 0) pres = 0;
                     if (pres != buttons[but].last_pres) {
@@ -615,7 +618,7 @@ class Instrument {
                     }
                 } else {
                     buttons[but].state = STATE_OFF;
-                    int velo = 0 - buttons[but].vpres * rvelo_sensitivity;
+                    int velo = 0 - buttons[but].vpres * velo_sensitivity * 256;
                     if (velo > 127) velo = 127;
                     else if (velo < 0) velo = 0;
                     midi_usb_MidiSend3(1, MIDI_NOTE_OFF | midi_channel_offset,
@@ -744,7 +747,7 @@ class Instrument {
                 buttons[but].state = STATE_OFF;
 
 #ifdef USE_MIDI_OUT
-                int velo = 0 - buttons[but].vpres * rvelo_sensitivity;
+                int velo = 0 - buttons[but].vpres * velo_sensitivity * 256;
                 if (velo > 127) velo = 127;
                 else if (velo < 0) velo = 0;
                 midi_usb_MidiSend3(1, MIDI_NOTE_OFF | (midi_channel_offset + buttons[but].voice),
@@ -783,7 +786,7 @@ class Instrument {
                 last_button = but;
 
 #ifdef USE_MIDI_OUT
-                int velo = 0 + buttons[but].vpres * velo_sensitivity;
+                int velo = 0 + buttons[but].vpres * velo_sensitivity * 256;
                 if (velo > 127) velo = 127;
                 else if (velo < 1) velo = 1;
 
@@ -799,19 +802,21 @@ class Instrument {
 
         void update_voice(int but) {
             float pb = bend_sensitivity * pow3(buttons[but].but_x);
+            float presf = buttons[but].pres * pres_sensitivity;
+            float velof = buttons[but].vpres * velo_sensitivity;
 #ifdef USE_INTERNAL_SYNTH
             int voice = buttons[but].voice;
             *(synth_interface->note[voice])  = buttons[but].note + pb;
-            *(synth_interface->pres[voice])  = buttons[but].pres;
-            *(synth_interface->vpres[voice]) = buttons[but].vpres;
+            *(synth_interface->pres[voice])  = presf;
+            *(synth_interface->vpres[voice]) = velof;
             *(synth_interface->but_x[voice]) = buttons[but].but_x;
             *(synth_interface->but_y[voice]) = buttons[but].but_y;
 #endif
 
 #ifdef USE_MIDI_OUT
             float d; // calculate direction for hysteresis
-            d = (buttons[but].last_pres > (buttons[but].pres * pres_sensitivity)) * 0.5 - 0.25;
-            int pres = buttons[but].pres * pres_sensitivity + 0.5 + d;
+            d = (buttons[but].last_pres > (presf)) * 0.5 - 0.25;
+            int pres = presf + 0.5 + d;
             if (pres > 127) pres = 127;
             else if (pres < 0) pres = 0;
 
@@ -864,8 +869,8 @@ class Instrument {
             }
             if (config.midi_contvelo) {
                 // TODO: hysteresis for continuous velocity
-                if (buttons[but].vpres > 0) {
-                    int velo = 0 + buttons[but].vpres * velo_sensitivity;
+                if (velof > 0) {
+                    int velo = 0 + velof * 256;
                     if (velo > 127) velo = 127;
                     else if (velo < 0) velo = 0;
                     if (velo != buttons[but].last_velo) {
@@ -879,7 +884,7 @@ class Instrument {
                         buttons[but].last_rvelo = 0;
                     }
                 } else {
-                    int rvelo = 0 - buttons[but].vpres * rvelo_sensitivity;
+                    int rvelo = 0 - velof * 256;
                     if (rvelo > 127) rvelo = 127;
                     else if (rvelo < 0) rvelo = 0;
                     if (rvelo != buttons[but].last_rvelo) {
