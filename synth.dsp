@@ -69,6 +69,7 @@ ppRange = hslider("v:[2]config3/ppRange[style:knob]", 18, 0, 36, 0.1);
 
 bfQ1 = hslider("v:[2]config3/bfQ1[style:knob]",5,0.3,20,0.01);
 bfQ2 = hslider("v:[2]config3/bfQ2[style:knob]",8,0.3,20,0.01);
+bfQ3 = hslider("v:[2]config3/bfQ3[style:knob]",8,0.3,20,0.01);
 bflevel = hslider("v:[2]config3/bflevel[style:knob]",6,0.1,20,0.01);
 
 voice(note,pres,vpres,but_x,but_y1) = vosc <: filt, filt2, bfs * bflevel :> _ * level
@@ -85,15 +86,16 @@ with {
     pluck = but_y^2 : envdecay(select2(pres==0, halftime2fac_fast(0.01), 1));
     // decaytime = max(max(min(pluck * 2 - 0.4, 0.5+pluck), min(pres * 16, 0.5+pres)), 0.05) * 64 / note;
     decaytime = max(min(pres * 16, 0.5+pres*0.5), 0.05) * 64 / note;
-    vpres1 = max(vpres - 0.001, 0);
-    vplev = vpres1 / (0.5+vpres1) + 0.6 * max(pres-0.3,0)^2;// + min(pres, 0.001);
+    vpres1 = max(vpres - 0.02, 0);
+    vplev = vpres1 / (0.5+vpres1);// + min(pres, 0.001);
     rotlev = min(pres * 2, max(rot_y^2+rot_z^2 - 0.005, 0));
-    level = max(vplev : envdecay(resetni*halftime2fac_fast(decaytime)), rotlev) : LPF(K_f0(100), 1);// / (0.2 + note/24);
+    // level = max(vplev : envdecay(resetni*halftime2fac_fast(decaytime)), rotlev) : LPF(K_f0(100), 1);// / (0.2 + note/24);
+    level = (vplev : envdecay(resetni*halftime2fac_fast(decaytime))) + 1.0 * pres^2 : LPF(K_f0(100), 1);// / (0.2 + note/24);
 
     vdacc = min(acc_abs,2):envdecay(accDecay);
     // K = K_f0(max(freq,minFreq)) + filtFF*(level*(1-max(-but_y,0))+max(vdacc-1,0))^2^2;
     // filt = LPF(K, filtQ+max(-but_y,0)*8) * (1-max(-but_y,0)/2)^2;
-    f = min(max(freq,minFreq) * (1 + filtFF*(level*(1-max(-but_y,0))+max(vdacc-1,0))^2^2), 16000);
+    f = min(max(freq,minFreq) * (1 + filtFF*(level*(1-max(-but_y,0))+max(vdacc-1,0))^2), 16000);
     filt = fi.svf.lp(f, filtQ+max(-but_y,0)*8) * (1-max(-but_y,0)/2)^2;
 
     filt2lev = max(but_y,0) * but_y * pres;
@@ -104,9 +106,9 @@ with {
     b1 = BPF(K1, bfQ1) * abs(rot_y);
     K2 = select2(rot_x>0, K_f0(300), K_f0(600)) * (1+0.5*abs(rot_x));
     b2 = BPF(K2, bfQ2) * abs(rot_x);
-    K3 = select2(rot_x>0, K_f0(300), K_f0(600)) * (1+0.5*abs(rot_x));
-    b3 = BPF(K2, bfQ2) * abs(rot_x);
-    bfs = _ <: b1, b2 :> _;
+    K3 = select2(rot_z>0, K_f0(1300), K_f0(2600)) * (1+0.5*abs(rot_z));
+    b3 = BPF(K3, bfQ3) * abs(rot_z);
+    bfs = _ <: b1, b2, b3 :> _;
 };
 
 voice_sine(note,pres,vpres,but_x,but_y) = vosc * level
