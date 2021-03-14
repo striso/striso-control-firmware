@@ -816,7 +816,7 @@ class Instrument {
 #ifdef USE_MIDI_OUT
             float d; // calculate direction for hysteresis
             d = (buttons[but].last_pres > (presf)) * 0.5 - 0.25;
-            int pres = presf + 0.5 + d;
+            int pres = presf * 127 + 0.5 + d;
             if (pres > 127) pres = 127;
             else if (pres < 0) pres = 0;
 
