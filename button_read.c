@@ -25,6 +25,7 @@
 #include "striso.h"
 #include "synth.h"
 #include "usbcfg.h"
+#include "led.h"
 
 #include "messaging.h"
 #ifdef STM32F4XX
@@ -464,7 +465,7 @@ void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
   }
 }
 
-int32_t calibrate(int32_t s, int32_t c) {
+int32_t calibrate(int32_t s, button_t* but) {
   #ifdef CALIBRATION_MODE
   /* keep linear voltage for calibration */
   s = ADCFACT * (4095-s);
@@ -472,7 +473,7 @@ int32_t calibrate(int32_t s, int32_t c) {
   /* convert adc value to force */
   // c is the normalisation value for the force
   //    2^18   * 2^12 / 2^12 * ADCFACT/2^6 / c
-  s = (c * (4095-s)/(s+1)) * (ADCFACT>>6);
+  s = (but->c_force * (4095-s)/(s+1)) * (ADCFACT>>6);
   #endif
   return s;
 }
@@ -489,30 +490,30 @@ void update_button(button_t* but, adcsample_t* inp) {
 
 #ifdef TWO_WAY_SAMPLING
   s_new = max(inp[0], inp[53]);
-  s_new = calibrate(s_new, but->c_force);
+  s_new = calibrate(s_new, but);
   if (s_new > s_max) s_max = s_new;
   s_new -= but->c_offset;
   update_and_filter(&but->s0, &but->v0, s_new);
   s_new = max(inp[1], inp[52]);
-  s_new = calibrate(s_new, but->c_force);
+  s_new = calibrate(s_new, but);
   if (s_new > s_max) s_max = s_new;
   s_new -= but->c_offset;
   update_and_filter(&but->s1, &but->v1, s_new);
   s_new = max(inp[2], inp[51]);
-  s_new = calibrate(s_new, but->c_force);
+  s_new = calibrate(s_new, but);
   if (s_new > s_max) s_max = s_new;
   s_new -= but->c_offset;
   update_and_filter(&but->s2, &but->v2, s_new);
 #else
-  s_new = calibrate(inp[0], but->c_force);
+  s_new = calibrate(inp[0], but);
   if (s_new > s_max) s_max = s_new;
   s_new -= but->c_offset;
   update_and_filter(&but->s0, &but->v0, s_new);
-  s_new = calibrate(inp[1], but->c_force);
+  s_new = calibrate(inp[1], but);
   if (s_new > s_max) s_max = s_new;
   s_new -= but->c_offset;
   update_and_filter(&but->s1, &but->v1, s_new);
-  s_new = calibrate(inp[2], but->c_force);
+  s_new = calibrate(inp[2], but);
   if (s_new > s_max) s_max = s_new;
   s_new -= but->c_offset;
   update_and_filter(&but->s2, &but->v2, s_new);
@@ -832,13 +833,13 @@ static void ThreadReadButtons(void *arg) {
           but_id = note_id + n * 17;
           but = &buttons[but_id];
           int s_new = samples[n][cur_conv];
-          s_new = calibrate(s_new, but->c_force);
+          s_new = calibrate(s_new, but);
           if (s_new > but->p) but->p = s_new;
           s_new = samples[n][cur_conv+1];
-          s_new = calibrate(s_new, but->c_force);
+          s_new = calibrate(s_new, but);
           if (s_new > but->p) but->p = s_new;
           s_new = samples[n][cur_conv+2];
-          s_new = calibrate(s_new, but->c_force);
+          s_new = calibrate(s_new, but);
           if (s_new > but->p) but->p = s_new;
         }
         // Once per cycle, after the last buttons
