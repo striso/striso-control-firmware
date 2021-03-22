@@ -164,6 +164,8 @@ struct struct_button {
   int32_t v2;
   int32_t c_force;
   int32_t c_offset;
+  int32_t c_breakpoint;
+  int32_t c_force2;
   int32_t zero_time;
   int32_t zero_max;
   enum button_status status;
@@ -474,7 +476,13 @@ int32_t calibrate(int32_t s, button_t* but) {
   // c is the normalisation value for the force
   //    2^18   * 2^12 / 2^12 * ADCFACT/2^6 / c
   s = (but->c_force * (4095-s)/(s+1)) * (ADCFACT>>6);
-  #endif
+  #ifdef BREAKPOINT_CALIBRATION
+  // breakpoint calibration
+  if (s > but->c_breakpoint) {
+    s += but->c_force2 * ((s - but->c_breakpoint)>>8);
+  }
+  #endif // BREAKPOINT_CALIBRATION
+  #endif // CALIBRATION_MODE
   return s;
 }
 
@@ -1045,6 +1053,7 @@ void buttonSetCalibration(uint32_t c_force, uint32_t c_offset) {
     chprintf((BaseSequentialStream *)&BDU1, "but[%d] c_force: %d c_offset: %d\r\n", n, buttons[n].c_force, buttons[n].c_offset);
     buttons[n].c_force = c_force;
     buttons[n].c_offset = c_offset;
+    buttons[n].c_breakpoint = INT32_MAX;
   }
 }
 
@@ -1102,6 +1111,27 @@ void ButtonReadStart(void) {
   } else {
     led_rgb(0xff0000);
     chThdSleepMilliseconds(200);
+  }
+
+  if (calib_dis_breakpoint->UID[0] == UID[0] &&
+      calib_dis_breakpoint->UID[1] == UID[1] &&
+      calib_dis_breakpoint->UID[2] == UID[2] &&
+      calib_dis_breakpoint->type == 0xb1) {
+    for (int n=0; n<N_BUTTONS; n++) {
+      buttons[n].c_breakpoint = calib_dis_breakpoint->calib[n] << 16;
+    }
+  } else {
+    for (int n=0; n<N_BUTTONS; n++) {
+      buttons[n].c_breakpoint = INT32_MAX;
+    }
+  }
+  if (calib_dis_force2->UID[0] == UID[0] &&
+      calib_dis_force2->UID[1] == UID[1] &&
+      calib_dis_force2->UID[2] == UID[2] &&
+      calib_dis_force2->type == 0x01) {
+    for (int n=0; n<N_BUTTONS; n++) {
+      buttons[n].c_force2 = calib_dis_force2->calib[n];
+    }
   }
 
   /*

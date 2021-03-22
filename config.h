@@ -53,6 +53,7 @@
 #define BUTTON_FILT
 #define TWO_WAY_SAMPLING
 #define DETECT_STUCK_NOTES
+#define BREAKPOINT_CALIBRATION
 
 #define CALIB_OFFSET 1024
 #define CALIB_FORCE  ((1<<18)/64)
@@ -106,10 +107,12 @@ typedef struct {
 typedef struct {
   const uint32_t UID[3];
   const uint16_t calib[68];
-  const unsigned char reserved[256-3*4-68*2-16];
+  const unsigned char reserved[256-3*4-68*2-2-16];
+  const uint16_t type;
   const unsigned char date[16];
 } calib_t;
 #define calib_dis_force ((calib_t*)(DEVSPEC_FLASH_START + 256))
-#define calib_dis_offset ((calib_t*)(DEVSPEC_FLASH_START + 512))
+#define calib_dis_breakpoint ((calib_t*)(DEVSPEC_FLASH_START + 2*256))
+#define calib_dis_force2 ((calib_t*)(DEVSPEC_FLASH_START + 3*256))
 
 #endif
