@@ -37,7 +37,8 @@
 #define VELOFACT 32
 #define MSGFACT (1<<11)
 #define MSGFACT_VELO (MSGFACT/VELOFACT)
-#define FILT 8  // max:  1<<32 / INTERNAL_ONE = 64
+#define FILT 8  // min: 1 (no filter), max: 64 (1<<32 / INTERNAL_ONE)
+#define FILTV 8 // min: 1 (no filter), max: 64 (1<<32 / INTERNAL_ONE)
 #define ZERO_LEVEL_OFFSET 4
 #define ZERO_LEVEL_MAX_VELO 500
 
@@ -458,7 +459,7 @@ void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
     *s = INTERNAL_ONE - 1;
     *v = 0;
   } else {
-    *v = ((FILT-1) * (*v) + (*s - old_s)) / FILT;
+    *v = ((FILTV-1) * (*v) + (*s - old_s)) / FILTV;
     if (*v >= (INTERNAL_ONE/VELOFACT)) {
       *v = (INTERNAL_ONE/VELOFACT) - 1;
     } else if (*v <= -(INTERNAL_ONE/VELOFACT)) {
@@ -528,6 +529,7 @@ void update_button(button_t* but, adcsample_t* inp) {
 #endif
   but->p = but->s0 + but->s1 + but->s2;
 
+#ifdef DETECT_STUCK_NOTES
   // adjust zero pressure level dynamically
   if (s_max < (INTERNAL_ONE/32)
       && (but->v0 + but->v1 + but->v2) < ZERO_LEVEL_MAX_VELO
@@ -542,6 +544,7 @@ void update_button(button_t* but, adcsample_t* inp) {
     but->zero_time = 0;
     but->zero_max = 0;
   }
+#endif
 
 #ifdef BUTTON_FILT
 #ifdef TWO_WAY_SAMPLING

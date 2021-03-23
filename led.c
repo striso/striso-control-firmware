@@ -42,6 +42,10 @@ void led_rgb3(int r, int g, int b) {
   pwmEnableChannel(&PWMD4, 1, gamma8(b));
 }
 
+/*
+ * Set up down leds state
+ * state is 0xabcd with a=up2, b=up, c=down, d=down2
+ */
 void led_updown(uint32_t state) {
   if (state       & 0xf) palSetLine(LINE_LED_UP2);   else palClearLine(LINE_LED_UP2);
   if (state >>  4 & 0xf) palSetLine(LINE_LED_UP);    else palClearLine(LINE_LED_UP);
