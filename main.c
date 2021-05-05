@@ -149,6 +149,9 @@ int main(void) {
   halInit();
   chSysInit();
 
+  // Enable the headphone amp to stop noise at boot with some amps
+  palSetLine(LINE_HP_EN);
+
   /*
    * Activates the serial driver using the driver default configuration.
    */
