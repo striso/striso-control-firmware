@@ -4,3 +4,10 @@ build/
 releases/
 *.tmp
 .git_version
+
+__pycache__
+*.pyc
+
+striso_util
+synth
+stribri

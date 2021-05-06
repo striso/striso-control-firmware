@@ -1,0 +1,4 @@
+# Striso binary protocol
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="f055", ATTRS{idProduct}=="57c0", MODE:="0666"
+# 0483:df11 - STM32 microcontroller in DFU mode
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", MODE:="0666"
