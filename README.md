@@ -15,4 +15,4 @@ The UF2 bootloader can be found on https://github.com/striso/uf2-ChibiOS.
 - gcc-arm-none-eabi
 - faust (when synthesizer is modified)
 - git (for version number)
-- python (for uf2 file creation)
+- python3 (for uf2 file creation)

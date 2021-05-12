@@ -202,7 +202,10 @@ synth.cpp: synth.dsp faust_synth_template.cpp faust2striso.py
 	./faust2striso.py
 
 %.uf2: %.bin
-	python uf2/utils/uf2conv.py -c -f 0xa21e1295 -b 0x08040000 $(BUILDDIR)/$(PROJECT).bin -o $(BUILDDIR)/$(PROJECT).uf2
+	@python3 uf2/utils/uf2conv.py -c -f 0xa21e1295 -b 0x08040000 $(BUILDDIR)/$(PROJECT).bin -o $(BUILDDIR)/$(PROJECT).uf2
+
+prog_uf2: uf2
+	@python3 uf2/utils/uf2conv.py -f 0xa21e1295 -b 0x08040000 $(BUILDDIR)/$(PROJECT).bin
 
 release: uf2
 	mkdir -p releases
