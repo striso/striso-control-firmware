@@ -619,8 +619,9 @@ class Instrument {
                 // in single channel poly mode just send out the notes on a single channel,
                 // skip the whole channel assignment stuff.
 #ifdef USE_MIDI_OUT
-                // Note on detection
                 if (buttons[but].pres > 0.0) {
+                    buttons[but].calculate();
+                    // Note on detection
                     if (buttons[but].state == STATE_OFF) {
                         buttons[but].state = STATE_ON;
                         buttons[but].midinote = buttons[but].midinote_base + start_note_offset;
@@ -630,22 +631,112 @@ class Instrument {
                         else if (velo < 1) velo = 1;
                         MidiSend3(MIDI_NOTE_ON | midi_channel_offset,
                                         buttons[but].midinote, velo);
+
+                        portamento_button = but;
                     }
-                    int pres = buttons[but].pres * pres_sensitivity * 127;
-                    if (pres > 127) pres = 127;
-                    else if (pres < 0) pres = 0;
-                    if (pres != buttons[but].last_pres) {
-                        MidiSend3(MIDI_POLY_PRESSURE | midi_channel_offset,
-                                           buttons[but].midinote, pres);
-                        buttons[but].last_pres = pres;
+                    if (portamento_button == -1) {
+                        portamento_button = but;
                     }
-                } else {
+
+                    if (config.midi_pres == CFG_POLY_PRESSURE) {
+                        float presf = buttons[but].pres * pres_sensitivity;
+                        float d; // calculate direction for hysteresis
+                        d = (buttons[but].last_pres > (presf)) * 0.5 - 0.25;
+                        int pres = presf * 127 + 0.5 + d;
+                        if (pres > 127) pres = 127;
+                        else if (pres < 0) pres = 0;
+
+                        if (pres != buttons[but].last_pres) {
+                            MidiSend3(MIDI_POLY_PRESSURE | midi_channel_offset,
+                                            buttons[but].midinote, pres);
+                            buttons[but].last_pres = pres;
+                        }
+                    }
+
+                    if (but == portamento_button) { // update only once like in portamento, hence use the same variable
+                        // reduce pres, bend and tilt of all pressed buttons to single values
+                        float presf = 0.0f;
+                        float x = 0.0f;
+                        float xw = 0.0f;
+                        float y = 0.0f;
+                        float yw = 0.0f;
+                        for (int i=0; i<BUTTONCOUNT; i++) {
+                            if (buttons[i].state == STATE_ON) {
+                                if (buttons[i].pres > presf) presf = buttons[i].pres;
+                                float w = pow2(buttons[i].but_x);
+                                x += w * buttons[i].but_x;
+                                xw += w;
+                                w = pow2(buttons[i].but_y);
+                                y += w * buttons[i].but_y;
+                                yw += w;
+                            }
+                        }
+                        if (xw > 0.0000001f) x /= xw;
+                        if (yw > 0.0000001f) y /= yw;
+
+                        float d; // calculate direction for hysteresis
+
+                        if (config.midi_pres != CFG_POLY_PRESSURE) {
+                            d = (buttons[0].last_pres > (presf)) * 0.5 - 0.25;
+                            int pres = presf * 127 + 0.5 + d;
+                            if (pres > 127) pres = 127;
+                            else if (pres < 0) pres = 0;
+                            if (pres != buttons[0].last_pres) {
+                                if (config.midi_pres == CFG_CHANNEL_PRESSURE) {
+                                    MidiSend2(MIDI_CHANNEL_PRESSURE | midi_channel_offset,
+                                                    pres);
+                                } else if (config.midi_pres < 120) {
+                                    MidiSend3(MIDI_CONTROL_CHANGE | midi_channel_offset,
+                                                    config.midi_pres, pres);
+                                }
+                                buttons[0].last_pres = pres;
+                            }
+                        }
+                        if (config.midi_x == CFG_PITCH_BEND) {
+                            x = pow3(x) * bend_sensitivity;
+                            d = (buttons[0].last_bend > (0x2000 + x * 0x2000)) * 0.5 - 0.25;
+                            int bend = 0x2000 + x * 0x2000 + 0.5 + d;
+                            if (bend >= 0x4000) bend = 0x3fff;
+                            else if (bend < 0) bend = 0;
+                            if (bend != buttons[0].last_bend) {
+                                MidiSend3(MIDI_PITCH_BEND | midi_channel_offset,
+                                          bend & 0x7f, (bend >> 7) & 0x7f);
+                                buttons[0].last_bend = bend;
+                            }
+                        } else if (config.midi_x < 120) {
+                            d = (buttons[0].last_bend > (64 + x * 64)) * 0.5 - 0.25;
+                            int bend = 64 + x * 64 + 0.5 + d;
+                            if (bend > 127) bend = 127;
+                            else if (bend < 0) bend = 0;
+                            if (bend != buttons[0].last_bend) {
+                                MidiSend3(MIDI_CONTROL_CHANGE | midi_channel_offset,
+                                                config.midi_x, bend);
+                                buttons[0].last_bend = bend;
+                            }
+                        }
+                        d = (buttons[0].last_tilt > (64 + y * 64)) * 0.5 - 0.25;
+                        int tilt = 64 + y * 64 + 0.5 + d;
+                        if (tilt > 127) tilt = 127;
+                        else if (tilt < 0) tilt = 0;
+                        if (tilt != buttons[0].last_tilt) {
+                            if (config.midi_y < 120) {
+                                MidiSend3(MIDI_CONTROL_CHANGE | midi_channel_offset,
+                                                config.midi_y, tilt);
+                            }
+                            buttons[0].last_tilt = tilt;
+                        }
+                    }
+
+                } else { // Note off
                     buttons[but].state = STATE_OFF;
                     int velo = 0 - buttons[but].vpres * velo_sensitivity * 256;
                     if (velo > 127) velo = 127;
                     else if (velo < 0) velo = 0;
                     MidiSend3(MIDI_NOTE_OFF | midi_channel_offset,
                                     buttons[but].midinote, velo);
+                    if (but == portamento_button) {
+                        portamento_button = -1;
+                    }
                 }
                 return;
 #endif
@@ -866,32 +957,35 @@ class Instrument {
                 buttons[but].last_pitchbend = pitchbend;
             }
             if (pres != buttons[but].last_pres) {
-                if (config.midi_pres == 1) {
+                if (config.mpe_pres == CFG_CHANNEL_PRESSURE) {
                     MidiSend2(MIDI_CHANNEL_PRESSURE | (midi_channel_offset + buttons[but].voice),
                                     pres);
-                } else if (config.midi_pres == 2) {
+                } else if (config.mpe_pres < 120) {
                     MidiSend3(MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
-                                    70, pres);
+                                    config.mpe_pres, pres);
                 }
                 buttons[but].last_pres = pres;
             }
-            if (config.midi_bend == 2) {
+            if (config.mpe_x < 120) {
                 int bend = 64.5 + buttons[but].but_x * 64;
                 if (bend > 127) bend = 127;
                 else if (bend < 0) bend = 0;
                 if (bend != buttons[but].last_bend) {
                     MidiSend3(MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
-                                    71, bend);
+                                    config.mpe_x, bend);
                     buttons[but].last_bend = bend;
                 }
             }
             if (tilt != buttons[but].last_tilt) {
-                MidiSend3(MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
-                                74, tilt);
+                if (config.mpe_y < 120) {
+                    MidiSend3(MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                                    config.mpe_y, tilt);
+                }
                 buttons[but].last_tilt = tilt;
             }
-            if (config.midi_contvelo) {
+            if (config.mpe_contvelo < 120) {
                 // TODO: hysteresis for continuous velocity
+                // TODO: make contvelo CC configurable
                 if (velof > 0) {
                     int velo = 0 + velof * 256;
                     if (velo > 127) velo = 127;
@@ -1069,22 +1163,43 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
             } break;
             case  1|MIDI_C_LSB: lsb_cc1 = data2; break;
             case 16: config.send_motion_interval = data2; break;
-            case 16|MIDI_C_LSB: config.send_motion_14bit = data2; break;
+            // case 16|MIDI_C_LSB: config.send_motion_14bit = data2; break;
             case 17: config.message_interval = data2 >= 1 ? data2 : 1; break;
-            case 17|MIDI_C_LSB: config.send_button_14bit = data2; break;
+            // case 17|MIDI_C_LSB: config.send_button_14bit = data2; break;
             case 18: { // Note offset
                 dis.set_note_offset(data2 - 2);
             } break;
             case 65: dis.set_portamento(data2); break;
-            case 70: if (data2 > 0 && data2 < 3) config.midi_pres = data2; break;
-            case 71: {
-                if (data2 > 0) {
-                    dis.bend_sensitivity = (float)(data2 - 1) * 0.01;
-                    config.midi_bend = 0;
+            case 70: { // pressure
+                if (data2 == 0) data2 = CFG_DISABLE;
+                if (config.midi_mode == MIDI_MODE_MPE) {
+                    config.mpe_pres = data2;
                 } else {
-                    dis.bend_sensitivity = 0;
-                    config.midi_bend = 2;
+                    config.midi_pres = data2;
                 }
+            } break;
+            case 71: { // x
+                if (data2 == 0) data2 = CFG_DISABLE;
+                if (config.midi_mode == MIDI_MODE_MPE) {
+                    config.mpe_x = data2;
+                } else {
+                    config.midi_x = data2;
+                }
+            } break;
+            case 72: { // cont release velo
+            } break;
+            case 73: { // cont velo
+            } break;
+            case 74: { // y
+                if (data2 == 0) data2 = CFG_DISABLE;
+                if (config.midi_mode == MIDI_MODE_MPE) {
+                    config.mpe_y = data2;
+                } else {
+                    config.midi_y = data2;
+                }
+            } break;
+            case 75: { // pitch bend sensitivity, TODO: different CC?
+                dis.bend_sensitivity = (float)data2 * 0.01;
             } break;
             case 126: {
                 if (data2 == 0) {

@@ -75,24 +75,39 @@ typedef struct struct_config {
   int send_motion_interval;
   int send_motion_14bit;
   int send_button_14bit;
-  int midi_pres;
-  int midi_bend;
-  int midi_contvelo;
   midi_mode_t midi_mode;
+  unsigned int midi_pres;
+  unsigned int midi_x;
+  unsigned int midi_y;
+  unsigned int mpe_pres;
+  unsigned int mpe_x;
+  unsigned int mpe_y;
+  unsigned int mpe_contvelo;
 } config_t;
 extern config_t config;
 
+#define CFG_DISABLE               127
+#define CFG_POLY_PRESSURE         120
+#define CFG_CHANNEL_PRESSURE      121
+#define CFG_PITCH_BEND            122
+
 #ifdef CONFIG_HERE
+// default config
 config_t config = {
-  .message_interval = 1,     // interval in ms
+  .message_interval = 1,      // interval in ms
   .send_usb_bulk = 0,         // send Striso binary protocol
   .send_motion_interval = 1,  // 0 = disable, else x10ms
   .send_motion_14bit = 0,     // send 14 bit motion CC
   .send_button_14bit = 0,     // send 14 bit MPE CC
-  .midi_pres = 1,             // 1 = Channel Pressure, 2 = CC 70
-  .midi_bend = 1,             // 2 = CC 71
-  .midi_contvelo = 0,         // 0 = disable, 1 = enable
   .midi_mode = MIDI_MODE_MPE,
+  // for the following: < 120: CC, or CFG_* (not all options are supported)
+  .midi_pres = CFG_POLY_PRESSURE,
+  .midi_x = CFG_PITCH_BEND,
+  .midi_y = 74,
+  .mpe_pres = CFG_CHANNEL_PRESSURE,
+  .mpe_x = CFG_PITCH_BEND,
+  .mpe_y = 74,
+  .mpe_contvelo = CFG_DISABLE,
 };
 #endif
 
