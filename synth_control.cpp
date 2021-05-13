@@ -29,6 +29,8 @@ extern "C" {
 #include "config.h"
 #include "striso.h"
 #include "midi_usb.h"
+#include "midi_serial.h"
+#include "midi.h"
 
 #ifndef USE_WS2812
 #define ws2812_write_led(n,r,g,b) led_rgb3(14*r,14*g,14*b)
@@ -42,6 +44,27 @@ extern "C" {
 #define CLEAR_TIMER TIME_MS2I(500) // interval to clear dead notes
 
 #define VOLUME_FACTOR 0.005f;
+
+void MidiSend1(uint8_t b0) {
+    midi_usb_MidiSend1(1, b0);
+#ifdef USE_MIDI_SERIAL
+    serial_MidiSend1(b0);
+#endif
+}
+
+void MidiSend2(uint8_t b0, uint8_t b1) {
+    midi_usb_MidiSend2(1, b0, b1);
+#ifdef USE_MIDI_SERIAL
+    serial_MidiSend2(b0, b1);
+#endif
+}
+
+void MidiSend3(uint8_t b0, uint8_t b1, uint8_t b2) {
+    midi_usb_MidiSend3(1, b0, b1, b2);
+#ifdef USE_MIDI_SERIAL
+    serial_MidiSend3(b0, b1, b2);
+#endif
+}
 
 // Schlick power function, approximation of power function
 float powf_schlick(const float a, const float b)
@@ -319,7 +342,7 @@ class Instrument {
                 portamento = 0;
             }
         }
-        
+
         void set_altmode(int a) {
             if (a) {
                 altmode = 1;
@@ -467,97 +490,97 @@ class Instrument {
                         // row 6: 35 37 39 41 43 45 30 32
 #ifdef USE_MIDI_OUT
                         case (35): {
-                            midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
+                            MidiSend2(MIDI_PROGRAM_CHANGE,
                                                 0);
                             ws2812_write_led(0, 4, 0, 0);
                         } return;
                         case (37): {
-                            midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
+                            MidiSend2(MIDI_PROGRAM_CHANGE,
                                                 1);
                             ws2812_write_led(0, 4, 1, 0);
                         } return;
                         case (39): {
-                            midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
+                            MidiSend2(MIDI_PROGRAM_CHANGE,
                                                 2);
                             ws2812_write_led(0, 4, 4, 0);
                         } return;
                         case (41): {
-                            midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
+                            MidiSend2(MIDI_PROGRAM_CHANGE,
                                                 3);
                             ws2812_write_led(0, 1, 8, 0);
                         } return;
                         case (43): {
-                            midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
+                            MidiSend2(MIDI_PROGRAM_CHANGE,
                                                 4);
                             ws2812_write_led(0, 0, 4, 4);
                         } return;
                         case (45): {
-                            midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
+                            MidiSend2(MIDI_PROGRAM_CHANGE,
                                                 5);
                             ws2812_write_led(0, 0, 1, 12);
                         } return;
                         case (30): {
-                            midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
+                            MidiSend2(MIDI_PROGRAM_CHANGE,
                                                 6);
                             ws2812_write_led(0, 2, 0, 6);
                         } return;
                         case (32): {
-                            midi_usb_MidiSend2(1, MIDI_PROGRAM_CHANGE,
+                            MidiSend2(MIDI_PROGRAM_CHANGE,
                                                 7);
                             ws2812_write_led(0, 3, 3, 3);
                         } return;
 #endif
                         // row 7: 51 53 55 40 42 44 46 48 50
                         case (51): {
-                            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                            MidiSend3(MIDI_CONTROL_CHANGE,
                                                 MIDI_C_MAIN_VOLUME, 7);
                             volume = 7.0 * VOLUME_FACTOR;
                             ws2812_write_led(0, 1, 1, 1);
                         } return;
                         case (53): {
-                            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                            MidiSend3(MIDI_CONTROL_CHANGE,
                                                 MIDI_C_MAIN_VOLUME, 15);
                             volume = 15.0 * VOLUME_FACTOR;
                             ws2812_write_led(0, 2, 2, 2);
                         } return;
                         case (55): {
-                            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                            MidiSend3(MIDI_CONTROL_CHANGE,
                                                 MIDI_C_MAIN_VOLUME, 31);
                             volume = 31.0 * VOLUME_FACTOR;
                             ws2812_write_led(0, 3, 3, 3);
                         } return;
                         case (40): {
-                            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                            MidiSend3(MIDI_CONTROL_CHANGE,
                                                 MIDI_C_MAIN_VOLUME, 47);
                             volume = 47.0 * VOLUME_FACTOR;
                             ws2812_write_led(0, 4, 4, 4);
                         } return;
                         case (42): {
-                            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                            MidiSend3(MIDI_CONTROL_CHANGE,
                                                 MIDI_C_MAIN_VOLUME, 63);
                             volume = 63.0 * VOLUME_FACTOR;
                             ws2812_write_led(0, 6, 6, 6);
                         } return;
                         case (44): {
-                            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                            MidiSend3(MIDI_CONTROL_CHANGE,
                                                 MIDI_C_MAIN_VOLUME, 79);
                             volume = 79.0 * VOLUME_FACTOR;
                             ws2812_write_led(0, 8, 8, 8);
                         } return;
                         case (46): {
-                            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                            MidiSend3(MIDI_CONTROL_CHANGE,
                                                 MIDI_C_MAIN_VOLUME, 95);
                             volume = 95.0 * VOLUME_FACTOR;
                             ws2812_write_led(0, 10, 10, 10);
                         } return;
                         case (48): {
-                            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                            MidiSend3(MIDI_CONTROL_CHANGE,
                                                 MIDI_C_MAIN_VOLUME, 111);
                             volume = 111.0 * VOLUME_FACTOR;
                             ws2812_write_led(0, 14, 14, 14);
                         } return;
                         case (50): {
-                            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                            MidiSend3(MIDI_CONTROL_CHANGE,
                                                 MIDI_C_MAIN_VOLUME, 127);
                             volume = 127.0 * VOLUME_FACTOR;
                             ws2812_write_led(0, 18, 18, 18);
@@ -567,7 +590,7 @@ class Instrument {
                         // row 9:                   63 65 67
                         case (63): { // panic/request config
 #ifdef USE_MIDI_OUT
-                            midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                            MidiSend3(MIDI_CONTROL_CHANGE,
                                                 MIDI_C_ALL_NOTES_OFF, 0);
                             ws2812_write_led(0, 16, 0, 0);
 #endif
@@ -605,14 +628,14 @@ class Instrument {
                         int velo = 0 + buttons[but].vpres * velo_sensitivity * 256;
                         if (velo > 127) velo = 127;
                         else if (velo < 1) velo = 1;
-                        midi_usb_MidiSend3(1, MIDI_NOTE_ON | midi_channel_offset,
+                        MidiSend3(MIDI_NOTE_ON | midi_channel_offset,
                                         buttons[but].midinote, velo);
                     }
                     int pres = buttons[but].pres * pres_sensitivity * 127;
                     if (pres > 127) pres = 127;
                     else if (pres < 0) pres = 0;
                     if (pres != buttons[but].last_pres) {
-                        midi_usb_MidiSend3(1, MIDI_POLY_PRESSURE | midi_channel_offset,
+                        MidiSend3(MIDI_POLY_PRESSURE | midi_channel_offset,
                                            buttons[but].midinote, pres);
                         buttons[but].last_pres = pres;
                     }
@@ -621,7 +644,7 @@ class Instrument {
                     int velo = 0 - buttons[but].vpres * velo_sensitivity * 256;
                     if (velo > 127) velo = 127;
                     else if (velo < 0) velo = 0;
-                    midi_usb_MidiSend3(1, MIDI_NOTE_OFF | midi_channel_offset,
+                    MidiSend3(MIDI_NOTE_OFF | midi_channel_offset,
                                     buttons[but].midinote, velo);
                 }
                 return;
@@ -633,7 +656,7 @@ class Instrument {
                 // calculate midinote only at note on
                 buttons[but].midinote = buttons[but].midinote_base + start_note_offset;
                 buttons[but].start_note_offset = start_note_offset;
-                
+
                 if (portamento) {
                     if (portamento_button == -1) {
                         if (get_voice(but) >= 0) {
@@ -665,7 +688,7 @@ class Instrument {
                 if (but == portamento_button) {
                     // calculate average of portamento buttons
                     float temp_pres = buttons[but].pres; // save pres for note off detection
-                    
+
                     float pres = buttons[but].pres;
                     float sw = pres*pres;
                     float vpres = buttons[but].vpres;
@@ -693,7 +716,7 @@ class Instrument {
                     buttons[but].vpres = vpres;
                     buttons[but].but_x = but_x / sw;
                     buttons[but].but_y = but_y / sw;
-                    
+
                     update_voice(but);
                     buttons[but].pres = temp_pres;
                 }
@@ -750,7 +773,7 @@ class Instrument {
                 int velo = 0 - buttons[but].vpres * velo_sensitivity * 256;
                 if (velo > 127) velo = 127;
                 else if (velo < 0) velo = 0;
-                midi_usb_MidiSend3(1, MIDI_NOTE_OFF | (midi_channel_offset + buttons[but].voice),
+                MidiSend3(MIDI_NOTE_OFF | (midi_channel_offset + buttons[but].voice),
                                    buttons[but].midinote, velo);
 #endif
             }
@@ -790,7 +813,7 @@ class Instrument {
                 if (velo > 127) velo = 127;
                 else if (velo < 1) velo = 1;
 
-                midi_usb_MidiSend3(1, MIDI_NOTE_ON | (midi_channel_offset + buttons[but].voice),
+                MidiSend3(MIDI_NOTE_ON | (midi_channel_offset + buttons[but].voice),
                                    buttons[but].midinote, velo);
                 buttons[but].last_velo = velo;
 #endif
@@ -838,16 +861,16 @@ class Instrument {
 
             // pitchbend is also used for tuning and glissando
             if (pitchbend != buttons[but].last_pitchbend) {
-                midi_usb_MidiSend3(1, MIDI_PITCH_BEND | (midi_channel_offset + buttons[but].voice),
+                MidiSend3(MIDI_PITCH_BEND | (midi_channel_offset + buttons[but].voice),
                                    pitchbend & 0x7f, (pitchbend >> 7) & 0x7f);
                 buttons[but].last_pitchbend = pitchbend;
             }
             if (pres != buttons[but].last_pres) {
                 if (config.midi_pres == 1) {
-                    midi_usb_MidiSend2(1, MIDI_CHANNEL_PRESSURE | (midi_channel_offset + buttons[but].voice),
+                    MidiSend2(MIDI_CHANNEL_PRESSURE | (midi_channel_offset + buttons[but].voice),
                                     pres);
                 } else if (config.midi_pres == 2) {
-                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                    MidiSend3(MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
                                     70, pres);
                 }
                 buttons[but].last_pres = pres;
@@ -857,13 +880,13 @@ class Instrument {
                 if (bend > 127) bend = 127;
                 else if (bend < 0) bend = 0;
                 if (bend != buttons[but].last_bend) {
-                    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                    MidiSend3(MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
                                     71, bend);
                     buttons[but].last_bend = bend;
                 }
             }
             if (tilt != buttons[but].last_tilt) {
-                midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                MidiSend3(MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
                                 74, tilt);
                 buttons[but].last_tilt = tilt;
             }
@@ -874,12 +897,12 @@ class Instrument {
                     if (velo > 127) velo = 127;
                     else if (velo < 0) velo = 0;
                     if (velo != buttons[but].last_velo) {
-                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                        MidiSend3(MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
                                         73, velo);
                         buttons[but].last_velo = velo;
                     }
                     if (buttons[but].last_rvelo > 0) {
-                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                        MidiSend3(MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
                                         72, 0);
                         buttons[but].last_rvelo = 0;
                     }
@@ -888,12 +911,12 @@ class Instrument {
                     if (rvelo > 127) rvelo = 127;
                     else if (rvelo < 0) rvelo = 0;
                     if (rvelo != buttons[but].last_rvelo) {
-                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                        MidiSend3(MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
                                         72, rvelo);
                         buttons[but].last_rvelo = rvelo;
                     }
                     if (buttons[but].last_velo > 0) {
-                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
+                        MidiSend3(MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
                                         73, 0);
                         buttons[but].last_velo = 0;
                     }
@@ -1013,11 +1036,11 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
     static uint8_t lastNRPN_LSB = 0;
     static uint8_t lastNRPN_MSB = 0;
     static uint8_t lsb_cc1 = 0;
-    
+
     uint8_t channel = status & 0x0f;
     status &= 0xf0;
     ws2812_write_led(0, 18, 0, 9);
-    
+
     if (status == MIDI_CONTROL_CHANGE) {
         switch (data1) {
             case MIDI_C_RPN_LSB: lastRPN_LSB = data2; lastNRPN_LSB = lastNRPN_MSB = 0x7f; break;
@@ -1111,7 +1134,7 @@ void set_midi_mode(midi_mode_t mode) {
 void midi_config(void) {
 #ifdef USE_MIDI_OUT
     // Send a midi message to show we're connected
-    midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE, MIDI_C_ALL_NOTES_OFF, 0);
+    MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_ALL_NOTES_OFF, 0);
 #endif
 }
 
