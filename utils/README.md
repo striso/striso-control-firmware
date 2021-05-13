@@ -25,3 +25,5 @@ Launch the synth and OSC bridge with `make launch_synth`.
 `synth`: synthesizer, uses JACK for audio
 
 `strivi.py`: Striso data visualisation utility
+
+Other recommended utilities are [SendMIDI](https://github.com/gbevin/SendMIDI) and [ReceiveMIDI](https://github.com/gbevin/ReceiveMIDI).
