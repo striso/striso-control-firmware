@@ -283,7 +283,7 @@ static void adccallback(ADCDriver *adcp) {
 
   // Wake up processing thread
   chSysLockFromISR();
-  if (tpReadButtons != NULL) {
+  if (tpReadButtons != NULL && (cur_channel % 3) == 2) {
     chSchReadyI(tpReadButtons);
     tpReadButtons = NULL;
   }
@@ -468,22 +468,31 @@ void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
   }
 }
 
-int32_t calibrate(int32_t s, button_t* but) {
-  #ifdef CALIBRATION_MODE
+int32_t linearize(int32_t s) {
+#ifdef CALIBRATION_MODE
   /* keep linear voltage for calibration */
-  s = ADCFACT * (4095-s);
-  #else
+  return ADCFACT * (4095-s);
+#else
   /* convert adc value to force */
+  return (ADCFACT>>6) * (4095-s)/(s+1);
+#endif // CALIBRATION_MODE
+}
+
+int32_t calibrate(int32_t s, button_t* but) {
+#ifdef CALIBRATION_MODE
+  return s;
+#endif
   // c is the normalisation value for the force
   //    2^18   * 2^12 / 2^12 * ADCFACT/2^6 / c
-  s = (but->c_force * (4095-s)/(s+1)) * (ADCFACT>>6);
+  // s = (but->c_force * (4095-s)/(s+1)) * (ADCFACT>>6);
+  s -= but->c_offset;
+  s = but->c_force * s;
   #ifdef BREAKPOINT_CALIBRATION
   // breakpoint calibration
   if (s > but->c_breakpoint) {
     s += but->c_force2 * ((s - but->c_breakpoint)>>8);
   }
   #endif // BREAKPOINT_CALIBRATION
-  #endif // CALIBRATION_MODE
   return s;
 }
 
@@ -498,33 +507,30 @@ void update_button(button_t* but, adcsample_t* inp) {
   msg[0] = but->src_id;
 
 #ifdef TWO_WAY_SAMPLING
-  s_new = max(inp[0], inp[53]);
-  s_new = calibrate(s_new, but);
+  s_new = linearize(max(inp[0], inp[53]));
   if (s_new > s_max) s_max = s_new;
-  s_new -= but->c_offset;
+  s_new = calibrate(s_new, but);
   update_and_filter(&but->s0, &but->v0, s_new);
-  s_new = max(inp[1], inp[52]);
-  s_new = calibrate(s_new, but);
+  s_new = linearize(max(inp[1], inp[52]));
   if (s_new > s_max) s_max = s_new;
-  s_new -= but->c_offset;
+  s_new = calibrate(s_new, but);
   update_and_filter(&but->s1, &but->v1, s_new);
-  s_new = max(inp[2], inp[51]);
-  s_new = calibrate(s_new, but);
+  s_new = linearize(max(inp[2], inp[51]));
   if (s_new > s_max) s_max = s_new;
-  s_new -= but->c_offset;
+  s_new = calibrate(s_new, but);
   update_and_filter(&but->s2, &but->v2, s_new);
 #else
-  s_new = calibrate(inp[0], but);
+  s_new = linearize(inp[0]);
   if (s_new > s_max) s_max = s_new;
-  s_new -= but->c_offset;
+  s_new = calibrate(s_new, but);
   update_and_filter(&but->s0, &but->v0, s_new);
-  s_new = calibrate(inp[1], but);
+  s_new = linearize(inp[1]);
   if (s_new > s_max) s_max = s_new;
-  s_new -= but->c_offset;
+  s_new = calibrate(s_new, but);
   update_and_filter(&but->s1, &but->v1, s_new);
-  s_new = calibrate(inp[2], but);
+  s_new = linearize(inp[2]);
   if (s_new > s_max) s_max = s_new;
-  s_new -= but->c_offset;
+  s_new = calibrate(s_new, but);
   update_and_filter(&but->s2, &but->v2, s_new);
 #endif
   but->p = but->s0 + but->s1 + but->s2;
@@ -844,13 +850,13 @@ static void ThreadReadButtons(void *arg) {
           but_id = note_id + n * 17;
           but = &buttons[but_id];
           int s_new = samples[n][cur_conv];
-          s_new = calibrate(s_new, but);
+          s_new = linearize(s_new);
           if (s_new > but->p) but->p = s_new;
           s_new = samples[n][cur_conv+1];
-          s_new = calibrate(s_new, but);
+          s_new = linearize(s_new);
           if (s_new > but->p) but->p = s_new;
           s_new = samples[n][cur_conv+2];
-          s_new = calibrate(s_new, but);
+          s_new = linearize(s_new);
           if (s_new > but->p) but->p = s_new;
         }
         // Once per cycle, after the last buttons
