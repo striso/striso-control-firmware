@@ -476,25 +476,40 @@ class Instrument {
                         // row 4: 18 20 22 24 26 28 13 15
                         // row 5: 34 36 38 23 25 27 29 31 33
                         case (34): { // set 12tet tuning
+                            notegen0 = 12.0f;
                             set_notegen1(7.0f);
                         } return;
                         case (36): { // set quarter comma meantone tuning
+                            notegen0 = 12.0f;
                             set_notegen1(6.96578428466209f);
                         } return;
                         case (38): { // set 19tet tuning
+                            notegen0 = 12.0f;
                             set_notegen1(6.94736842105263f);
                         } return;
                         case (23): { // set pythagorean tuning
+                            notegen0 = 12.0f;
                             set_notegen1(7.01955000865388f);
                         } return;
                         case (25): { // set 5tet tuning
+                            notegen0 = 12.0f;
                             set_notegen1(7.2f);
                         } return;
                         case (27): { // set 7tet tuning
+                            notegen0 = 12.0f;
                             set_notegen1(6.85714285714286f);
                         } return;
                         case (29): { // set 31tet tuning
+                            notegen0 = 12.0f;
                             set_notegen1(6.96774193548387f);
+                        } return;
+                        case (31): { // set Bohlen-Pierce tuning thirds 13et
+                            notegen0 = 10.2413f;
+                            notegen1 = 5.8522f;
+                        } return;
+                        case (33): { // set Bohlen-Pierce tuning sixts 13tet
+                            notegen0 = 19.0196f;
+                            notegen1 = 10.2413f;
                         } return;
                         // row 6: 35 37 39 41 43 45 30 32
 #ifdef USE_MIDI_OUT
