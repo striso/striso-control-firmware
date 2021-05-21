@@ -41,6 +41,7 @@
 #define FILTV 8 // min: 1 (no filter), max: 64 (1<<32 / INTERNAL_ONE)
 #define ZERO_LEVEL_OFFSET 4
 #define ZERO_LEVEL_MAX_VELO 500
+#define COMMON_CHANNEL_FILT 0.5
 
 #define INTEGRATED_PRES_TRESHOLD (INTERNAL_ONE/8)
 #define SENDFACT    config.message_interval
@@ -146,6 +147,7 @@ static const ioportmask_t out_channels_bas_portmask[51] = {
 static int cur_channel = 0;
 static int next_conversion = 0;
 static int proc_conversion = 0;
+static int common_channel = 0;
 
 enum button_status {
   OFF = 0,
@@ -200,6 +202,9 @@ static int buttons_pressed[2] = {0};
 static int col_pressed[2][17] = {0};
 static int32_t max_pres = 0, max_pres1 = 0;
 
+static float octave_factor[6] = {1.0f};
+static int32_t octave_sum[6] = {0};
+
 #ifdef USE_AUX_BUTTONS
 // #define LINE_BUTTON_PORT   PAL_LINE(GPIOI,  2U)
 // #define LINE_BUTTON_UP     PAL_LINE(GPIOI,  1U)
@@ -237,10 +242,49 @@ static adcsample_t samples_bas1[102] = {0};
 static adcsample_t* samples_bas[2] = {samples_bas0, samples_bas1};
 #endif
 
+static adcsample_t samples_common[6] = {0};
+
 static thread_t *tpReadButtons = NULL;
 
 static void adccallback(ADCDriver *adcp) {
   adcsample_t *buffer = adcp->samples; // = adc_samples
+
+#ifdef COMMON_CHANNEL_FILT
+  /* process common channel sampling (for crosstalk compensation) */
+  if (common_channel) {
+    /* Open old channels */
+    for (int c = 0; c<51; c++) {
+      palSetPort(out_channels_port[c], out_channels_portmask[c]);
+    }
+
+    /* Drain new channel */
+    palClearPort(out_channels_port[cur_channel], out_channels_portmask[cur_channel]);
+#ifdef USE_BAS
+    palClearPort(out_channels_bas_port[cur_channel], out_channels_bas_portmask[cur_channel]);
+#endif
+
+    /* copy adc_samples */
+    cacheBufferInvalidate(adc_samples, sizeof (adc_samples) / sizeof (adcsample_t));
+    samples_common[0] = buffer[0];
+    samples_common[1] = buffer[1];
+    samples_common[2] = buffer[2];
+    samples_common[3] = buffer[3];
+#ifdef USE_BAS
+    samples_common[4] = buffer[4];
+    samples_common[5] = buffer[5];
+#endif
+
+    common_channel = 0;
+
+    // start next ADC conversion
+#if defined(STM32F4XX)
+    adcp->adc->CR2 |= ADC_CR2_SWSTART;
+#elif defined(STM32H7XX)
+    adcp->adcm->CR |= ADC_CR_ADSTART;
+#endif
+    return;
+  }
+#endif // COMMON_CHANNEL_FILT
 
   /* Open old channel */
   palSetPort(out_channels_port[cur_channel], out_channels_portmask[cur_channel]);
@@ -249,6 +293,18 @@ static void adccallback(ADCDriver *adcp) {
 #endif
 
   cur_channel = (next_conversion+1) % OUT_NUM_CHANNELS;
+
+#ifdef COMMON_CHANNEL_FILT
+  /* Start common channel sampling before next channel */
+  if (cur_channel == 0) {
+    /* Drain all channels */
+    for (int c = 0; c<51; c++) {
+      palClearPort(out_channels_port[c], out_channels_portmask[c]);
+    }
+    common_channel = 1;
+  }
+#endif
+
 #ifdef TWO_WAY_SAMPLING
   if ((next_conversion+1) % 102 >= 51) {
     cur_channel -= ((cur_channel % 3) - 1) * 2;
@@ -501,6 +557,7 @@ int32_t calibrate(int32_t s, button_t* but) {
 
 void update_button(button_t* but, adcsample_t* inp) {
   int but_id = but->but_id;
+  int oct = but_id/17;
   int32_t s_new;
   int32_t s_max = 0;
   int msg[8];
@@ -509,27 +566,39 @@ void update_button(button_t* but, adcsample_t* inp) {
 #ifdef TWO_WAY_SAMPLING
   s_new = linearize(max(inp[0], inp[53]));
   if (s_new > s_max) s_max = s_new;
+  octave_sum[oct] += s_new;
+  s_new = s_new * octave_factor[oct];
   s_new = calibrate(s_new, but);
   update_and_filter(&but->s0, &but->v0, s_new);
   s_new = linearize(max(inp[1], inp[52]));
   if (s_new > s_max) s_max = s_new;
+  octave_sum[oct] += s_new;
+  s_new = s_new * octave_factor[oct];
   s_new = calibrate(s_new, but);
   update_and_filter(&but->s1, &but->v1, s_new);
   s_new = linearize(max(inp[2], inp[51]));
   if (s_new > s_max) s_max = s_new;
+  octave_sum[oct] += s_new;
+  s_new = s_new * octave_factor[oct];
   s_new = calibrate(s_new, but);
   update_and_filter(&but->s2, &but->v2, s_new);
 #else
   s_new = linearize(inp[0]);
   if (s_new > s_max) s_max = s_new;
+  octave_sum[oct] += s_new;
+  s_new = s_new * octave_factor[oct];
   s_new = calibrate(s_new, but);
   update_and_filter(&but->s0, &but->v0, s_new);
   s_new = linearize(inp[1]);
   if (s_new > s_max) s_max = s_new;
+  octave_sum[oct] += s_new;
+  s_new = s_new * octave_factor[oct];
   s_new = calibrate(s_new, but);
   update_and_filter(&but->s1, &but->v1, s_new);
   s_new = linearize(inp[2]);
   if (s_new > s_max) s_max = s_new;
+  octave_sum[oct] += s_new;
+  s_new = s_new * octave_factor[oct];
   s_new = calibrate(s_new, but);
   update_and_filter(&but->s2, &but->v2, s_new);
 #endif
@@ -894,7 +963,7 @@ static void ThreadReadButtons(void *arg) {
              f = 1/7.5
              but for very light touches
          */
-#ifdef BUTTON_FILT
+#ifdef BUTTON_FILT_OCT
         for (int m = 0; m < 3; m++) {
           int max = samples[0][cur_conv + m];
           for (int n = 1; n < 4; n++) {
@@ -920,6 +989,25 @@ static void ThreadReadButtons(void *arg) {
         }
         // Once per cycle, after the last buttons
         if (note_id == 16) {
+#ifdef COMMON_CHANNEL_FILT
+          // process common channel for crosstalk compensation
+          for (int i=0; i<4; i++) {
+            int s_new = linearize(samples_common[i]);
+            if (octave_sum[i] > 0) {
+              float new = 1.0f * (float)(s_new+51) / (float)octave_sum[i];
+              float f = min(octave_sum[i],1024)/1024.0f;
+              new = f*new + (1.0f-f);
+              octave_factor[i] = (1-COMMON_CHANNEL_FILT) * octave_factor[i] + COMMON_CHANNEL_FILT * new;
+            } else {
+              octave_factor[i] = 1.0f;
+            }
+          }
+          octave_sum[0] = 0;
+          octave_sum[1] = 0;
+          octave_sum[2] = 0;
+          octave_sum[3] = 0;
+#endif
+
 #ifdef BUTTON_FILT
           // Find maximum pressure (and second to maximum)
           max_pres1 = 0;

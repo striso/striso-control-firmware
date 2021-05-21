@@ -50,11 +50,12 @@
 //#define USE_WS2812
 #endif
 
-//#define CALIBRATION_MODE TRUE
-#define BUTTON_FILT
-#define TWO_WAY_SAMPLING
-#define DETECT_STUCK_NOTES
-// #define BREAKPOINT_CALIBRATION
+// #define CALIBRATION_MODE TRUE      // don't linearize or calibrate sensor data
+#define BUTTON_FILT                // filter out erroneous presses
+#define TWO_WAY_SAMPLING           // reduces sensitivity for erroneous presses, increases latency
+#define DETECT_STUCK_NOTES         // dynamic zero level detection
+// #define BREAKPOINT_CALIBRATION     // button sensitivity correction using a breakpoint fit
+#define COMMON_CHANNEL_FILT        // sample all channels together for crosstalk compensation
 
 #define CALIB_OFFSET 1024
 #define CALIB_FORCE  ((1<<18)/64)
