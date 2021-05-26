@@ -327,7 +327,7 @@ class Instrument {
 
         void set_portamento(int p) {
             // in mono mode portamento should stay on
-            if (config.midi_mode == MIDI_MODE_MONO) {
+            if (config.midi_mode != MIDI_MODE_MPE) {
                 return;
             }
             if (p) {
@@ -872,6 +872,14 @@ class Instrument {
                         // if no other portamento button is found turn off portamento
                         if (buttons[but].state) {
                             portamento_button = -1;
+                        }
+                    } else if (but == last_button) {
+                        // if last pressed button is released check if other button can take its place
+                        for (int n = 0; n < voicecount; n++) {
+                            if (voices[n] >= 0 && buttons[voices[n]].state == STATE_ON) {
+                                last_button = voices[n];
+                                break;
+                            }
                         }
                     }
 
