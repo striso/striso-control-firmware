@@ -993,7 +993,7 @@ static void ThreadReadButtons(void *arg) {
           // process common channel for crosstalk compensation
           for (int i=0; i<4; i++) {
             int s_new = linearize(samples_common[i]);
-            if (octave_sum[i] > 0) {
+            if (octave_sum[i] > 0 && config.common_channel_filter == 1) {
               float new = 1.0f * (float)(s_new+51) / (float)octave_sum[i];
               float f = min(octave_sum[i],1024)/1024.0f;
               new = f*new + (1.0f-f);

@@ -427,6 +427,15 @@ class Instrument {
                             *(synth_interface->rot_z) = 0.0f;
                             ws2812_write_led(0, 3, 0, 0);
                         } return;
+                        case (11): { // TESTING: toggle common channel crosstalk filtering
+                            if (config.common_channel_filter) {
+                                config.common_channel_filter = 0;
+                                led_updown(0x1000);
+                            } else {
+                                config.common_channel_filter = 1;
+                                led_updown(0x1111);
+                            }
+                        } return;
                         // row 3: 17 19 21  6  8 10 12 14 16
                         case (17): {
                             pres_sensitivity = 1.0f;
