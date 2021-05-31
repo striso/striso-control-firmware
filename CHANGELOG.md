@@ -1,3 +1,12 @@
+## v2.0.5 - 2021-05-31
+
+### Added
+- Bohlen-Pierce tuning (two mappings)
+- Optional crosstalk filter (for testing)
+
+### Fixed
+- Portamento was not working in some situations
+
 ## v2.0.4 - 2021-05-14
 
 ### Added

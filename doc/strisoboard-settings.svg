@@ -1436,7 +1436,7 @@
          id="tspan13734"
          x="195.11015"
          y="635.07556"
-         style="font-size:3.88055563px;text-align:center;text-anchor:middle">-</tspan></text>
+         style="font-size:3.88055563px;text-align:center;text-anchor:middle">BP¹</tspan></text>
     <text
        id="text13740"
        y="628.65015"
@@ -1447,7 +1447,7 @@
          y="628.65015"
          x="212.11017"
          id="tspan13738"
-         sodipodi:role="line">-</tspan></text>
+         sodipodi:role="line">BP²</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:3.88055563px;line-height:6.61458302px;font-family:Andika;-inkscape-font-specification:Andika;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000"
@@ -1751,7 +1751,7 @@
            d="m 153,76.385165 a 2,2 0 0 1 -2,2 2,2 0 0 1 -2,-2 2,2 0 0 1 2,-2 2,2 0 0 1 2,2 z"
            id="path13860"
            inkscape:connector-curvature="0"
-           style="fill:#f7f7f7;fill-opacity:1;stroke:#000000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+           style="fill:#ff40d4;fill-opacity:1;stroke:#000000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
         <path
            d="m 161.5,92.448745 a 2,2.0000004 0 0 1 -2,2 2,2.0000004 0 0 1 -2,-2 2,2.0000004 0 0 1 2,-2 2,2.0000004 0 0 1 2,2 z"
            id="path13862"
@@ -1761,7 +1761,7 @@
            d="m 170,69.959733 a 2,2 0 0 1 -2,2 2,2 0 0 1 -2,-2 2,2 0 0 1 2,-2 2,2 0 0 1 2,2 z"
            id="path13864"
            inkscape:connector-curvature="0"
-           style="fill:#f7f7f7;fill-opacity:1;stroke:#000000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+           style="fill:#ff0202;fill-opacity:1;stroke:#000000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
         <path
            d="m 34,44.257997 a 1.9999996,2 0 0 1 -1.999999,2 1.9999996,2 0 0 1 -2.000001,-2 1.9999996,2 0 0 1 2.000001,-2 1.9999996,2 0 0 1 1.999999,2 z"
            id="path13866"
@@ -2144,5 +2144,31 @@
          y="717.71143"
          style="font-size:4.93888903px;line-height:4.85069466px;text-align:center;text-anchor:middle;fill:#808080"
          id="tspan14152">(future use)</tspan></text>
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot1229"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8px;line-height:1.25;font-family:'Gentium Plus';-inkscape-font-specification:'Gentium Plus';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"><flowRegion
+         id="flowRegion1231"><rect
+           id="rect1233"
+           width="29.988617"
+           height="16.908476"
+           x="630.39905"
+           y="285.80844" /></flowRegion><flowPara
+         id="flowPara1235"></flowPara></flowRoot>    <text
+       xml:space="preserve"
+       style="font-size:3.88055563px;line-height:2.9104166px;font-family:Andika;-inkscape-font-specification:Andika;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000"
+       x="169.36963"
+       y="587.04425"
+       id="text1249"><tspan
+         sodipodi:role="line"
+         x="169.36963"
+         y="587.04425"
+         style="font-size:3.88055563px;line-height:2.9104166px;text-align:center;text-anchor:middle"
+         id="tspan1247">filter</tspan><tspan
+         sodipodi:role="line"
+         x="169.36963"
+         y="589.95465"
+         style="font-size:3.88055563px;line-height:2.9104166px;text-align:center;text-anchor:middle"
+         id="tspan1251">test</tspan></text>
   </g>
 </svg>

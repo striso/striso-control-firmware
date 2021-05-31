@@ -506,10 +506,12 @@ class Instrument {
                         case (31): { // set Bohlen-Pierce tuning thirds 13et
                             notegen0 = 10.2413f;
                             notegen1 = 5.8522f;
+                            update_leds();
                         } return;
                         case (33): { // set Bohlen-Pierce tuning sixts 13tet
                             notegen0 = 19.0196f;
                             notegen1 = 10.2413f;
+                            update_leds();
                         } return;
                         // row 6: 35 37 39 41 43 45 30 32
 #ifdef USE_MIDI_OUT
