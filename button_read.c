@@ -33,9 +33,9 @@
 #endif
 
 #define INTERNAL_ONE (1<<24)
-#define ADCFACT (1<<12)
-#define VELOFACT 32
-#define MSGFACT (1<<11)
+#define ADCFACT (1<<12)  // factor from adc sample to INTERNAL_ONE
+#define VELOFACT 32      // extra factor for velocity
+#define MSGFACT (1<<11)  // factor from 14 bit message to INTERNAL_ONE
 #define MSGFACT_VELO (MSGFACT/VELOFACT)
 #define FILT 8  // min: 1 (no filter), max: 64 (1<<32 / INTERNAL_ONE)
 #define FILTV 8 // min: 1 (no filter), max: 64 (1<<32 / INTERNAL_ONE)

@@ -58,7 +58,7 @@
 #define COMMON_CHANNEL_FILT        // sample all channels together for crosstalk compensation
 
 #define CALIB_OFFSET 4
-#define CALIB_FORCE  ((1<<18)/64)
+#define CALIB_FORCE  ((1<<18)/16)   // 1k adc pull up resistors
 
 #define AUX_BUTTON_DEBOUNCE_TIME 5
 
@@ -120,6 +120,8 @@ typedef struct {
   const uint32_t UID[3];
   const unsigned char id[16];
   const unsigned char model[64];
+  const unsigned char reserved[256-3*4-16-64-2];
+  const uint16_t base_calib_force;
 } devspec_id_t;
 #define devspec_id ((devspec_id_t*)(DEVSPEC_FLASH_START))
 

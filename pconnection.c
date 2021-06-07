@@ -188,8 +188,13 @@ void PExReceiveByte(unsigned char c) {
         cmd_threads((BaseSequentialStream *)&BDU1);
       }
       else if (c == 'C') { // Calibration mode
-        buttonSetCalibration(CALIB_FORCE, CALIB_OFFSET);
-        chprintf((BaseSequentialStream *)&BDU1, "c_force: %d c_offset: %d\r\n", CALIB_FORCE, CALIB_OFFSET);
+        uint16_t base_calib_force = devspec_id->base_calib_force;
+        // use default when not device flash not yet initialized
+        if (base_calib_force == 0xffff) base_calib_force = CALIB_FORCE;
+        // fall back to 10k resistors when info not available (old struct)
+        if (base_calib_force == 0x0000) base_calib_force = ((1<<18)/64);
+        buttonSetCalibration(base_calib_force, CALIB_OFFSET);
+        chprintf((BaseSequentialStream *)&BDU1, "c_force: %d c_offset: %d\r\n", base_calib_force, CALIB_OFFSET);
       }
       break;
     }
