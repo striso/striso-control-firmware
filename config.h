@@ -57,7 +57,7 @@
 // #define BREAKPOINT_CALIBRATION     // button sensitivity correction using a breakpoint fit
 #define COMMON_CHANNEL_FILT        // sample all channels together for crosstalk compensation
 
-#define CALIB_OFFSET 1024
+#define CALIB_OFFSET 4
 #define CALIB_FORCE  ((1<<18)/64)
 
 #define AUX_BUTTON_DEBOUNCE_TIME 5
