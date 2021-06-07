@@ -339,7 +339,7 @@ static void adccallback(ADCDriver *adcp) {
 
   // Wake up processing thread
   chSysLockFromISR();
-  if (tpReadButtons != NULL && (cur_channel % 3) == 2) {
+  if (tpReadButtons != NULL && (next_conversion % 3) == 2) {
     chSchReadyI(tpReadButtons);
     tpReadButtons = NULL;
   }
