@@ -53,8 +53,8 @@
 //#define USE_WS2812
 #endif
 
-// #define CALIBRATION_MODE TRUE      // don't linearize or calibrate sensor data
-#define DETECT_STUCK_NOTES         // zero level detection
+#define CALIBRATION_MODE TRUE      // don't linearize or calibrate sensor data
+// #define DETECT_STUCK_NOTES         // zero level detection
 // #define DETECT_STUCK_NOTES_DECREASE  // zero level detection, allow notes to come back
 // #define BREAKPOINT_CALIBRATION     // button sensitivity correction using a breakpoint fit
 
