@@ -42,6 +42,7 @@
 #define ZERO_LEVEL_OFFSET 4
 #define ZERO_LEVEL_MAX_VELO 500
 #define COMMON_CHANNEL_FILT 0.5
+#define KEY_DETECT 32
 
 #define INTEGRATED_PRES_TRESHOLD (INTERNAL_ONE/8)
 #define SENDFACT    config.message_interval
@@ -145,9 +146,9 @@ static const ioportmask_t out_channels_bas_portmask[51] = {
 #endif // USE_BAS
 
 static int cur_channel = 0;
-static int next_conversion = 0;
-static int proc_conversion = 0;
-static int common_channel = 0;
+static int cur_conversion = 0;
+static int cur_phase = 0;
+static volatile int next_note_id = 0;
 
 enum button_status {
   OFF = 0,
@@ -158,10 +159,12 @@ enum button_status {
 
 typedef struct struct_button button_t;
 struct struct_button {
+  int32_t on;
+  int32_t p;
+  int32_t v;
   int32_t s0;
   int32_t s1;
   int32_t s2;
-  int32_t p;
   int32_t v0;
   int32_t v1;
   int32_t v2;
@@ -230,11 +233,10 @@ static uint32_t aux_buttons_state[4] = {0};
 //CC_SECTION(".ram3")
 CC_CACHE_ALIGN static adcsample_t adc_samples[CACHE_SIZE_ALIGN(adcsample_t, ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH)];
 // static adcsample_t adc_samples[ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH];
-static adcsample_t samples0[102] = {0};
-static adcsample_t samples1[102] = {0};
-static adcsample_t samples2[102] = {0};
-static adcsample_t samples3[102] = {0};
-static adcsample_t* samples[4] = {samples0, samples1, samples2, samples3};
+
+static int measure[20] = {0};
+static int *measure_put = measure;
+static int *measure_get = measure;
 
 #ifdef USE_BAS
 static adcsample_t samples_bas0[102] = {0};
@@ -247,88 +249,127 @@ static adcsample_t samples_common[6] = {0};
 static thread_t *tpReadButtons = NULL;
 
 static void adccallback(ADCDriver *adcp) {
-  adcsample_t *buffer = adcp->samples; // = adc_samples
-
-#ifdef COMMON_CHANNEL_FILT
-  /* process common channel sampling (for crosstalk compensation) */
-  if (common_channel) {
-    /* Open old channels */
-    for (int c = 0; c<51; c++) {
-      palSetPort(out_channels_port[c], out_channels_portmask[c]);
-    }
-
-    /* Drain new channel */
-    palClearPort(out_channels_port[cur_channel], out_channels_portmask[cur_channel]);
-#ifdef USE_BAS
-    palClearPort(out_channels_bas_port[cur_channel], out_channels_bas_portmask[cur_channel]);
-#endif
-
-    /* copy adc_samples */
-    cacheBufferInvalidate(adc_samples, sizeof (adc_samples) / sizeof (adcsample_t));
-    samples_common[0] = buffer[0];
-    samples_common[1] = buffer[1];
-    samples_common[2] = buffer[2];
-    samples_common[3] = buffer[3];
-#ifdef USE_BAS
-    samples_common[4] = buffer[4];
-    samples_common[5] = buffer[5];
-#endif
-
-    common_channel = 0;
-
-    // start next ADC conversion
-#if defined(STM32F4XX)
-    adcp->adc->CR2 |= ADC_CR2_SWSTART;
-#elif defined(STM32H7XX)
-    adcp->adcm->CR |= ADC_CR_ADSTART;
-#endif
-    return;
-  }
-#endif // COMMON_CHANNEL_FILT
-
-  /* Open old channel */
-  palSetPort(out_channels_port[cur_channel], out_channels_portmask[cur_channel]);
-#ifdef USE_BAS
-  palSetPort(out_channels_bas_port[cur_channel], out_channels_bas_portmask[cur_channel]);
-#endif
-
-  cur_channel = (next_conversion+1) % OUT_NUM_CHANNELS;
-
-#ifdef COMMON_CHANNEL_FILT
-  /* Start common channel sampling before next channel */
-  if (cur_channel == 0) {
-    /* Drain all channels */
-    for (int c = 0; c<51; c++) {
-      palClearPort(out_channels_port[c], out_channels_portmask[c]);
-    }
-    common_channel = 1;
-  }
-#endif
-
-#ifdef TWO_WAY_SAMPLING
-  if ((next_conversion+1) % 102 >= 51) {
-    cur_channel -= ((cur_channel % 3) - 1) * 2;
-  }
-#endif
-  /* Drain new channel */
-  palClearPort(out_channels_port[cur_channel], out_channels_portmask[cur_channel]);
-#ifdef USE_BAS
-  palClearPort(out_channels_bas_port[cur_channel], out_channels_bas_portmask[cur_channel]);
-#endif
-
+  adcsample_t *buffer = adcp->samples; // == adc_samples
+  // invalidate buffer after DMA transfer
   cacheBufferInvalidate(adc_samples, sizeof (adc_samples) / sizeof (adcsample_t));
-  /* copy adc_samples */
-  samples0[next_conversion] = buffer[0];
-  samples1[next_conversion] = buffer[1];
-  samples2[next_conversion] = buffer[2];
-  samples3[next_conversion] = buffer[3];
 
-#ifdef USE_BAS
-  samples_bas0[next_conversion] = buffer[4];
-  samples_bas1[next_conversion] = buffer[5];
-#endif
+  if (cur_conversion < 17) { // key press detection phase
+    int next_conversion = cur_conversion + 1;
+    /* Open old channels */
+    palSetPort(out_channels_port[cur_channel+0], out_channels_portmask[cur_channel+0]);
+    palSetPort(out_channels_port[cur_channel+1], out_channels_portmask[cur_channel+1]);
+    palSetPort(out_channels_port[cur_channel+2], out_channels_portmask[cur_channel+2]);
+    if (next_conversion == 17) {
+      // switch to measure phase
+      for (int n=0; n<OUT_NUM_CHANNELS; n++) {
+        palSetPadMode(out_channels_port[n], out_channels_pad[n], PAL_MODE_OUTPUT_OPENDRAIN | PAL_STM32_OSPEED_HIGHEST);
+      }
+      measure_get = measure;
+      next_note_id = *measure_get;
+      cur_channel = next_note_id * 3;
+    } else {
+      cur_channel = next_conversion * 3;
+    }
+    /* Drain new channels */
+    palClearPort(out_channels_port[cur_channel+0], out_channels_portmask[cur_channel+0]);
+    palClearPort(out_channels_port[cur_channel+1], out_channels_portmask[cur_channel+1]);
+    palClearPort(out_channels_port[cur_channel+2], out_channels_portmask[cur_channel+2]);
 
-  next_conversion = (next_conversion+1) % 102;
+    // store values
+    buttons[cur_conversion   ].on = 4095 - buffer[0];
+    buttons[cur_conversion+17].on = 4095 - buffer[1];
+    buttons[cur_conversion+34].on = 4095 - buffer[2];
+    buttons[cur_conversion+51].on = 4095 - buffer[3];
+    if (buffer[0] < (4095-KEY_DETECT) ||
+        buffer[1] < (4095-KEY_DETECT) ||
+        buffer[2] < (4095-KEY_DETECT) ||
+        buffer[3] < (4095-KEY_DETECT)) {
+          *measure_put++ = cur_conversion;
+    }
+
+    cur_conversion = next_conversion;
+  } else { // key measurement phase
+    switch (cur_phase) {
+    case 0: {
+      /* Open old channels */
+      palSetPort(out_channels_port[cur_channel+1], out_channels_portmask[cur_channel+1]);
+      palSetPort(out_channels_port[cur_channel+2], out_channels_portmask[cur_channel+2]);
+
+      buttons[next_note_id   ].p = buffer[0];
+      buttons[next_note_id+17].p = buffer[1];
+      buttons[next_note_id+34].p = buffer[2];
+      buttons[next_note_id+51].p = buffer[3];
+
+      cur_phase = 1;
+    } break;
+    case 1: {
+      /* Open old channels */
+      palSetPort(out_channels_port[cur_channel+0], out_channels_portmask[cur_channel+0]);
+      /* Drain new channels */
+      palClearPort(out_channels_port[cur_channel+1], out_channels_portmask[cur_channel+1]);
+
+      buttons[next_note_id   ].s0 = buffer[0];
+      buttons[next_note_id+17].s0 = buffer[1];
+      buttons[next_note_id+34].s0 = buffer[2];
+      buttons[next_note_id+51].s0 = buffer[3];
+
+      cur_phase = 2;
+    } break;
+    case 2: {
+      /* Open old channels */
+      palSetPort(out_channels_port[cur_channel+1], out_channels_portmask[cur_channel+1]);
+      /* Drain new channels */
+      palClearPort(out_channels_port[cur_channel+2], out_channels_portmask[cur_channel+2]);
+
+      buttons[next_note_id   ].s1 = buffer[0];
+      buttons[next_note_id+17].s1 = buffer[1];
+      buttons[next_note_id+34].s1 = buffer[2];
+      buttons[next_note_id+51].s1 = buffer[3];
+
+      cur_phase = 3;
+    } break;
+    case 3: {
+      /* Open old channels */
+      palSetPort(out_channels_port[cur_channel+2], out_channels_portmask[cur_channel+2]);
+
+      buttons[next_note_id   ].s2 = buffer[0];
+      buttons[next_note_id+17].s2 = buffer[1];
+      buttons[next_note_id+34].s2 = buffer[2];
+      buttons[next_note_id+51].s2 = buffer[3];
+
+      // Next channel
+      measure_get++;
+      if (measure_get < measure_put) {
+        next_note_id = *measure_get;
+        cur_channel = next_note_id * 3;
+      } else {
+        // switch to detection phase
+        measure_put = measure;
+        cur_conversion = 0;
+        cur_channel = 0;
+        next_note_id = 0;
+        for (int n=0; n<OUT_NUM_CHANNELS; n++) {
+          palSetPadMode(out_channels_port[n], out_channels_pad[n], PAL_MODE_OUTPUT_PUSHPULL | PAL_STM32_OSPEED_HIGHEST);
+        }
+      }
+
+      /* Drain new channels */
+      palClearPort(out_channels_port[cur_channel+0], out_channels_portmask[cur_channel+0]);
+      palClearPort(out_channels_port[cur_channel+1], out_channels_portmask[cur_channel+1]);
+      palClearPort(out_channels_port[cur_channel+2], out_channels_portmask[cur_channel+2]);
+
+      cur_phase = 0;
+
+      // Wake up processing thread
+      chSysLockFromISR();
+      if (tpReadButtons != NULL) {
+        chSchReadyI(tpReadButtons);
+        tpReadButtons = NULL;
+      }
+      chSysUnlockFromISR();
+    } break;
+    }
+  }
 
   // start next ADC conversion
 #if defined(STM32F4XX)
@@ -337,13 +378,6 @@ static void adccallback(ADCDriver *adcp) {
   adcp->adcm->CR |= ADC_CR_ADSTART;
 #endif
 
-  // Wake up processing thread
-  chSysLockFromISR();
-  if (tpReadButtons != NULL && (next_conversion % 3) == 2) {
-    chSchReadyI(tpReadButtons);
-    tpReadButtons = NULL;
-  }
-  chSysUnlockFromISR();
 }
 
 #ifdef STM32F4XX
@@ -555,7 +589,7 @@ int32_t calibrate(int32_t s, button_t* but) {
 #define max(x,y) (x>y?x:y)
 #define min(x,y) (x<y?x:y)
 
-void update_button(button_t* but, adcsample_t* inp) {
+void update_button(button_t* but) {
   int but_id = but->but_id;
   int oct = but_id/17;
   int32_t s_new;
@@ -563,45 +597,35 @@ void update_button(button_t* but, adcsample_t* inp) {
   int msg[8];
   msg[0] = but->src_id;
 
-#ifdef TWO_WAY_SAMPLING
-  s_new = linearize(max(inp[0], inp[53]));
-  if (s_new > s_max) s_max = s_new;
-  octave_sum[oct] += s_new;
-  s_new = s_new * octave_factor[oct];
+  if (but->on > KEY_DETECT) {
+    msg[1] = but_id;
+    msg[2] = but->on;
+    msg[3] = but->p;
+    msg[4] = but->s0;
+    msg[5] = but->s1;
+    msgSend(6, msg);
+  } else {
+    msg[1] = but_id;
+    msg[2] = 0;
+    msg[3] = 0;
+    msg[4] = 0;
+    msg[5] = 0;
+    // msgSend(6, msg);
+  }
+  return;
+  s_new = linearize(but->p);
   s_new = calibrate(s_new, but);
-  update_and_filter(&but->s0, &but->v0, s_new);
-  s_new = linearize(max(inp[1], inp[52]));
-  if (s_new > s_max) s_max = s_new;
-  octave_sum[oct] += s_new;
-  s_new = s_new * octave_factor[oct];
-  s_new = calibrate(s_new, but);
-  update_and_filter(&but->s1, &but->v1, s_new);
-  s_new = linearize(max(inp[2], inp[51]));
-  if (s_new > s_max) s_max = s_new;
-  octave_sum[oct] += s_new;
-  s_new = s_new * octave_factor[oct];
-  s_new = calibrate(s_new, but);
-  update_and_filter(&but->s2, &but->v2, s_new);
-#else
-  s_new = linearize(inp[0]);
-  if (s_new > s_max) s_max = s_new;
-  octave_sum[oct] += s_new;
-  s_new = s_new * octave_factor[oct];
-  s_new = calibrate(s_new, but);
-  update_and_filter(&but->s0, &but->v0, s_new);
-  s_new = linearize(inp[1]);
-  if (s_new > s_max) s_max = s_new;
-  octave_sum[oct] += s_new;
-  s_new = s_new * octave_factor[oct];
+  // update_and_filter(&but->pres, &but->velo, s_new);
+
+  s_new = linearize(but->s0);
   s_new = calibrate(s_new, but);
   update_and_filter(&but->s1, &but->v1, s_new);
-  s_new = linearize(inp[2]);
-  if (s_new > s_max) s_max = s_new;
-  octave_sum[oct] += s_new;
-  s_new = s_new * octave_factor[oct];
+  s_new = linearize(but->s1);
+  s_new = calibrate(s_new, but);
+  update_and_filter(&but->s1, &but->v1, s_new);
+  s_new = linearize(but->s2);
   s_new = calibrate(s_new, but);
   update_and_filter(&but->s2, &but->v2, s_new);
-#endif
   but->p = but->s0 + but->s1 + but->s2;
 
 #ifdef DETECT_STUCK_NOTES
@@ -908,7 +932,8 @@ static void ThreadReadButtons(void *arg) {
   (void)arg;
 
   chRegSetThreadName("read_buttons");
-  int cur_conv, but_id, note_id;
+  int but_id;
+  int note_id = 0;
   button_t* but;
 
 #ifdef DETECT_STUCK_NOTES
@@ -957,63 +982,15 @@ static void ThreadReadButtons(void *arg) {
 #endif // DETECT_STUCK_NOTES
 
   while (TRUE) {
-    while (proc_conversion != next_conversion) {
-      // process 3 buttons if all 3 values * 3 buttons are available
-      if ((proc_conversion % 3) == 2) {
-        note_id = (proc_conversion / 3) % 17;
-        cur_conv = (proc_conversion - 2);
-
-        /* Octave crosstalk
-           if note in multiple octaves:
-             subtract f * (max - n) from n
-             max = 8.5 * n (from test with v1.9, on sensor values)
-             f = 1/7.5
-             but for very light touches
-         */
-#ifdef BUTTON_FILT_OCT
-        for (int m = 0; m < 3; m++) {
-          int max = samples[0][cur_conv + m];
-          for (int n = 1; n < 4; n++) {
-            if (max > samples[n][cur_conv + m]) { // samples is invert so >
-              max = samples[n][cur_conv + m];
-            }
-          }
-          for (int n = 0; n < 4; n++) {
-            samples[n][cur_conv + m] -= (max - samples[n][cur_conv + m]) / 6; // / 7; // TODO: - k if other notes in this octave
-            if (samples[n][cur_conv + m] > 4095) samples[n][cur_conv + m] = 4095;
-          }
-        }
-#endif
+    while (note_id != next_note_id) {
         // Update button in each octave/adc-channel
         for (int n = 0; n < 4; n++) {
           but_id = note_id + n * 17;
           but = &buttons[but_id];
-#ifdef TWO_WAY_SAMPLING
-          update_button(but, &samples[n][cur_conv % 51]);
-#else
-          update_button(but, &samples[n][cur_conv]);
-#endif
+          update_button(but);
         }
         // Once per cycle, after the last buttons
         if (note_id == 16) {
-#ifdef COMMON_CHANNEL_FILT
-          // process common channel for crosstalk compensation
-          for (int i=0; i<4; i++) {
-            int s_new = linearize(samples_common[i]);
-            if (octave_sum[i] > 0 && config.common_channel_filter == 1) {
-              float new = 1.0f * (float)(s_new+51) / (float)octave_sum[i];
-              float f = min(octave_sum[i],1024)/1024.0f;
-              new = f*new + (1.0f-f);
-              octave_factor[i] = (1-COMMON_CHANNEL_FILT) * octave_factor[i] + COMMON_CHANNEL_FILT * new;
-            } else {
-              octave_factor[i] = 1.0f;
-            }
-          }
-          octave_sum[0] = 0;
-          octave_sum[1] = 0;
-          octave_sum[2] = 0;
-          octave_sum[3] = 0;
-#endif
 
 #ifdef BUTTON_FILT
           // Find maximum pressure (and second to maximum)
@@ -1109,8 +1086,7 @@ static void ThreadReadButtons(void *arg) {
           }
         }
 #endif // USE_BAS
-      }
-      proc_conversion = (proc_conversion+1) % 102;
+      note_id = (note_id + 1) % 17;
     }
 
     chSysLock();
@@ -1171,8 +1147,8 @@ void ButtonReadStart(void) {
 #endif
 
   for (int n=0; n<OUT_NUM_CHANNELS; n++) {
-    palSetPadMode(out_channels_port[n], out_channels_pad[n], PAL_MODE_OUTPUT_OPENDRAIN | PAL_STM32_OSPEED_HIGHEST);
-    // palSetPadMode(out_channels_port[n], out_channels_pad[n], PAL_MODE_OUTPUT_PUSHPULL | PAL_STM32_OSPEED_HIGHEST);
+    // palSetPadMode(out_channels_port[n], out_channels_pad[n], PAL_MODE_OUTPUT_OPENDRAIN | PAL_STM32_OSPEED_HIGHEST);
+    palSetPadMode(out_channels_port[n], out_channels_pad[n], PAL_MODE_OUTPUT_PUSHPULL | PAL_STM32_OSPEED_HIGHEST);
   }
 
   /*
