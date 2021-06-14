@@ -653,9 +653,7 @@ void update_button(button_t* but, adcsample_t* inp) {
           msg[3] = 0;
           msg[4] = 0;
           msg[5] = 0;
-          msg[6] = 0;
-          msg[7] = 0;
-          msgSend(8, msg);
+          msgSend(6, msg);
       }
       // reset phantom flag since next round it can change
       but->status = STARTING;
@@ -663,39 +661,48 @@ void update_button(button_t* but, adcsample_t* inp) {
     // if integration is succesful and interval is ready send note message
     else if (--but->timer <= 0) {
       but->status = ON;
+
+      // calculate values from signals
+      #define CENTERTEND 0.02f
+      int32_t pres, vpres, but_x, but_y;
+      // use unsigned saturate to limit values between 0 and INTERNAL_ONE (2^24)
+      int32_t s0 = __USAT(but->s0, 24);
+      int32_t s1 = __USAT(but->s1, 24);
+      int32_t s2 = __USAT(but->s2, 24);
+      pres = (s0 + s1 + s2)/3;
+      vpres = (but->v0 + but->v1 + but->v2)/3;
+      // max(s0, s1, s2)
+      int32_t m = s0;
+      if (s1 > m) m = s1;
+      if (s2 > m) m = s2;
+      if (m > 0) {
+          float mf = ((float)m)/INTERNAL_ONE;
+          float fact = 1.0f/(mf + CENTERTEND/mf - CENTERTEND);
+          but_x = (s2 - s0) * fact;
+          but_y = ((s0 + s2) / 2 - s1) * fact;
+      } else {
+          but_x = 0;
+          but_y = 0;
+      }
+
       msg[1] = but_id;
-      if (but->s0 <= 0)
-        msg[2] = 0;
-      else
-        msg[2] = but->s0 / MSGFACT;
-        //msg[2] = (int32_t)(vsqrtf((float)but->s0 / INTERNAL_ONE) * (INTERNAL_ONE / MSGFACT));
-      if (but->s1 <= 0)
-        msg[3] = 0;
-      else
-        msg[3] = but->s1 / MSGFACT;
-        //msg[3] = (int32_t)(vsqrtf((float)but->s1 / INTERNAL_ONE) * (INTERNAL_ONE / MSGFACT));
-      if (but->s2 <= 0)
-        msg[4] = 0;
-      else
-        msg[4] = but->s2 / MSGFACT;
-        //msg[4] = (int32_t)(vsqrtf((float)but->s2 / INTERNAL_ONE) * (INTERNAL_ONE / MSGFACT));
-      msg[5] = but->v0 / MSGFACT_VELO;
-      msg[6] = but->v1 / MSGFACT_VELO;
-      msg[7] = but->v2 / MSGFACT_VELO;
-      msgSend(8, msg);
+      msg[2] = pres / MSGFACT;
+      msg[3] = vpres / MSGFACT_VELO;
+      msg[4] = but_x / MSGFACT;
+      msg[5] = but_y / MSGFACT;
+      msgSend(6, msg);
       but->timer = (buttons_pressed[0] + buttons_pressed[1]) * SENDFACT;
     }
   }
   else if (but->status && !(but->s0 > MSGFACT + min_pres1 || but->s1 > MSGFACT + min_pres1 || but->s2 > MSGFACT + min_pres1)) {
     if (but->status & ON) {
+      int32_t vpres = (but->v0 + but->v1 + but->v2)/3;
       msg[1] = but_id;
       msg[2] = 0;
-      msg[3] = 0;
+      msg[3] = vpres / MSGFACT_VELO;
       msg[4] = 0;
-      msg[5] = but->v0 / MSGFACT_VELO;
-      msg[6] = but->v1 / MSGFACT_VELO;
-      msg[7] = but->v2 / MSGFACT_VELO;
-      while (msgSend(8, msg)) { // note off messages are more important so keep trying
+      msg[5] = 0;
+      while (msgSend(6, msg)) { // note off messages are more important so keep trying
         chThdSleep(1);
       }
     }

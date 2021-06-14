@@ -210,7 +210,6 @@ class Button {
     public:
         int coord0;
         int coord1;
-        float signals[6] = {0,0,0,0,0,0};
         float note;
         int midinote;
         int midinote_base;
@@ -235,23 +234,10 @@ class Button {
         }
 
         void message(float* msg) {
-            unsigned int n;
-            // copy given parameters
-            for (n = 0; n < 3; n++) {
-                signals[n] = msg[n];
-                signals[3+n] = msg[3+n];
-            }
-            // calculate pres already for note detection and voice allocation
-            pres = (signals[0] + signals[1] + signals[2])/3;
-            if (pres > 1.0) {
-                pres = 1.0;
-            }
-            vpres = (signals[3] + signals[4] + signals[5])/3;
-            if (vpres > 1.0) {
-                vpres = 1.0;
-            } else if (vpres < -1.0) {
-                vpres = -1.0;
-            }
+            pres = msg[0];
+            vpres = msg[1];
+            but_x = msg[2];
+            but_y = msg[3];
 
             // allow vol below zero to take over oldest voice
             if (pres <= 0.0)
@@ -260,22 +246,6 @@ class Button {
                 vol0 = pres + vpres;
             if (vol < vol0)
                 vol = vol0;
-        }
-
-        #define CENTERTEND 0.02
-        void calculate() {
-            // m = max(signals)
-            float m = signals[0];
-            if (signals[1] > m) m = signals[1];
-            if (signals[2] > m) m = signals[2];
-            if (m > 0.0) {
-                float fact = 1.0/(m + CENTERTEND/m - CENTERTEND);
-                but_x = (signals[2] - signals[0]) * fact;
-                but_y = (0.5 * (signals[0] + signals[2]) - signals[1]) * fact;
-            } else {
-                but_x = 0.0;
-                but_y = 0.0;
-            }
         }
 };
 
@@ -646,7 +616,6 @@ class Instrument {
                 // skip the whole channel assignment stuff.
 #ifdef USE_MIDI_OUT
                 if (buttons[but].pres > 0.0) {
-                    buttons[but].calculate();
                     // Note on detection
                     if (buttons[but].state == STATE_OFF) {
                         buttons[but].state = STATE_ON;
@@ -799,7 +768,6 @@ class Instrument {
                 buttons[but].note = buttons[but].start_note_offset + note_offset +
                                     notegen0 * buttons[but].coord0 +
                                     notegen1 * buttons[but].coord1;
-                buttons[but].calculate();
                 buttons[but].timer = chVTGetSystemTime() + CLEAR_TIMER;
 
                 if (but == portamento_button) {
@@ -1115,6 +1083,7 @@ int synth_message(int size, int* msg) {
     int src = msg[0];
     int id = msg[1];
     msg = &msg[2];
+    size -= 2;
 
     if (src == ID_CONTROL) {
         if (id == IDC_ALT) {
@@ -1136,13 +1105,13 @@ int synth_message(int size, int* msg) {
         }
         update_leds();
     }
-    else if (src == ID_ACCEL && size == 9) {
+    else if (src == ID_ACCEL && size == 7) {
         motion.message(msg);
     }
-    else if ((src == ID_DIS || src == ID_BAS) && size == 8 && id < BUTTONCOUNT && id >= 0) {
-        // 6x14bit value, dis or bas button
+    else if ((src == ID_DIS || src == ID_BAS) && size == 4 && id < BUTTONCOUNT && id >= 0) {
+        // 4x14bit value, dis or bas button, version >= 2.1
 
-        int2float(msg, fmsg, size-2);
+        int2float(msg, fmsg, size);
 
         if (src == ID_DIS) {
             dis.button_message(id, fmsg);
