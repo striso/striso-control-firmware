@@ -43,6 +43,7 @@
 #define ZERO_LEVEL_MAX_VELO 500
 #define COMMON_CHANNEL_FILT 0.5
 #define KEY_DETECT 32
+#define MIN_MEASURES 4 // minimum notes to measure, must be >= 2
 
 #define INTEGRATED_PRES_TRESHOLD (INTERNAL_ONE/8)
 #define SENDFACT    config.message_interval
@@ -288,7 +289,7 @@ static void adccallback(ADCDriver *adcp) {
     }
 
     cur_conversion = next_conversion;
-  } else { // key measurement phase
+  } else if (cur_conversion == 17) { // key measurement phase
     switch (cur_phase) {
     case 0: {
       /* Open old channels */
@@ -343,11 +344,19 @@ static void adccallback(ADCDriver *adcp) {
         next_note_id = *measure_get;
         cur_channel = next_note_id * 3;
       } else {
-        // switch to detection phase
+        if (measure_put - measure < MIN_MEASURES) {
+          // switch to delay phase
+          cur_conversion = 20 + 4 * (measure_put - measure);
+          next_note_id = 16; // process all but last notes to keep from hanging
+          led_updown(1 << (cur_conversion-20));
+        } else {
+          // switch to detection phase
+          cur_conversion = 0;
+          next_note_id = 0;
+          led_updown(0x0000);
+        }
         measure_put = measure;
-        cur_conversion = 0;
         cur_channel = 0;
-        next_note_id = 0;
         for (int n=0; n<OUT_NUM_CHANNELS; n++) {
           palSetPadMode(out_channels_port[n], out_channels_pad[n], PAL_MODE_OUTPUT_PUSHPULL | PAL_STM32_OSPEED_HIGHEST);
         }
@@ -368,6 +377,25 @@ static void adccallback(ADCDriver *adcp) {
       }
       chSysUnlockFromISR();
     } break;
+    }
+  } else { // delay phase
+    /* When less than MIN_MEASURES buttons are measured delay a bit so the
+       total conversion time and velocity sensitivity stay constant.
+       When more than MIN_MEASURES buttons are measured it slows down, increasing
+       the velocity sensitivity */
+    cur_conversion++;
+    if (cur_conversion >= 20 + 4 * MIN_MEASURES) {
+      // switch to detection phase
+      cur_conversion = 0;
+      next_note_id = 0;
+
+      // Wake up processing thread
+      chSysLockFromISR();
+      if (tpReadButtons != NULL) {
+        chSchReadyI(tpReadButtons);
+        tpReadButtons = NULL;
+      }
+      chSysUnlockFromISR();
     }
   }
 
