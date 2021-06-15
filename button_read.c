@@ -42,7 +42,7 @@
 #define ZERO_LEVEL_OFFSET 4
 #define ZERO_LEVEL_MAX_VELO 500
 #define COMMON_CHANNEL_FILT 0.5
-#define KEY_DETECT 32
+#define KEY_DETECT 320
 #define MIN_MEASURES 4 // minimum notes to measure, must be >= 2
 
 #define INTEGRATED_PRES_TRESHOLD (INTERNAL_ONE/8)
@@ -162,10 +162,11 @@ typedef struct struct_button button_t;
 struct struct_button {
   int32_t on;
   int32_t p;
-  int32_t v;
   int32_t s0;
   int32_t s1;
   int32_t s2;
+  int32_t pres;
+  int32_t velo;
   int32_t v0;
   int32_t v1;
   int32_t v2;
@@ -626,21 +627,86 @@ void update_button(button_t* but) {
   msg[0] = but->src_id;
 
   if (but->on > KEY_DETECT) {
-    msg[1] = but_id;
-    msg[2] = but->on;
-    msg[3] = but->p;
-    msg[4] = but->s0;
-    msg[5] = but->s1;
-    msgSend(6, msg);
-  } else {
-    msg[1] = but_id;
-    msg[2] = 0;
-    msg[3] = 0;
-    msg[4] = 0;
-    msg[5] = 0;
-    // msgSend(6, msg);
+
+    s_new = linearize(but->p);
+    s_new = calibrate(s_new, but);
+    update_and_filter(&but->pres, &but->velo, s_new);
+
+    // if button is off start integration timer
+    if (but->status == OFF) {
+      but->status = STARTING;
+      but->timer = INTEGRATED_PRES_TRESHOLD;
+      buttons_pressed[but->src_id]++;
+      col_pressed[but->src_id][but_id % 17]++;
+    }
+    // if button is in start integration reduce timer
+    if (but->status == STARTING) {
+      but->timer -= but->pres;
+    }
+    // if button is phantom pressed release it
+    if (but->status & PHANTOM_FLAG) {
+      if (but->status == (ON | PHANTOM_FLAG)) {
+          msg[1] = but_id;
+          msg[2] = 0;
+          msg[3] = 0;
+          msg[4] = 0;
+          msg[5] = 0;
+          msgSend(6, msg);
+      }
+      // reset phantom flag since next round it can change
+      but->status = STARTING;
+    }
+    // if integration is succesful and interval is ready send note message
+    else if (--but->timer <= 0) {
+      but->status = ON;
+
+      // calculate values from signals
+      #define CENTERTEND 0.02f
+      int32_t pres, vpres, but_x, but_y;
+      int32_t s0 = calibrate(linearize(but->s0), but);
+      int32_t s1 = calibrate(linearize(but->s1), but);
+      int32_t s2 = calibrate(linearize(but->s2), but);
+      // max(s0, s1, s2)
+      int32_t m = s0;
+      if (s1 > m) m = s1;
+      if (s2 > m) m = s2;
+      if (m > 0) {
+          float mf = ((float)m)/INTERNAL_ONE;
+          float fact = 1.0f/(mf + CENTERTEND/mf - CENTERTEND);
+          but_x = (s2 - s0) * fact;
+          but_y = ((s0 + s2) / 2 - s1) * fact;
+      } else {
+          but_x = 0;
+          but_y = 0;
+      }
+
+      msg[1] = but_id;
+      msg[2] = but->pres / MSGFACT;
+      msg[3] = but->velo / MSGFACT_VELO;
+      msg[4] = but_x / MSGFACT;
+      msg[5] = but_y / MSGFACT;
+      msgSend(6, msg);
+      but->timer = (buttons_pressed[0] + buttons_pressed[1]) * SENDFACT;
+    }
+  }
+  else if (but->status && but->on <= KEY_DETECT) {
+    if (but->status == ON) {
+      msg[1] = but_id;
+      msg[2] = 0;
+      msg[3] = but->velo / MSGFACT_VELO;
+      msg[4] = 0;
+      msg[5] = 0;
+      while (msgSend(6, msg)) { // note off messages are more important so keep trying
+        chThdSleep(1);
+      }
+    }
+    but->status = OFF;
+    buttons_pressed[but->src_id]--;
+    col_pressed[but->src_id][but_id % 17]--;
   }
   return;
+
+
   s_new = linearize(but->p);
   s_new = calibrate(s_new, but);
   // update_and_filter(&but->pres, &but->velo, s_new);
@@ -1197,6 +1263,8 @@ void ButtonReadStart(void) {
     buttons[n].prev_but = &buttons[(n/17) * 17 + ((n+17-1) % 17)];
     buttons[n].zero_time = 0;
     buttons[n].zero_max = 0;
+    buttons[n].pres = 0;
+    buttons[n].velo = 0;
   }
 #ifdef USE_BAS
   for (int n=0; n<N_BUTTONS_BAS; n++) {
