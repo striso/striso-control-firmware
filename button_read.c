@@ -42,7 +42,9 @@
 #define ZERO_LEVEL_OFFSET 4
 #define ZERO_LEVEL_MAX_VELO 500
 #define COMMON_CHANNEL_FILT 0.5
-#define KEY_DETECT 320
+#define KEY_DETECT 64
+#define KEY_DETECT2 64
+#define KEY_DETECT3 320
 #define MIN_MEASURES 4 // minimum notes to measure, must be >= 2
 
 #define INTEGRATED_PRES_TRESHOLD (INTERNAL_ONE/8)
@@ -176,6 +178,7 @@ struct struct_button {
   int32_t c_force2;
   int32_t zero_time;
   int32_t zero_max;
+  float fact;
   enum button_status status;
   int timer;
   int but_id;
@@ -604,8 +607,8 @@ int32_t calibrate(int32_t s, button_t* but) {
   // c is the normalisation value for the force
   //    2^18   * 2^12 / 2^12 * ADCFACT/2^6 / c
   // s = (but->c_force * (4095-s)/(s+1)) * (ADCFACT>>6);
-  s -= but->c_offset;
-  s = but->c_force * s;
+  // s -= but->c_offset;
+  s = (but->c_force * s) * but->fact;
   #ifdef BREAKPOINT_CALIBRATION
   // breakpoint calibration
   if (s > but->c_breakpoint) {
@@ -615,8 +618,8 @@ int32_t calibrate(int32_t s, button_t* but) {
   return s;
 }
 
-#define max(x,y) (x>y?x:y)
-#define min(x,y) (x<y?x:y)
+#define max(x,y) ((x)>(y)?(x):(y))
+#define min(x,y) ((x)<(y)?(x):(y))
 
 void update_button(button_t* but) {
   int but_id = but->but_id;
@@ -626,7 +629,13 @@ void update_button(button_t* but) {
   int msg[8];
   msg[0] = but->src_id;
 
-  if (but->on > KEY_DETECT) {
+  int threshold;
+  if (col_pressed[but->src_id][but_id % 17] - (but->status == ON) > 0) {
+    threshold = KEY_DETECT2;
+  } else {
+    threshold = KEY_DETECT;
+  }
+  if (but->on > threshold) {
 
     s_new = linearize(but->p);
     s_new = calibrate(s_new, but);
@@ -689,7 +698,7 @@ void update_button(button_t* but) {
       but->timer = (buttons_pressed[0] + buttons_pressed[1]) * SENDFACT;
     }
   }
-  else if (but->status && but->on <= KEY_DETECT) {
+  else if (but->status) {
     if (but->status == ON) {
       msg[1] = but_id;
       msg[2] = 0;
@@ -701,9 +710,13 @@ void update_button(button_t* but) {
       }
     }
     but->status = OFF;
+    but->p = 4095;
     buttons_pressed[but->src_id]--;
     col_pressed[but->src_id][but_id % 17]--;
+  } else {
+    but->p = 4095;
   }
+  but->fact = 1.0f;
   return;
 
 
@@ -1079,9 +1092,49 @@ static void ThreadReadButtons(void *arg) {
     while (note_id != next_note_id) {
         // Update button in each octave/adc-channel
         for (int n = 0; n < 4; n++) {
-          but_id = note_id + n * 17;
-          but = &buttons[but_id];
-          update_button(but);
+          update_button(&buttons[note_id + n * 17]);
+        }
+
+        // calculate cross talk correction factors
+        /* correction factor for 1k adc pull up resistors:
+           1: 600/570 = 1.05
+           2: 600/320 = 1.9
+           3: 600/230 = 2.6
+           4: 600/180 = 3.3
+        */
+        float oct_fact[4] = {1.0f};
+        for (int n = 0; n < 4; n++) {
+          float fact = 1.0f + (4095-buttons[note_id + n * 17].p) * (0.05f / 0.9f / 4095.0f);
+          oct_fact[n] = max(oct_fact[n], fact);
+          for (int k = n+1; k < 4; k++) {
+            fact = 1.0f + min(4095-buttons[note_id + n * 17].p, 4095-buttons[note_id + k * 17].p) * (0.9f / 0.95f / 4095.0f);
+            oct_fact[n] = max(oct_fact[n], fact);
+            oct_fact[k] = max(oct_fact[k], fact);
+          }
+        }
+        bool set_oct[4];
+        for (int b = 0; b < 17; b++) {
+          if (b != note_id) {
+            for (int n = 0; n < 4; n++) {
+              set_oct[n] = true;
+            }
+            for (int n = 0; n < 4; n++) {
+              if (buttons[b + n * 17].status == ON) {
+                // disable correction when four corners are pressed
+                for (int k = n+1; k < 4; k++) {
+                  if (/*buttons[b + n * 17].status == ON &&*/ buttons[note_id + n * 17].status == ON &&
+                      buttons[b + k * 17].status == ON && buttons[note_id + k * 17].status == ON) {
+                    set_oct[n] = false;
+                    set_oct[k] = false;
+                  }
+                }
+                // set correction if larger than current correction
+                if (set_oct[n] && oct_fact[n] > buttons[b + n * 17].fact) {
+                  buttons[b + n * 17].fact = oct_fact[n];
+                }
+              }
+            }
+          }
         }
         // Once per cycle, after the last buttons
         if (note_id == 16) {
