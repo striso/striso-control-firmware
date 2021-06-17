@@ -56,7 +56,7 @@
 // #define BREAKPOINT_CALIBRATION     // button sensitivity correction using a breakpoint fit
 
 #define CALIB_OFFSET 4
-#define CALIB_FORCE  ((1<<18)/16)   // 1k adc pull up resistors
+#define CALIB_FORCE  ((1<<18)/64 + 1)   // +1 to signify hardware revision, 1k adc pull up resistors
 
 #define AUX_BUTTON_DEBOUNCE_TIME 5
 
@@ -112,15 +112,30 @@ config_t config = {
 };
 #endif
 
+/** Device specific storage in the last flash sector
+ * Stores serial number, model description, calibration values, etc.
+ *
+ * hardware_revision:
+ *    0: v2.0.3 pcb (10k adc pullups)
+ *    1: v2.0.3 pcb with 1k adc pullups
+ *
+ * calib type:
+ *    0x00: linear force correction, measured per sensor (<= v2.0.5)
+ *    0x02: linear force correction, measured per key (>= v2.1)
+ *    0xb1: breakpoint location
+ *    0x01: additional linear force correction after breakpoint
+ */
 #define DEVSPEC_FLASH_START 0x081e0000
 
 typedef struct {
   const uint32_t UID[3];
   const unsigned char id[16];
   const unsigned char model[64];
-  const unsigned char reserved[256-3*4-16-64-2];
+  const uint16_t hardware_revision;
+  const unsigned char reserved[256-3*4-16-64-2-2];
   const uint16_t base_calib_force;
 } devspec_id_t;
+typedef char assert_devspec_id_size[sizeof(devspec_id_t) == 256 ? 1 : -1]; // static assert trick
 #define devspec_id ((devspec_id_t*)(DEVSPEC_FLASH_START))
 
 typedef struct {
@@ -130,6 +145,7 @@ typedef struct {
   const uint16_t type;
   const unsigned char date[16];
 } calib_t;
+typedef char assert_calib_size[sizeof(calib_t) == 256 ? 1 : -1]; // static assert trick
 #define calib_dis_force ((calib_t*)(DEVSPEC_FLASH_START + 256))
 #define calib_dis_breakpoint ((calib_t*)(DEVSPEC_FLASH_START + 2*256))
 #define calib_dis_force2 ((calib_t*)(DEVSPEC_FLASH_START + 3*256))
