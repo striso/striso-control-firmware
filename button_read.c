@@ -43,7 +43,7 @@
 #define ZERO_LEVEL_OFFSET 4
 #define COMMON_CHANNEL_FILT 0.5
 #define KEY_DETECT 64   // key_detect threshold
-#define KEY_DETECT2 64
+#define KEY_DETECT2 32  // additional threshold when another key in the column is pressed
 #define KEY_DETECT3 256 // additional threshold when 3 or 4 corners are pressed
 #define MIN_MEASURES 4 // minimum notes to measure, must be >= 2
 
@@ -613,7 +613,9 @@ void update_button(button_t* but) {
   int msg[8];
   msg[0] = but->src_id;
 
-  if (but->on > but->key_detect + but->key_detect3) {
+  int key_detect2 = KEY_DETECT2 * (col_pressed[but->src_id][but_id % 17] - (but->status != OFF) > 1);
+
+  if (but->on > but->key_detect + key_detect2 + but->key_detect3) {
 
     s_new = calibrate(linearize(but->p), but);
     update_and_filter(&but->pres, &but->velo, s_new);
