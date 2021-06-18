@@ -287,10 +287,10 @@ static void adccallback(ADCDriver *adcp) {
       palSetPort(out_channels_port[cur_channel+1], out_channels_portmask[cur_channel+1]);
       palSetPort(out_channels_port[cur_channel+2], out_channels_portmask[cur_channel+2]);
 
-      buttons[next_note_id   ].p = buffer[0];
-      buttons[next_note_id+17].p = buffer[1];
-      buttons[next_note_id+34].p = buffer[2];
-      buttons[next_note_id+51].p = buffer[3];
+      buttons[next_note_id   ].p = 4095 - buffer[0];
+      buttons[next_note_id+17].p = 4095 - buffer[1];
+      buttons[next_note_id+34].p = 4095 - buffer[2];
+      buttons[next_note_id+51].p = 4095 - buffer[3];
 
       cur_phase = 1;
     } break;
@@ -300,10 +300,10 @@ static void adccallback(ADCDriver *adcp) {
       /* Drain new channels */
       palClearPort(out_channels_port[cur_channel+1], out_channels_portmask[cur_channel+1]);
 
-      buttons[next_note_id   ].s0 = buffer[0];
-      buttons[next_note_id+17].s0 = buffer[1];
-      buttons[next_note_id+34].s0 = buffer[2];
-      buttons[next_note_id+51].s0 = buffer[3];
+      buttons[next_note_id   ].s0 = 4095 - buffer[0];
+      buttons[next_note_id+17].s0 = 4095 - buffer[1];
+      buttons[next_note_id+34].s0 = 4095 - buffer[2];
+      buttons[next_note_id+51].s0 = 4095 - buffer[3];
 
       cur_phase = 2;
     } break;
@@ -313,10 +313,10 @@ static void adccallback(ADCDriver *adcp) {
       /* Drain new channels */
       palClearPort(out_channels_port[cur_channel+2], out_channels_portmask[cur_channel+2]);
 
-      buttons[next_note_id   ].s1 = buffer[0];
-      buttons[next_note_id+17].s1 = buffer[1];
-      buttons[next_note_id+34].s1 = buffer[2];
-      buttons[next_note_id+51].s1 = buffer[3];
+      buttons[next_note_id   ].s1 = 4095 - buffer[0];
+      buttons[next_note_id+17].s1 = 4095 - buffer[1];
+      buttons[next_note_id+34].s1 = 4095 - buffer[2];
+      buttons[next_note_id+51].s1 = 4095 - buffer[3];
 
       cur_phase = 3;
     } break;
@@ -324,10 +324,10 @@ static void adccallback(ADCDriver *adcp) {
       /* Open old channels */
       palSetPort(out_channels_port[cur_channel+2], out_channels_portmask[cur_channel+2]);
 
-      buttons[next_note_id   ].s2 = buffer[0];
-      buttons[next_note_id+17].s2 = buffer[1];
-      buttons[next_note_id+34].s2 = buffer[2];
-      buttons[next_note_id+51].s2 = buffer[3];
+      buttons[next_note_id   ].s2 = 4095 - buffer[0];
+      buttons[next_note_id+17].s2 = 4095 - buffer[1];
+      buttons[next_note_id+34].s2 = 4095 - buffer[2];
+      buttons[next_note_id+51].s2 = 4095 - buffer[3];
 
       // Next channel
       measure_get++;
@@ -580,10 +580,10 @@ void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
 int32_t linearize(int32_t s) {
 #ifdef CALIBRATION_MODE
   /* keep linear voltage for calibration */
-  return ADCFACT * (4095-s);
+  return ADCFACT * s;
 #else
   /* convert adc value to force */
-  return (ADCFACT>>6) * (4095-s)/(s+1);
+  return (ADCFACT>>6) * s/(4095-s+1);
 #endif // CALIBRATION_MODE
 }
 
@@ -674,11 +674,11 @@ void update_button(button_t* but) {
       }
     }
     but->status = OFF;
-    but->p = 4095;
+    but->p = 0;
     buttons_pressed[but->src_id]--;
     col_pressed[but->src_id][but_id % 17]--;
   } else {
-    but->p = 4095;
+    but->p = 0;
   }
   but->fact = 1.0f;
   but->key_detect3 = 0;
@@ -922,10 +922,10 @@ static void ThreadReadButtons(void *arg) {
         */
         float oct_fact[4] = {1.0f};
         for (int n = 0; n < 4; n++) {
-          float fact = 1.0f + (4095-buttons[note_id + n * 17].p) * (0.05f / 0.9f / 4095.0f);
+          float fact = 1.0f + buttons[note_id + n * 17].p * (0.05f / 0.9f / 4095.0f);
           oct_fact[n] = max(oct_fact[n], fact);
           for (int k = n+1; k < 4; k++) {
-            fact = 1.0f + min(4095-buttons[note_id + n * 17].p, 4095-buttons[note_id + k * 17].p) * (0.9f / 0.95f / 4095.0f);
+            fact = 1.0f + min(buttons[note_id + n * 17].p, buttons[note_id + k * 17].p) * (0.9f / 0.95f / 4095.0f);
             oct_fact[n] = max(oct_fact[n], fact);
             oct_fact[k] = max(oct_fact[k], fact);
           }
