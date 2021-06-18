@@ -51,11 +51,9 @@
 #endif
 
 // #define CALIBRATION_MODE TRUE      // don't linearize or calibrate sensor data
-// #define BUTTON_FILT                // filter out erroneous presses
 #define DETECT_STUCK_NOTES         // zero level detection at start
 // #define BREAKPOINT_CALIBRATION     // button sensitivity correction using a breakpoint fit
 
-#define CALIB_OFFSET 4
 #define CALIB_FORCE  ((1<<18)/64 + 1)   // +1 to signify hardware revision, 1k adc pull up resistors
 
 #define AUX_BUTTON_DEBOUNCE_TIME 5

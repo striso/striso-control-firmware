@@ -18,6 +18,7 @@
 #include "button_read.h"
 #include "ch.h"
 #include "hal.h"
+#include "chprintf.h"
 
 #include "ccportab.h"
 
@@ -40,7 +41,6 @@
 #define FILT 8  // min: 1 (no filter), max: 64 (1<<32 / INTERNAL_ONE)
 #define FILTV 8 // min: 1 (no filter), max: 64 (1<<32 / INTERNAL_ONE)
 #define ZERO_LEVEL_OFFSET 4
-#define ZERO_LEVEL_MAX_VELO 500
 #define COMMON_CHANNEL_FILT 0.5
 #define KEY_DETECT 64   // key_detect threshold
 #define KEY_DETECT2 64
@@ -157,7 +157,6 @@ enum button_status {
   OFF = 0,
   STARTING = 1,
   ON = 2,
-  PHANTOM_FLAG = 4,
 };
 
 typedef struct struct_button button_t;
@@ -169,11 +168,7 @@ struct struct_button {
   int32_t s2;
   int32_t pres;
   int32_t velo;
-  int32_t v0;
-  int32_t v1;
-  int32_t v2;
   int32_t c_force;
-  int32_t c_offset;
   int32_t c_breakpoint;
   int32_t c_force2;
   int32_t zero_time;
@@ -188,6 +183,7 @@ struct struct_button {
   button_t* prev_but;
 };
 
+#ifdef USE_BAS
 typedef struct struct_slider {
   int32_t s[27];
   int32_t v[27];
@@ -203,6 +199,7 @@ typedef struct struct_slider {
 } slider_t;
 
 static slider_t sld;
+#endif
 
 static button_t buttons[N_BUTTONS];
 #ifdef USE_BAS
@@ -210,10 +207,6 @@ static button_t buttons_bas[N_BUTTONS_BAS];
 #endif
 static int buttons_pressed[2] = {0};
 static int col_pressed[2][17] = {0};
-static int32_t max_pres = 0, max_pres1 = 0;
-
-static float octave_factor[6] = {1.0f};
-static int32_t octave_sum[6] = {0};
 
 #ifdef USE_AUX_BUTTONS
 // #define LINE_BUTTON_PORT   PAL_LINE(GPIOI,  2U)
@@ -244,14 +237,6 @@ CC_CACHE_ALIGN static adcsample_t adc_samples[CACHE_SIZE_ALIGN(adcsample_t, ADC_
 static int measure[20] = {0};
 static int *measure_put = measure;
 static int *measure_get = measure;
-
-#ifdef USE_BAS
-static adcsample_t samples_bas0[102] = {0};
-static adcsample_t samples_bas1[102] = {0};
-static adcsample_t* samples_bas[2] = {samples_bas0, samples_bas1};
-#endif
-
-static adcsample_t samples_common[6] = {0};
 
 static thread_t *tpReadButtons = NULL;
 
@@ -609,7 +594,6 @@ int32_t calibrate(int32_t s, button_t* but) {
   // c is the normalisation value for the force
   //    2^18   * 2^12 / 2^12 * ADCFACT/2^6 / c
   // s = (but->c_force * (4095-s)/(s+1)) * (ADCFACT>>6);
-  // s -= but->c_offset;
   s = (but->c_force * s) * but->fact;
   #ifdef BREAKPOINT_CALIBRATION
   // breakpoint calibration
@@ -625,16 +609,13 @@ int32_t calibrate(int32_t s, button_t* but) {
 
 void update_button(button_t* but) {
   int but_id = but->but_id;
-  int oct = but_id/17;
   int32_t s_new;
-  int32_t s_max = 0;
   int msg[8];
   msg[0] = but->src_id;
 
   if (but->on > but->key_detect + but->key_detect3) {
 
-    s_new = linearize(but->p);
-    s_new = calibrate(s_new, but);
+    s_new = calibrate(linearize(but->p), but);
     update_and_filter(&but->pres, &but->velo, s_new);
 
     // if button is off start integration timer
@@ -648,30 +629,17 @@ void update_button(button_t* but) {
     if (but->status == STARTING) {
       but->timer -= but->pres;
     }
-    // if button is phantom pressed release it
-    if (but->status & PHANTOM_FLAG) {
-      if (but->status == (ON | PHANTOM_FLAG)) {
-          msg[1] = but_id;
-          msg[2] = 0;
-          msg[3] = 0;
-          msg[4] = 0;
-          msg[5] = 0;
-          msgSend(6, msg);
-      }
-      // reset phantom flag since next round it can change
-      but->status = STARTING;
-    }
     // if integration is succesful and interval is ready send note message
-    else if (--but->timer <= 0) {
+    if (--but->timer <= 0) {
       but->status = ON;
 
       // calculate values from signals
       #define CENTERTEND 0.02f
-      int32_t pres, vpres, but_x, but_y;
+      int32_t but_x, but_y;
       int32_t s0 = calibrate(linearize(but->s0), but);
       int32_t s1 = calibrate(linearize(but->s1), but);
       int32_t s2 = calibrate(linearize(but->s2), but);
-      // max(s0, s1, s2)
+      // m = max(s0, s1, s2)
       int32_t m = s0;
       if (s1 > m) m = s1;
       if (s2 > m) m = s2;
@@ -714,132 +682,9 @@ void update_button(button_t* but) {
   }
   but->fact = 1.0f;
   but->key_detect3 = 0;
-  return;
-
-
-  s_new = linearize(but->p);
-  s_new = calibrate(s_new, but);
-  // update_and_filter(&but->pres, &but->velo, s_new);
-
-  s_new = linearize(but->s0);
-  s_new = calibrate(s_new, but);
-  update_and_filter(&but->s1, &but->v1, s_new);
-  s_new = linearize(but->s1);
-  s_new = calibrate(s_new, but);
-  update_and_filter(&but->s1, &but->v1, s_new);
-  s_new = linearize(but->s2);
-  s_new = calibrate(s_new, but);
-  update_and_filter(&but->s2, &but->v2, s_new);
-  but->p = but->s0 + but->s1 + but->s2;
-
-#ifdef DETECT_STUCK_NOTES
-  // adjust zero pressure level dynamically
-  if (s_max < (INTERNAL_ONE/32)
-      && (but->v0 + but->v1 + but->v2) < ZERO_LEVEL_MAX_VELO
-      && (but->v0 + but->v1 + but->v2) > -ZERO_LEVEL_MAX_VELO) {
-    if (s_max > but->zero_max) but->zero_max = s_max;
-    but->zero_time++;
-    if (but->zero_time > 500) {
-      but->zero_time = 0;
-      but->c_offset = but->zero_max + ZERO_LEVEL_OFFSET;
-    }
-  } else {
-    but->zero_time = 0;
-    but->zero_max = 0;
-  }
-#endif
-
-#ifdef BUTTON_FILT
-#ifdef TWO_WAY_SAMPLING
-  int min_pres1 = max_pres/32;
-#else
-  int min_pres1 = ((but->prev_but->s2 > MSGFACT) + (but->prev_but->s2 > INTERNAL_ONE/4)) * (INTERNAL_ONE/64) // stop ADC reaction time phantom presses
-    + max_pres/32;   // stop three nearby corner phantom presses TODO: fix for bas
-#endif
-  int min_pres = min_pres1 + __USAT(buttons_pressed[0], 2) * (INTERNAL_ONE/256); // reduce sensitivity a bit when many buttons are pressed TODO: fix for bas
-#else
-  int min_pres1 = max_pres/32;
-  int min_pres = min_pres1;
-#endif
-  if (but->s0 > MSGFACT + min_pres || but->s1 > MSGFACT + min_pres || but->s2 > MSGFACT + min_pres) {
-    // if button is off start integration timer
-    if (but->status == OFF) {
-      but->status = STARTING;
-      but->timer = INTEGRATED_PRES_TRESHOLD;
-      buttons_pressed[but->src_id]++;
-      col_pressed[but->src_id][but_id % 17]++;
-    }
-    // if button is in start integration reduce timer
-    if (but->status == STARTING) {
-      but->timer -= but->p; //(but->s0 + but->s1 + but->s2);
-    }
-    // if button is phantom pressed release it
-    if (but->status & PHANTOM_FLAG) {
-      if (but->status == (ON | PHANTOM_FLAG)) {
-          msg[1] = but_id;
-          msg[2] = 0;
-          msg[3] = 0;
-          msg[4] = 0;
-          msg[5] = 0;
-          msgSend(6, msg);
-      }
-      // reset phantom flag since next round it can change
-      but->status = STARTING;
-    }
-    // if integration is succesful and interval is ready send note message
-    else if (--but->timer <= 0) {
-      but->status = ON;
-
-      // calculate values from signals
-      #define CENTERTEND 0.02f
-      int32_t pres, vpres, but_x, but_y;
-      // use unsigned saturate to limit values between 0 and INTERNAL_ONE (2^24)
-      int32_t s0 = __USAT(but->s0, 24);
-      int32_t s1 = __USAT(but->s1, 24);
-      int32_t s2 = __USAT(but->s2, 24);
-      pres = (s0 + s1 + s2)/3;
-      vpres = (but->v0 + but->v1 + but->v2)/3;
-      // max(s0, s1, s2)
-      int32_t m = s0;
-      if (s1 > m) m = s1;
-      if (s2 > m) m = s2;
-      if (m > 0) {
-          float mf = ((float)m)/INTERNAL_ONE;
-          float fact = 1.0f/(mf + CENTERTEND/mf - CENTERTEND);
-          but_x = (s2 - s0) * fact;
-          but_y = ((s0 + s2) / 2 - s1) * fact;
-      } else {
-          but_x = 0;
-          but_y = 0;
-      }
-
-      msg[1] = but_id;
-      msg[2] = pres / MSGFACT;
-      msg[3] = vpres / MSGFACT_VELO;
-      msg[4] = but_x / MSGFACT;
-      msg[5] = but_y / MSGFACT;
-      msgSend(6, msg);
-      but->timer = (buttons_pressed[0] + buttons_pressed[1]) * SENDFACT;
-    }
-  }
-  else if (but->status && !(but->s0 > MSGFACT + min_pres1 || but->s1 > MSGFACT + min_pres1 || but->s2 > MSGFACT + min_pres1)) {
-    if (but->status & ON) {
-      int32_t vpres = (but->v0 + but->v1 + but->v2)/3;
-      msg[1] = but_id;
-      msg[2] = 0;
-      msg[3] = vpres / MSGFACT_VELO;
-      msg[4] = 0;
-      msg[5] = 0;
-      while (msgSend(6, msg)) { // note off messages are more important so keep trying
-        chThdSleep(1);
-      }
-    }
-    but->status = OFF;
-    buttons_pressed[but->src_id]--;
-    col_pressed[but->src_id][but_id % 17]--;
-  }
 }
 
+#ifdef USE_BAS
 /*
 typedef struct struct_slider {
   int32_t s[27];
@@ -870,7 +715,6 @@ int slider_interp(int n) {
   }
 }
 
-#ifdef USE_BAS
 void update_slider(void) {
   int n;
   int np = 0;
@@ -1036,9 +880,7 @@ static void ThreadReadButtons(void *arg) {
   (void)arg;
 
   chRegSetThreadName("read_buttons");
-  int but_id;
   int note_id = 0;
-  button_t* but;
 
 #ifdef DETECT_STUCK_NOTES
   int count = 0;
@@ -1117,50 +959,6 @@ static void ThreadReadButtons(void *arg) {
         }
         // Once per cycle, after the last buttons
         if (note_id == 16) {
-
-#ifdef BUTTON_FILT
-          // Find maximum pressure (and second to maximum)
-          max_pres1 = 0;
-          max_pres = 0;
-          for (int n = 0; n<17; n++) {
-            for (int nr = 0; nr<4; nr++) {
-              if (buttons[n + 17*nr].p > max_pres1) {
-                max_pres1 = buttons[n + 17*nr].p;
-                if (max_pres1 > max_pres) {
-                  max_pres1 = max_pres;
-                  max_pres = buttons[n + 17*nr].p;
-                }
-              }
-            }
-          }
-          // Find phantom presses (presses on the fourth corner that appear when 3 corners are pressed)
-          // Specific for dis side, on bas side there's only one octave
-          for (int n = 0; n<17; n++) {
-            if (col_pressed[0][n] >= 2) {
-              for (int k = n+1; k<17; k++) {
-                if (col_pressed[0][k] >= 2) {
-                  for (int nr = 0; nr<4; nr++) {
-                    if (buttons[n + 17*nr].status && buttons[k + 17*nr].status) {
-                      for (int kr = nr+1; kr<4; kr++) {
-                        if (buttons[n + 17*kr].status && buttons[k + 17*kr].status) {
-                          // 4 pressed corners are found, give lowest pressure a phantom flag
-                          button_t* min = &buttons[n + 17*nr];
-                          button_t* b1  = &buttons[k + 17*nr];
-                          button_t* b2  = &buttons[n + 17*kr];
-                          button_t* b3  = &buttons[k + 17*kr];
-                          if (b1->p < min->p) {min = b1;}
-                          if (b2->p < min->p) {min = b2;}
-                          if (b3->p < min->p) {min = b3;}
-                          min->status |= PHANTOM_FLAG;
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-#endif
 #ifdef USE_AUX_BUTTONS
           int msg[8];
           for (int n = 0; n < 4; n++) {
@@ -1182,36 +980,6 @@ static void ThreadReadButtons(void *arg) {
 #endif // USE_AUX_BUTTONS
         }
 
-#ifdef USE_BAS
-        // bas side
-        but_id = note_id;
-        but = &buttons_bas[but_id];
-        update_button(but, &samples_bas[0][cur_conv]);
-        if (note_id % 2) {
-          but_id = note_id + 17;
-          but = &buttons_bas[but_id];
-          update_button(but, &samples_bas[1][cur_conv]);
-        } else {
-          // slider
-          //but_id = note_id + 2*17;
-          //but = &buttons_bas[but_id];
-          //update_button(but, &samples_bas[1][cur_conv]);
-
-          but_id = (note_id / 2) * 3;
-
-          int32_t s_new;
-          s_new = calibrate(samples_bas[1][cur_conv + 0], (ADCFACT>>6) / 6, ADC_OFFSET);
-          update_and_filter(&sld.s[but_id + 0], &sld.v[but_id + 0], s_new);
-          s_new = calibrate(samples_bas[1][cur_conv + 1], (ADCFACT>>6) / 6, ADC_OFFSET);
-          update_and_filter(&sld.s[but_id + 1], &sld.v[but_id + 1], s_new);
-          s_new = calibrate(samples_bas[1][cur_conv + 2], (ADCFACT>>6) / 6, ADC_OFFSET);
-          update_and_filter(&sld.s[but_id + 2], &sld.v[but_id + 2], s_new);
-
-          if (note_id == 16) {
-            update_slider();
-          }
-        }
-#endif // USE_BAS
       note_id = (note_id + 1) % 17;
     }
 
@@ -1254,13 +1022,20 @@ void ButtonBoardTest(void) {
   }
 }
 
-void buttonSetCalibration(uint32_t c_force, uint32_t c_offset) {
+void buttonSetCalibration(void) {
+  uint16_t base_calib_force = devspec_id->base_calib_force;
+  // use default when not device flash not yet initialized
+  if (base_calib_force == 0xffff) base_calib_force = CALIB_FORCE;
+  // fall back to old default when info not available (old struct)
+  if (base_calib_force == 0x0000) base_calib_force = ((1<<18)/64);
+
   for (int n=0; n<N_BUTTONS; n++) {
-    chprintf((BaseSequentialStream *)&BDU1, "but[%d] c_force: %d c_offset: %d\r\n", n, buttons[n].c_force, buttons[n].c_offset);
-    buttons[n].c_force = c_force;
-    buttons[n].c_offset = c_offset;
+    chprintf((BaseSequentialStream *)&BDU1, "but[%d] c_force: %d key_detect: %d\r\n", n, buttons[n].c_force, buttons[n].key_detect);
+    buttons[n].c_force = base_calib_force;
+    buttons[n].key_detect = KEY_DETECT;
     buttons[n].c_breakpoint = INT32_MAX;
   }
+  chprintf((BaseSequentialStream *)&BDU1, "c_force: %d key_detect: %d\r\n", base_calib_force, KEY_DETECT);
 }
 
 void ButtonReadStart(void) {
@@ -1291,7 +1066,6 @@ void ButtonReadStart(void) {
     buttons[n].but_id = n;
     buttons[n].src_id = ID_DIS;
     buttons[n].c_force = CALIB_FORCE;
-    buttons[n].c_offset = CALIB_OFFSET;
     buttons[n].key_detect = KEY_DETECT;
     buttons[n].key_detect3 = 0;
     buttons[n].prev_but = &buttons[(n/17) * 17 + ((n+17-1) % 17)];
