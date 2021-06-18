@@ -42,9 +42,9 @@
 #define ZERO_LEVEL_OFFSET 4
 #define ZERO_LEVEL_MAX_VELO 500
 #define COMMON_CHANNEL_FILT 0.5
-#define KEY_DETECT 64
+#define KEY_DETECT 64   // key_detect threshold
 #define KEY_DETECT2 64
-#define KEY_DETECT3 320
+#define KEY_DETECT3 256 // additional threshold when 3 or 4 corners are pressed
 #define MIN_MEASURES 4 // minimum notes to measure, must be >= 2
 
 #define INTEGRATED_PRES_TRESHOLD (INTERNAL_ONE/8)
@@ -178,6 +178,8 @@ struct struct_button {
   int32_t c_force2;
   int32_t zero_time;
   int32_t zero_max;
+  int32_t key_detect;
+  int32_t key_detect3;
   float fact;
   enum button_status status;
   int timer;
@@ -629,13 +631,7 @@ void update_button(button_t* but) {
   int msg[8];
   msg[0] = but->src_id;
 
-  int threshold;
-  if (col_pressed[but->src_id][but_id % 17] - (but->status == ON) > 0) {
-    threshold = KEY_DETECT2;
-  } else {
-    threshold = KEY_DETECT;
-  }
-  if (but->on > threshold) {
+  if (but->on > but->key_detect + but->key_detect3) {
 
     s_new = linearize(but->p);
     s_new = calibrate(s_new, but);
@@ -717,6 +713,7 @@ void update_button(button_t* but) {
     but->p = 4095;
   }
   but->fact = 1.0f;
+  but->key_detect3 = 0;
   return;
 
 
@@ -1119,19 +1116,22 @@ static void ThreadReadButtons(void *arg) {
               set_oct[n] = true;
             }
             for (int n = 0; n < 4; n++) {
-              if (buttons[b + n * 17].status == ON) {
-                // disable correction when four corners are pressed
-                for (int k = n+1; k < 4; k++) {
-                  if (/*buttons[b + n * 17].status == ON &&*/ buttons[note_id + n * 17].status == ON &&
-                      buttons[b + k * 17].status == ON && buttons[note_id + k * 17].status == ON) {
+              for (int k = n+1; k < 4; k++) {
+                // reduce sensitivity when three corners are pressed
+                if (buttons[note_id + n * 17].status == ON && buttons[note_id + k * 17].status == ON &&
+                    (buttons[b + k * 17].status == ON || buttons[b + n * 17].status == ON)) {
+                  buttons[b + n * 17].key_detect3 = KEY_DETECT3;
+                  buttons[b + k * 17].key_detect3 = KEY_DETECT3;
+                  // do not set correction when four corners are pressed
+                  if (buttons[b + n * 17].status == ON && buttons[b + k * 17].status == ON) {
                     set_oct[n] = false;
                     set_oct[k] = false;
                   }
                 }
-                // set correction if larger than current correction
-                if (set_oct[n] && oct_fact[n] > buttons[b + n * 17].fact) {
-                  buttons[b + n * 17].fact = oct_fact[n];
-                }
+              }
+              // set correction if larger than current correction
+              if (set_oct[n] && oct_fact[n] > buttons[b + n * 17].fact) {
+                buttons[b + n * 17].fact = oct_fact[n];
               }
             }
           }
@@ -1313,6 +1313,8 @@ void ButtonReadStart(void) {
     buttons[n].src_id = ID_DIS;
     buttons[n].c_force = CALIB_FORCE;
     buttons[n].c_offset = CALIB_OFFSET;
+    buttons[n].key_detect = KEY_DETECT;
+    buttons[n].key_detect3 = 0;
     buttons[n].prev_but = &buttons[(n/17) * 17 + ((n+17-1) % 17)];
     buttons[n].zero_time = 0;
     buttons[n].zero_max = 0;
