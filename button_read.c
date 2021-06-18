@@ -1041,47 +1041,26 @@ static void ThreadReadButtons(void *arg) {
   button_t* but;
 
 #ifdef DETECT_STUCK_NOTES
-  for (int n=0; n<N_BUTTONS; n++) {
-    buttons[n].p = 0;
-  }
   int count = 0;
   while (count < 100) {
-    while (count < 100 && proc_conversion != next_conversion) {
-      // process 3 buttons if all 3 values * 3 buttons are available
-      if ((proc_conversion % 3) == 2) {
-        note_id = (proc_conversion / 3) % 17;
-        cur_conv = (proc_conversion - 2);
-        for (int n = 0; n < 4; n++) {
-          but_id = note_id + n * 17;
-          but = &buttons[but_id];
-          int s_new = samples[n][cur_conv];
-          s_new = linearize(s_new);
-          if (s_new > but->p) but->p = s_new;
-          s_new = samples[n][cur_conv+1];
-          s_new = linearize(s_new);
-          if (s_new > but->p) but->p = s_new;
-          s_new = samples[n][cur_conv+2];
-          s_new = linearize(s_new);
-          if (s_new > but->p) but->p = s_new;
-        }
-        // Once per cycle, after the last buttons
-        if (note_id == 16) {
-          count++;
+    while (count < 100 && note_id != next_note_id) {
+      for (int n = 0; n < 4; n++) {
+        int kd = buttons[note_id + n * 17].on + ZERO_LEVEL_OFFSET;
+        if (kd > buttons[note_id + n * 17].key_detect) {
+          buttons[note_id + n * 17].key_detect = kd;
         }
       }
-      proc_conversion = (proc_conversion+1) % 102;
+      // Once per cycle, after the last buttons
+      if (note_id == 16) {
+        count++;
+      }
+      note_id = (note_id + 1) % 17;
     }
 
     chSysLock();
     tpReadButtons = chThdGetSelfX();
     chSchGoSleepS(CH_STATE_SUSPENDED);
     chSysUnlock();
-  }
-  for (int n=0; n<N_BUTTONS; n++) {
-    but = &buttons[n];
-    if (but->p > but->c_offset) {
-      but->c_offset = but->p + ZERO_LEVEL_OFFSET;
-    }
   }
 #endif // DETECT_STUCK_NOTES
 

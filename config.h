@@ -52,7 +52,7 @@
 
 // #define CALIBRATION_MODE TRUE      // don't linearize or calibrate sensor data
 // #define BUTTON_FILT                // filter out erroneous presses
-// #define DETECT_STUCK_NOTES         // dynamic zero level detection
+#define DETECT_STUCK_NOTES         // zero level detection at start
 // #define BREAKPOINT_CALIBRATION     // button sensitivity correction using a breakpoint fit
 
 #define CALIB_OFFSET 4
