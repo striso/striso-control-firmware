@@ -180,8 +180,8 @@ void PExReceiveByte(unsigned char c) {
           streamWrite((BaseSequentialStream *)&BDU1, calib_dis_force->date, n);
           chprintf((BaseSequentialStream *)&BDU1, "\r\n");
         }
-        if (config.common_channel_filter) {
-          chprintf((BaseSequentialStream *)&BDU1, "Common channel filter: enabled\r\n");
+        if (config.debug) {
+          chprintf((BaseSequentialStream *)&BDU1, "Debug: enabled\r\n");
         }
       }
       else if (c == 'I') { // thread info
