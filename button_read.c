@@ -962,7 +962,8 @@ static void ThreadReadButtons(void *arg) {
           float fact = 1.0f + buttons[note_id + n * 17].p * (0.05f / 0.9f / 4095.0f);
           oct_fact[n] = max(oct_fact[n], fact);
           for (int k = n+1; k < 4; k++) {
-            fact = 1.0f + min(buttons[note_id + n * 17].p, buttons[note_id + k * 17].p) * (0.9f / 0.95f / 4095.0f);
+            fact = 1.0f + (min(buttons[note_id + n * 17].p, buttons[note_id + k * 17].p) - (KEY_DETECT+KEY_DETECT2))
+                   * (0.9f / 0.95f / 4095.0f);
             oct_fact[n] = max(oct_fact[n], fact);
             oct_fact[k] = max(oct_fact[k], fact);
           }
