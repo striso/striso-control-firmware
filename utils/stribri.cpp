@@ -140,27 +140,60 @@ class Button {
         Button() {
         }
 
-        void message(float* msg) {
+        void message(float* msg, int size) {
             unsigned int n;
-            // copy given parameters
-            for (n = 0; n < 3; n++) {
-                signals[n] = msg[n];
-                // velocity
-                signals[3+n] = msg[3+n];
-            }
-
             float prevpres = pres;
 
-            // calculate pres already for note detection and voice allocation
-            pres = (signals[0] + signals[1] + signals[2])/3;
-            if (pres > 1.0) {
-                pres = 1.0;
+            if (size == 6) { // old style message (<= v2.0.5)
+                // copy given parameters
+                for (n = 0; n < 3; n++) {
+                    signals[n] = msg[n];
+                    // velocity
+                    signals[3+n] = msg[3+n];
+                }
+
+                // calculate values from signals
+                pres = (signals[0] + signals[1] + signals[2])/3;
+                if (pres > 1.0) {
+                    pres = 1.0;
+                }
+                vpres = (signals[3] + signals[4] + signals[5])/3;
+                if (vpres > 1.0) {
+                    vpres = 1.0;
+                } else if (vpres < -1.0) {
+                    vpres = -1.0;
+                }
+
+                #define CENTERTEND 0.02
+                // m = max(s0, s1, s2)
+                float m = signals[0];
+                if (signals[1] > m) m = signals[1];
+                if (signals[2] > m) m = signals[2];
+                if (m > 0.0) {
+                    float fact = 1.0/(m + CENTERTEND/m - CENTERTEND);
+                    but_x = (signals[2] - signals[0]) * fact;
+                    but_y = (0.5 * (signals[0] + signals[2]) - signals[1]) * fact;
+                } else {
+                    but_x = 0.0;
+                    but_y = 0.0;
+                }
             }
-            vpres = (signals[3] + signals[4] + signals[5])/3;
-            if (vpres > 1.0) {
-                vpres = 1.0;
-            } else if (vpres < -1.0) {
-                vpres = -1.0;
+            else if (size == 4) { // new style message (>= v2.1)
+                pres = msg[0];
+                vpres = msg[1];
+                but_x = msg[2];
+                but_y = msg[3];
+
+                // fake signals for display
+                signals[0] = pres;
+                if (but_x > -1.0f/18.0f)
+                    signals[1] = (1.0f/18.0f + but_x) / 7.1f;
+                else
+                    signals[1] = (10.0f/64.0f) - but_x / 7.1f;
+                if (but_y > -1.0f/18.0f)
+                    signals[2] = (1.0f/18.0f + but_y) / 7.1f;
+                else
+                    signals[2] = (10.0f/64.0f) - but_y / 7.1f;
             }
 
             if (prevpres <= 0.0 && pres > 0.0)
@@ -175,22 +208,6 @@ class Button {
                 vol0 = pres + vpres;
             if (vol < vol0)
                 vol = vol0;
-        }
-
-        #define CENTERTEND 0.02
-        void calculate() {
-            // m = max(signals)
-            float m = signals[0];
-            if (signals[1] > m) m = signals[1];
-            if (signals[2] > m) m = signals[2];
-            if (m > 0.0) {
-                float fact = 1.0/(m + CENTERTEND/m - CENTERTEND);
-                but_x = (signals[2] - signals[0]) * fact;
-                but_y = (0.5 * (signals[0] + signals[2]) - signals[1]) * fact;
-            } else {
-                but_x = 0.0;
-                but_y = 0.0;
-            }
         }
 
         void send_osc(lo_address t) {
@@ -409,9 +426,9 @@ class Instrument {
             notegen1 = g;
         }
 
-        void button_message(int but, float* msg) {
+        void button_message(int but, float* msg, int size) {
             // process button message and send osc messages
-            buttons[but].message(msg);
+            buttons[but].message(msg, size);
 
             // Note on detection
             if (buttons[but].state == STATE_OFF && buttons[but].pres > 0.0) {
@@ -444,7 +461,6 @@ class Instrument {
                 buttons[but].note = buttons[but].start_note_offset + note_offset +
                                     notegen0 * buttons[but].coord0 +
                                     notegen1 * buttons[but].coord1;
-                buttons[but].calculate();
                 // buttons[but].timer = chVTGetSystemTime() + CLEAR_TIMER;
 
                 if (but == portamento_button) {
@@ -766,6 +782,15 @@ char sig2char(float sig)
     return vischar[idx];
 }
 
+char vischar2[19] = {'i','h','g','f','e','d','c','b','a','0','1','2','3','4','5','6','7','8','9'};
+char sig2char2(float sig)
+{
+    int idx = (sig+1.0f)*9 + 0.5;
+    if (idx<0) idx = 0;
+    else if (idx>18) idx = 18;
+    return vischar[idx];
+}
+
 void int2float(int *msg, float *fmsg, int n) {
     int c;
     for (c=0; c<n; c++) {
@@ -1001,7 +1026,10 @@ int c1_bas[68] = {
             // 6x14bit value, dis or bas button
             if (debugtofile) {
                 gettimeofday(&t_tmp, NULL);
-                fprintf(fp_debug, "%.4f, %d, %d, %d, %d, %d, %d, %d, %d\n", (double)t_tmp.tv_sec + (double)t_tmp.tv_usec/1000000, src, id, msg[0], msg[1], msg[2], msg[3], msg[4], msg[5]);
+                if (size == 6)
+                    fprintf(fp_debug, "%.4f, %d, %d, %d, %d, %d, %d, %d, %d\n", (double)t_tmp.tv_sec + (double)t_tmp.tv_usec/1000000, src, id, msg[0], msg[1], msg[2], msg[3], msg[4], msg[5]);
+                if (size == 4)
+                    fprintf(fp_debug, "%.4f, %d, %d, %d, %d, %d, %d\n", (double)t_tmp.tv_sec + (double)t_tmp.tv_usec/1000000, src, id, msg[0], msg[1], msg[2], msg[3]);
                 fflush(fp_debug);
             }
 
@@ -1009,9 +1037,9 @@ int c1_bas[68] = {
 
             if (id < BUTTONCOUNT) {
                 if (src == ID_DIS) {
-                    dis->button_message(id, fmsg);
+                    dis->button_message(id, fmsg, size);
                 } else if (src == ID_BAS) {
-                    bas->button_message(id, fmsg);
+                    bas->button_message(id, fmsg, size);
                 }
             }
         }
@@ -1020,6 +1048,7 @@ int c1_bas[68] = {
         }
 
         #define disp_but(but) printf(" %c%c%c", sig2char(but.signals[0]), sig2char(but.signals[1]), sig2char(but.signals[2]))
+        // #define disp_but2(but) printf(" %c%c%c", sig2char(but.pres), sig2char2(but.x), sig2char2(but.y))
         #define disp_butv(but) printf(" %3.0f", but.vpres_max * 1000)
 
         // Display information
@@ -1073,7 +1102,7 @@ int c1_bas[68] = {
                     if (instrs[n]->buttons[but].state) {
                         if (instrs[n]->buttons[but].timer == -1) {
                             float msg[6] = {0,0,0,0,0,0};
-                            instrs[n]->button_message(but, msg);
+                            instrs[n]->button_message(but, msg, 6);
                         }
                         else {
                             instrs[n]->buttons[but].timer = -1;

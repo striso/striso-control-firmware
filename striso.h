@@ -18,7 +18,23 @@
 #ifndef _STRISO_H
 #define _STRISO_H
 
-// Striso protocol source ID's
+/**
+Striso binary protocol
+
+byte[0]:   0b1iiiisss, header
+           iiii = 4 bit source ID
+           sss = 3 bit message size = number of 14 bit values
+byte[1]:   0b0ccccccc, 7 bit control ID
+byte[2-3]: 0b0vvvvvvv * 2, signed 14 bit value 1
+byte[4-5]: signed 14 bit value 2
+etc. up to 7 values
+
+Button message:
+6 values: signal[0-2], velocity[0-2]    (up to v2.0.5)
+4 values: pres, vpres, x, y             (v2.1.0 and later)
+*/
+
+// Striso protocol source ID's [0-15]
 #define ID_DIS 0      // buttons on dis side
 #define ID_BAS 1      // buttons on bas side
 #define ID_CONTROL 2  // other controls

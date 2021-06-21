@@ -16,19 +16,26 @@ def int2float(msg):
     return [b/0x1fff for b in msg]
 
 def calculate(msg):
-    CENTERTEND = 0.02
     signals = int2float(msg)
-    pres = (signals[0] + signals[1] + signals[2])/3
-    vpres = (signals[3] + signals[4] + signals[5])/3
-    m = max(signals[:3])
-    if (m > 0.0):
-        fact = 1.0/(m + CENTERTEND/m - CENTERTEND)
-        but_x = (signals[2] - signals[0]) * fact
-        but_y = (0.5 * (signals[0] + signals[2]) - signals[1]) * fact
-    else:
-        but_x = 0.0
-        but_y = 0.0
-    return signals + [pres, vpres, but_x, but_y]
+    if len(msg) == 4:
+        pres = signals[0]
+        vpres = signals[1]
+        but_x = signals[2]
+        but_y = signals[3]
+        return [0,0,0,0,0,0, pres, vpres, but_x, but_y]
+    elif len(msg) == 6:
+        CENTERTEND = 0.02
+        pres = (signals[0] + signals[1] + signals[2])/3
+        vpres = (signals[3] + signals[4] + signals[5])/3
+        m = max(signals[:3])
+        if (m > 0.0):
+            fact = 1.0/(m + CENTERTEND/m - CENTERTEND)
+            but_x = (signals[2] - signals[0]) * fact
+            but_y = (0.5 * (signals[0] + signals[2]) - signals[1]) * fact
+        else:
+            but_x = 0.0
+            but_y = 0.0
+        return signals + [pres, vpres, but_x, but_y]
 
 class Striso(object):
     def __init__(self, update=None):
@@ -69,12 +76,13 @@ class Striso(object):
 
     def process_output(self, line):
         msg = line.split(',')
-        if len(msg) <= 1:
+        nvalues = len(msg) - 2
+        if nvalues < 0:
             return
         msg = [int(n) for n in msg]
         src = msg[0]
         id = msg[1]
-        if src == 0 and id in self.button_idx: # dis
+        if src == 0 and id in self.button_idx and nvalues in [6, 4]: # dis, old or new format
             idx = self.button_idx[id]
             self.button_state[idx] = tuple(calculate(msg[2:]))
             if self.update is not None:

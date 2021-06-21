@@ -1,3 +1,9 @@
+## v2.1.0
+
+### Changed
+ - Custom protocol button messages
+ - Button read algoritm rewritten, reducing crosstalk
+
 ## v2.0.5 - 2021-05-31
 
 ### Added

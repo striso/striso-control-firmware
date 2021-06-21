@@ -21,6 +21,6 @@
 #include "ch.h"
 
 void ButtonReadStart(void);
-void buttonSetCalibration(uint32_t c_force, uint32_t c_offset);
+void buttonSetCalibration(void);
 
 #endif
