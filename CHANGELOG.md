@@ -1,8 +1,14 @@
-## v2.1.0
+## v2.1.0 - 2021-06-21
+
+This release only works well with the new hardware revision (#141 and up).
 
 ### Changed
- - Custom protocol button messages
- - Button read algoritm rewritten, reducing crosstalk
+- Custom protocol button messages new format
+- Button read algoritm rewritten, reducing crosstalk and lifting the four corner limitation
+- Hardware revision: ADC resistor values changed for better sensitivity and less cross talk
+
+### Fixed
+- Clamp pres during portamento and fix portamento for very light presses
 
 ## v2.0.5 - 2021-05-31
 
