@@ -39,7 +39,7 @@
 #define MSGFACT (1<<11)  // factor from 14 bit message to INTERNAL_ONE
 #define MSGFACT_VELO (MSGFACT/VELOFACT)
 #define FILT 8  // min: 1 (no filter), max: 64 (1<<32 / INTERNAL_ONE)
-#define FILTV 8 // min: 1 (no filter), max: 64 (1<<32 / INTERNAL_ONE)
+#define FILTV 64 // min: 1 (no filter), max: 64 (1<<32 / INTERNAL_ONE)
 #define ZERO_LEVEL_OFFSET 4
 #define COMMON_CHANNEL_FILT 0.5
 #define KEY_DETECT 64   // key_detect threshold
@@ -1130,7 +1130,11 @@ void ButtonReadStart(void) {
       calib_dis_force->UID[1] == UID[1] &&
       calib_dis_force->UID[2] == UID[2]) {
     for (int n=0; n<N_BUTTONS; n++) {
+#ifdef BREAKPOINT_CALIBRATION
       buttons[n].c_force = calib_dis_force->calib[n];
+#else
+      buttons[n].c_force = 2 * calib_dis_force->calib[n]; // * 2 to make up for non-linearity
+#endif
     }
   } else {
     led_rgb(0xff0000);
