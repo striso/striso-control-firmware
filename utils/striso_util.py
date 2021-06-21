@@ -86,4 +86,4 @@ class Striso(object):
             idx = self.button_idx[id]
             self.button_state[idx] = tuple(calculate(msg[2:]))
             if self.update is not None:
-                self.update()
+                self.update(idx)

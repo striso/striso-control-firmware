@@ -5,6 +5,8 @@ Created: 01 Feb 2015
 Author: Piers Titus van der Torren <pierstitus@striso.org>
 """
 
+import time
+
 from pyqtgraph.Qt import QtGui, QtCore
 import pyqtgraph as pg
 import numpy as np
@@ -23,6 +25,7 @@ class Visualizer(object):
         self.data_pres = np.zeros(self.graph_length)
         self.data_velo = np.zeros(self.graph_length)
         self.ptr = 2
+        self.count = 0
 
     def start(self, calibrate=False):
         self.win = win = pg.GraphicsWindow()
@@ -48,6 +51,9 @@ class Visualizer(object):
         self.plot_striso.addItem(self.plotitem_striso)
         self.plotitem_strisopos = pg.ScatterPlotItem(pos=but_pos, size=9, pxMode=True, symbol='+')
         self.plot_striso.addItem(self.plotitem_strisopos)
+        self.plotitem_info = pg.TextItem('Striso')
+        self.plot_striso.addItem(self.plotitem_info)
+        # self.plotitem_info.textItem.setPos((2,2))
 
         p3 = win.addPlot()
         # Use automatic downsampling and clipping to reduce the drawing load
@@ -96,10 +102,12 @@ class Visualizer(object):
         self.timer.timeout.connect(self.update)
         self.timer.start(self.update_interval)
 
+        self.count_time = time.time()
+
     def stop(self):
         self.striso.stop()
 
-    def updatepres(self):
+    def updatepres(self, idx):
         p = self.striso.button_state['p'].copy()
         v = self.striso.button_state['v'].copy()
         striso_active = np.any(p)
@@ -107,14 +115,16 @@ class Visualizer(object):
             if striso_active and not (self.graph_mode == 'first' and self.striso_active):
                 self.striso_curbut = np.argmax(p)
 
-            self.data_pres[self.ptr] = p[self.striso_curbut]
-            self.data_velo[self.ptr] = v[self.striso_curbut]
-            self.ptr += 1
-            if self.ptr >= len(self.data_pres):
-                self.ptr = 0
+            if idx == self.striso_curbut:
+                self.data_pres[self.ptr] = p[self.striso_curbut]
+                self.data_velo[self.ptr] = v[self.striso_curbut]
+                self.ptr += 1
+                self.count += 1
+                if self.ptr >= len(self.data_pres):
+                    self.ptr = 0
 
-            self.striso_active = striso_active
             self.updated = True
+            self.striso_active = striso_active
 
     def update(self):
         if self.updated:
@@ -129,6 +139,12 @@ class Visualizer(object):
                 brush=self.cmap.mapToQColor(0.2*(p>0)+0.8*p))
             xy = c_[self.striso.button_state['x'], self.striso.button_state['y']]
             self.plotitem_strisopos.setData(pos=self.but_pos + 7*xy)
+
+            if time.time() - self.count_time > 0.1:
+                mps = self.count/(time.time() - self.count_time)
+                self.plotitem_info.setText(f'{mps:.0f} mps')
+                self.count_time = time.time()
+                self.count = 0
 
 ## Start Qt event loop unless running in interactive mode.
 if __name__ == '__main__':
