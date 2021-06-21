@@ -214,28 +214,30 @@ static void ThreadAccel(void *arg) {
       acc_z /= acc_abs;
     }
 
-    msg[2] = ax>>2;
-    msg[3] = ay>>2;
-    msg[4] = az>>2;
-    msg[5] = ((int16_t)(acc_abs * 32768.0/8.0))>>2;
-    msg[6] = gx>>2;
-    msg[7] = gy>>2;
-    msg[8] = gz>>2;
-    msgSend(9,msg);
+    if (config.send_motion_interval) {
+      msg[2] = ax>>2;
+      msg[3] = ay>>2;
+      msg[4] = az>>2;
+      msg[5] = ((int16_t)(acc_abs * 32768.0/8.0))>>2;
+      msg[6] = gx>>2;
+      msg[7] = gy>>2;
+      msg[8] = gz>>2;
+      msgSend(9,msg);
 
 #ifdef USE_INTERNAL_SYNTH
-    float rot_x = ((float)gx)*(1.0/32768.0);
-    float rot_y = ((float)gy)*(1.0/32768.0);
-    float rot_z = ((float)gz)*(1.0/32768.0);
+      float rot_x = ((float)gx)*(1.0/32768.0);
+      float rot_y = ((float)gy)*(1.0/32768.0);
+      float rot_z = ((float)gz)*(1.0/32768.0);
 
-    *(synth_interface.acc_abs) = acc_abs;
-    *(synth_interface.acc_x) = acc_x;
-    *(synth_interface.acc_y) = acc_y;
-    *(synth_interface.acc_z) = acc_z;
-    *(synth_interface.rot_x) = rot_x;
-    *(synth_interface.rot_y) = rot_y;
-    *(synth_interface.rot_z) = rot_z;
+      *(synth_interface.acc_abs) = acc_abs;
+      *(synth_interface.acc_x) = acc_x;
+      *(synth_interface.acc_y) = acc_y;
+      *(synth_interface.acc_z) = acc_z;
+      *(synth_interface.rot_x) = rot_x;
+      *(synth_interface.rot_y) = rot_y;
+      *(synth_interface.rot_z) = rot_z;
 #endif
+    }
 
     /* Waiting until the next 10 milliseconds time interval.*/
     // TODO: wait for interrupt at MPU_READY pin
@@ -273,19 +275,19 @@ static void ThreadAccel(void *arg) {
       acc_z /= acc_abs;
     }
 
-    // acceleration in message has maximum range 8g (16g for acc_abs)
-    // TODO: make /4 dependent on ACC_FS
-    msg[2] = (ax/4)>>2;
-    msg[3] = (ay/4)>>2;
-    msg[4] = (az/4)>>2;
-    msg[5] = ((int16_t)(acc_abs * 32768.0f/8.0f))>>2;
-    msg[6] = gx>>2;
-    msg[7] = gy>>2;
-    msg[8] = gz>>2;
-    msgSend(9,msg);
+    if (config.send_motion_interval) {
+      // acceleration in message has maximum range 8g (16g for acc_abs)
+      // TODO: make /4 dependent on ACC_FS
+      msg[2] = (ax/4)>>2;
+      msg[3] = (ay/4)>>2;
+      msg[4] = (az/4)>>2;
+      msg[5] = ((int16_t)(acc_abs * 32768.0f/8.0f))>>2;
+      msg[6] = gx>>2;
+      msg[7] = gy>>2;
+      msg[8] = gz>>2;
+      msgSend(9,msg);
 
 #ifdef USE_INTERNAL_SYNTH
-    if (config.send_motion_interval) {
       float rot_x = ((float)gx)*(1.0f/32768.0f);
       float rot_y = ((float)gy)*(1.0f/32768.0f);
       float rot_z = ((float)gz)*(1.0f/32768.0f);
@@ -297,8 +299,8 @@ static void ThreadAccel(void *arg) {
       *(synth_interface.rot_x) = rot_x;
       *(synth_interface.rot_y) = rot_y;
       *(synth_interface.rot_z) = rot_z;
-    }
 #endif
+    }
 
     /* Waiting until the next 10 milliseconds time interval.*/
     // TODO: wait for interrupt at MPU_READY pin
