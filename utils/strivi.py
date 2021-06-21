@@ -14,11 +14,11 @@ import dcompose
 import striso_util
 
 class Visualizer(object):
-    def __init__(self, update_interval=40, graph_length=1000):
+    def __init__(self, update_interval=40, graph_length=1000, graph_mode='max'):
         self.striso = None
         self.calib = None
         self.update_interval = update_interval
-
+        self.graph_mode = graph_mode
         self.graph_length = graph_length
         self.data_pres = np.zeros(self.graph_length)
         self.data_velo = np.zeros(self.graph_length)
@@ -104,8 +104,7 @@ class Visualizer(object):
         v = self.striso.button_state['v'].copy()
         striso_active = np.any(p)
         if self.striso_active or striso_active:
-            # print(p)
-            if striso_active:
+            if striso_active and not (self.graph_mode == 'first' and self.striso_active):
                 self.striso_curbut = np.argmax(p)
 
             self.data_pres[self.ptr] = p[self.striso_curbut]
@@ -144,13 +143,17 @@ if __name__ == '__main__':
         '--graph-length', '-l', default=1000, type=int,
         help='graph length')
     parser.add_argument(
+        '--graph-mode', '-g', default='max',
+        help='graph mode [max|first]')
+    parser.add_argument(
         '--calibrate', '-c', action='store_true',
         help='enable calibration mode')
     args = parser.parse_args()
 
     try:
         visualizer = Visualizer(update_interval=args.update_interval,
-                                graph_length=args.graph_length)
+                                graph_length=args.graph_length,
+                                graph_mode=args.graph_mode)
         visualizer.start(calibrate=args.calibrate)
 
         if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
