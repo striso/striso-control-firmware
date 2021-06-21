@@ -563,6 +563,7 @@ void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
   int32_t old_s = *s;
   *s = ((FILT-1) * (old_s + *v) + s_new) / FILT;
   if (*s < 0 && old_s < 0) {
+    *s = 0;
     *v = 0;
   } else if (*s >= INTERNAL_ONE) {
     *s = INTERNAL_ONE - 1;
@@ -573,6 +574,9 @@ void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
       *v = (INTERNAL_ONE/VELOFACT) - 1;
     } else if (*v <= -(INTERNAL_ONE/VELOFACT)) {
       *v = -(INTERNAL_ONE/VELOFACT) + 1;
+    }
+    if (*s < 0) {
+      *s = 0;
     }
   }
 }
@@ -631,6 +635,20 @@ void update_button(button_t* but) {
     if (but->status == STARTING) {
       but->timer -= but->pres;
     }
+    // note off if .pres is too low even though .on is high enough
+    if (but->pres < MSGFACT && but->status == ON) {
+      but->status = STARTING;
+      but->timer = INTEGRATED_PRES_TRESHOLD + (but->key_detect3 != 0) * but->pres;
+
+      msg[1] = but_id;
+      msg[2] = 0;
+      msg[3] = min(but->velo, 0) / MSGFACT_VELO;
+      msg[4] = 0;
+      msg[5] = 0;
+      while (msgSend(6, msg)) { // note off messages are more important so keep trying
+        chThdSleep(1);
+      }
+    }
     // if integration is succesful and interval is ready send note message
     if (--but->timer <= 0) {
       but->status = ON;
@@ -668,12 +686,15 @@ void update_button(button_t* but) {
     if (but->status == ON) {
       msg[1] = but_id;
       msg[2] = 0;
-      msg[3] = but->velo / MSGFACT_VELO;
+      msg[3] = min(but->velo, 0) / MSGFACT_VELO;
       msg[4] = 0;
       msg[5] = 0;
       while (msgSend(6, msg)) { // note off messages are more important so keep trying
         chThdSleep(1);
       }
+      // reset filter
+      but->pres = 0;
+      but->velo = 0;
     }
     but->status = OFF;
     but->p = 0;
