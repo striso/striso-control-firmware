@@ -241,7 +241,6 @@ static int *measure_get = measure;
 static thread_t *tpReadButtons = NULL;
 
 static void adccallback(ADCDriver *adcp) {
-  adcsample_t *buffer = adcp->samples; // == adc_samples
   // invalidate buffer after DMA transfer
   cacheBufferInvalidate(adc_samples, sizeof (adc_samples) / sizeof (adcsample_t));
 
@@ -268,14 +267,14 @@ static void adccallback(ADCDriver *adcp) {
     palClearPort(out_channels_port[cur_channel+2], out_channels_portmask[cur_channel+2]);
 
     // store values
-    buttons[cur_conversion   ].on = 4095 - buffer[0];
-    buttons[cur_conversion+17].on = 4095 - buffer[1];
-    buttons[cur_conversion+34].on = 4095 - buffer[2];
-    buttons[cur_conversion+51].on = 4095 - buffer[3];
-    if (buffer[0] < (4095-KEY_DETECT) ||
-        buffer[1] < (4095-KEY_DETECT) ||
-        buffer[2] < (4095-KEY_DETECT) ||
-        buffer[3] < (4095-KEY_DETECT)) {
+    buttons[cur_conversion   ].on = 4095 - adc_samples[0];
+    buttons[cur_conversion+17].on = 4095 - adc_samples[1];
+    buttons[cur_conversion+34].on = 4095 - adc_samples[2];
+    buttons[cur_conversion+51].on = 4095 - adc_samples[3];
+    if (adc_samples[0] < (4095-KEY_DETECT) ||
+        adc_samples[1] < (4095-KEY_DETECT) ||
+        adc_samples[2] < (4095-KEY_DETECT) ||
+        adc_samples[3] < (4095-KEY_DETECT)) {
           *measure_put++ = cur_conversion;
     }
 
@@ -287,10 +286,10 @@ static void adccallback(ADCDriver *adcp) {
       palSetPort(out_channels_port[cur_channel+1], out_channels_portmask[cur_channel+1]);
       palSetPort(out_channels_port[cur_channel+2], out_channels_portmask[cur_channel+2]);
 
-      buttons[next_note_id   ].p = 4095 - buffer[0];
-      buttons[next_note_id+17].p = 4095 - buffer[1];
-      buttons[next_note_id+34].p = 4095 - buffer[2];
-      buttons[next_note_id+51].p = 4095 - buffer[3];
+      buttons[next_note_id   ].p = 4095 - adc_samples[0];
+      buttons[next_note_id+17].p = 4095 - adc_samples[1];
+      buttons[next_note_id+34].p = 4095 - adc_samples[2];
+      buttons[next_note_id+51].p = 4095 - adc_samples[3];
 
       cur_phase = 1;
     } break;
@@ -300,10 +299,10 @@ static void adccallback(ADCDriver *adcp) {
       /* Drain new channels */
       palClearPort(out_channels_port[cur_channel+1], out_channels_portmask[cur_channel+1]);
 
-      buttons[next_note_id   ].s0 = 4095 - buffer[0];
-      buttons[next_note_id+17].s0 = 4095 - buffer[1];
-      buttons[next_note_id+34].s0 = 4095 - buffer[2];
-      buttons[next_note_id+51].s0 = 4095 - buffer[3];
+      buttons[next_note_id   ].s0 = 4095 - adc_samples[0];
+      buttons[next_note_id+17].s0 = 4095 - adc_samples[1];
+      buttons[next_note_id+34].s0 = 4095 - adc_samples[2];
+      buttons[next_note_id+51].s0 = 4095 - adc_samples[3];
 
       cur_phase = 2;
     } break;
@@ -313,10 +312,10 @@ static void adccallback(ADCDriver *adcp) {
       /* Drain new channels */
       palClearPort(out_channels_port[cur_channel+2], out_channels_portmask[cur_channel+2]);
 
-      buttons[next_note_id   ].s1 = 4095 - buffer[0];
-      buttons[next_note_id+17].s1 = 4095 - buffer[1];
-      buttons[next_note_id+34].s1 = 4095 - buffer[2];
-      buttons[next_note_id+51].s1 = 4095 - buffer[3];
+      buttons[next_note_id   ].s1 = 4095 - adc_samples[0];
+      buttons[next_note_id+17].s1 = 4095 - adc_samples[1];
+      buttons[next_note_id+34].s1 = 4095 - adc_samples[2];
+      buttons[next_note_id+51].s1 = 4095 - adc_samples[3];
 
       cur_phase = 3;
     } break;
@@ -324,10 +323,10 @@ static void adccallback(ADCDriver *adcp) {
       /* Open old channels */
       palSetPort(out_channels_port[cur_channel+2], out_channels_portmask[cur_channel+2]);
 
-      buttons[next_note_id   ].s2 = 4095 - buffer[0];
-      buttons[next_note_id+17].s2 = 4095 - buffer[1];
-      buttons[next_note_id+34].s2 = 4095 - buffer[2];
-      buttons[next_note_id+51].s2 = 4095 - buffer[3];
+      buttons[next_note_id   ].s2 = 4095 - adc_samples[0];
+      buttons[next_note_id+17].s2 = 4095 - adc_samples[1];
+      buttons[next_note_id+34].s2 = 4095 - adc_samples[2];
+      buttons[next_note_id+51].s2 = 4095 - adc_samples[3];
 
       // Next channel
       measure_get++;
