@@ -622,6 +622,20 @@ void update_button(button_t* but) {
   if (but->on > but->key_detect + key_detect2 + but->key_detect3) {
 
     s_new = calibrate(linearize(but->p), but);
+    // four corner correction algoritm
+    if (but->key_detect3) {
+      for (button_t* but2 = &buttons[but_id % 17]; but2 < &buttons[N_BUTTONS]; but2 = &but2[17]) {
+        if (but != but2 && but2->key_detect3 && but2->status) {
+          int32_t s_new2 = calibrate(linearize(but2->p), but2);
+          if (s_new2 > s_new) {
+            s_new -= (s_new2 - s_new) / 2;
+          } else {
+            s_new -= (s_new2 - s_new);
+          }
+          break;
+        }
+      }
+    }
     update_and_filter(&but->pres, &but->velo, s_new);
 
     // if button is off start integration timer
@@ -961,15 +975,19 @@ static void ThreadReadButtons(void *arg) {
             }
             for (int n = 0; n < 4; n++) {
               for (int k = n+1; k < 4; k++) {
-                // reduce sensitivity when three corners are pressed
-                if (buttons[note_id + n * 17].status == ON && buttons[note_id + k * 17].status == ON &&
-                    (buttons[b + k * 17].status == ON || buttons[b + n * 17].status == ON)) {
-                  buttons[b + n * 17].key_detect3 = KEY_DETECT3;
-                  buttons[b + k * 17].key_detect3 = KEY_DETECT3;
-                  // do not set correction when four corners are pressed
-                  if (buttons[b + n * 17].status == ON && buttons[b + k * 17].status == ON) {
+                if (buttons[note_id + n * 17].status != OFF && buttons[note_id + k * 17].status != OFF &&
+                    (buttons[b + k * 17].status != OFF || buttons[b + n * 17].status != OFF)) {
+                  if (buttons[b + n * 17].status != OFF && buttons[b + k * 17].status != OFF) {
+                    // four corners pressed, do not set correction and reduce sensitivity
                     set_oct[n] = false;
                     set_oct[k] = false;
+                    buttons[b + n * 17].key_detect3 = KEY_DETECT3;
+                    buttons[b + k * 17].key_detect3 = KEY_DETECT3;
+                  } else {
+                    // three corners pressed, only reduce sensitivity for not pressed corner.
+                    // | 1 as signal to the four corner correction algoritm
+                    buttons[b + n * 17].key_detect3 = KEY_DETECT3 * (buttons[b + k * 17].status != OFF) | 1;
+                    buttons[b + k * 17].key_detect3 = KEY_DETECT3 * (buttons[b + n * 17].status != OFF) | 1;
                   }
                 }
               }
