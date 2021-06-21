@@ -338,13 +338,11 @@ static void adccallback(ADCDriver *adcp) {
         if (measure_put - measure < MIN_MEASURES) {
           // switch to delay phase
           cur_conversion = 20 + 4 * (measure_put - measure);
-          next_note_id = 16; // process all but last notes to keep from hanging
-          led_updown(1 << (cur_conversion-20));
+          next_note_id = 16; // process all but last notes to keep from hanging at note_id 0
         } else {
           // switch to detection phase
           cur_conversion = 0;
           next_note_id = 0;
-          led_updown(0x0000);
         }
         measure_put = measure;
         cur_channel = 0;
