@@ -180,7 +180,6 @@ struct struct_button {
   int timer;
   int but_id;
   int src_id;
-  button_t* prev_but;
 };
 
 #ifdef USE_BAS
@@ -559,10 +558,7 @@ float powf_schlick(const float a, const float b) {
 void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
   int32_t old_s = *s;
   *s = ((FILT-1) * (old_s + *v) + s_new) / FILT;
-  if (*s < 0 && old_s < 0) {
-    *s = 0;
-    *v = 0;
-  } else if (*s >= INTERNAL_ONE) {
+  if (*s >= INTERNAL_ONE) {
     *s = INTERNAL_ONE - 1;
     *v = 0;
   } else {
@@ -614,7 +610,7 @@ void update_button(button_t* but) {
   int msg[8];
   msg[0] = but->src_id;
 
-  int key_detect2 = KEY_DETECT2 * (col_pressed[but->src_id][but_id % 17] - (but->status != OFF) > 1);
+  int key_detect2 = KEY_DETECT2 * (col_pressed[but->src_id][but_id % 17] - (but->status != OFF) >= 1);
 
   if (but->on > but->key_detect + key_detect2 + but->key_detect3) {
 
@@ -647,9 +643,9 @@ void update_button(button_t* but) {
       but->timer -= but->pres;
     }
     // note off if .pres is too low even though .on is high enough
-    if (but->pres < MSGFACT && but->status == ON) {
+    else if (but->pres < MSGFACT && but->status == ON) {
       but->status = STARTING;
-      but->timer = INTEGRATED_PRES_TRESHOLD + (but->key_detect3 != 0) * but->pres;
+      but->timer = INTEGRATED_PRES_TRESHOLD;
 
       msg[1] = but_id;
       msg[2] = 0;
@@ -686,7 +682,7 @@ void update_button(button_t* but) {
 
       msg[1] = but_id;
       msg[2] = but->pres / MSGFACT;
-      msg[3] = but->velo / MSGFACT_VELO;
+      msg[3] = but->velo / MSGFACT_VELO; // but->on;// s_new / MSGFACT; //
       msg[4] = but_x / MSGFACT;
       msg[5] = but_y / MSGFACT;
       msgSend(6, msg);
@@ -703,14 +699,14 @@ void update_button(button_t* but) {
       while (msgSend(6, msg)) { // note off messages are more important so keep trying
         chThdSleep(1);
       }
-      // reset filter
-      but->pres = 0;
-      but->velo = 0;
     }
     but->status = OFF;
     but->p = 0;
     buttons_pressed[but->src_id]--;
     col_pressed[but->src_id][but_id % 17]--;
+    // reset filter
+    but->pres = 0;
+    but->velo = 0;
   } else {
     but->p = 0;
   }
@@ -979,8 +975,8 @@ static void ThreadReadButtons(void *arg) {
                     // four corners pressed, do not set correction and reduce sensitivity
                     set_oct[n] = false;
                     set_oct[k] = false;
-                    buttons[b + n * 17].key_detect3 = KEY_DETECT3;
-                    buttons[b + k * 17].key_detect3 = KEY_DETECT3;
+                    buttons[b + n * 17].key_detect3 = KEY_DETECT3 | 1;
+                    buttons[b + k * 17].key_detect3 = KEY_DETECT3 | 1;
                   } else {
                     // three corners pressed, only reduce sensitivity for not pressed corner.
                     // | 1 as signal to the four corner correction algoritm
@@ -1107,19 +1103,25 @@ void ButtonReadStart(void) {
     buttons[n].c_force = CALIB_FORCE;
     buttons[n].key_detect = KEY_DETECT;
     buttons[n].key_detect3 = 0;
-    buttons[n].prev_but = &buttons[(n/17) * 17 + ((n+17-1) % 17)];
     buttons[n].zero_time = 0;
     buttons[n].zero_max = 0;
     buttons[n].pres = 0;
     buttons[n].velo = 0;
   }
+  // disable not existing buttons
+  buttons[52].key_detect = 4095;
+  buttons[54].key_detect = 4095;
+  buttons[57].key_detect = 4095;
+  buttons[59].key_detect = 4095;
+  buttons[61].key_detect = 4095;
+  buttons[64].key_detect = 4095;
+  buttons[66].key_detect = 4095;
 #ifdef USE_BAS
   for (int n=0; n<N_BUTTONS_BAS; n++) {
     buttons_bas[n].but_id = n;
     buttons_bas[n].src_id = ID_BAS;
     buttons_bas[n].c_force = (ADCFACT>>6) / 6;//calib_bas[n];//(ADCFACT>>6) / 2;
     buttons_bas[n].c_offset = ADC_OFFSET;
-    buttons_bas[n].prev_but = &buttons_bas[(n/17) * 17 + ((n+17-1) % 17)];
   }
 #endif
 
