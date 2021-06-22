@@ -34,18 +34,21 @@
 #endif
 
 #define INTERNAL_ONE (1<<24)
-#define ADCFACT (1<<12)  // factor from adc sample to INTERNAL_ONE
+#define ADC_BITS 12
+#define ADC_MAX ((1<<ADC_BITS)-1)
+#define ADCFACT (INTERNAL_ONE >> ADC_BITS)  // factor from adc sample to INTERNAL_ONE
 #define VELOFACT 32      // extra factor for velocity
 #define MSGFACT (1<<11)  // factor from 14 bit message to INTERNAL_ONE
 #define MSGFACT_VELO (MSGFACT/VELOFACT)
 #define FILT 8  // min: 1 (no filter), max: 64 (1<<32 / INTERNAL_ONE)
-#define FILTV 64 // min: 1 (no filter), max: 64 (1<<32 / INTERNAL_ONE)
+#define FILTV 8 // min: 1 (no filter), max: 64 (1<<32 / INTERNAL_ONE)
 #define ZERO_LEVEL_OFFSET 4
 #define COMMON_CHANNEL_FILT 0.5
 #define KEY_DETECT 64   // key_detect threshold
 #define KEY_DETECT2 32  // additional threshold when another key in the column is pressed
 #define KEY_DETECT3 256 // additional threshold when 3 or 4 corners are pressed
 #define MIN_MEASURES 4 // minimum notes to measure, must be >= 2
+#define MULTISAMPLE 4  // multisampling of pressure, also hardcoded in some places
 
 #define INTEGRATED_PRES_TRESHOLD (INTERNAL_ONE/8)
 #define SENDFACT    config.message_interval
@@ -280,52 +283,69 @@ static void adccallback(ADCDriver *adcp) {
     cur_conversion = next_conversion;
   } else if (cur_conversion == 17) { // key measurement phase
     switch (cur_phase) {
-    case 0: {
-      /* Open old channels */
-      palSetPort(out_channels_port[cur_channel+1], out_channels_portmask[cur_channel+1]);
-      palSetPort(out_channels_port[cur_channel+2], out_channels_portmask[cur_channel+2]);
-
+    case 0: { // read whole button, 4x multisampled (MULTISAMPLE hardcoded)
       buttons[next_note_id   ].p = 4095 - adc_samples[0];
       buttons[next_note_id+17].p = 4095 - adc_samples[1];
       buttons[next_note_id+34].p = 4095 - adc_samples[2];
       buttons[next_note_id+51].p = 4095 - adc_samples[3];
 
-      cur_phase = 1;
+      cur_phase++;
     } break;
-    case 1: {
+    case 1:
+    case 2: {
+      buttons[next_note_id   ].p += 4095 - adc_samples[0];
+      buttons[next_note_id+17].p += 4095 - adc_samples[1];
+      buttons[next_note_id+34].p += 4095 - adc_samples[2];
+      buttons[next_note_id+51].p += 4095 - adc_samples[3];
+
+      cur_phase++;
+    } break;
+    case 3: {
+      /* Open old channels */
+      palSetPort(out_channels_port[cur_channel+1], out_channels_portmask[cur_channel+1]);
+      palSetPort(out_channels_port[cur_channel+2], out_channels_portmask[cur_channel+2]);
+
+      buttons[next_note_id   ].p = buttons[next_note_id   ].p + 4095 - adc_samples[0];
+      buttons[next_note_id+17].p = buttons[next_note_id+17].p + 4095 - adc_samples[1];
+      buttons[next_note_id+34].p = buttons[next_note_id+34].p + 4095 - adc_samples[2];
+      buttons[next_note_id+51].p = buttons[next_note_id+51].p + 4095 - adc_samples[3];
+
+      cur_phase = 100;
+    } break;
+    case 100: { // read s0
       /* Open old channels */
       palSetPort(out_channels_port[cur_channel+0], out_channels_portmask[cur_channel+0]);
       /* Drain new channels */
       palClearPort(out_channels_port[cur_channel+1], out_channels_portmask[cur_channel+1]);
 
-      buttons[next_note_id   ].s0 = 4095 - adc_samples[0];
-      buttons[next_note_id+17].s0 = 4095 - adc_samples[1];
-      buttons[next_note_id+34].s0 = 4095 - adc_samples[2];
-      buttons[next_note_id+51].s0 = 4095 - adc_samples[3];
+      buttons[next_note_id   ].s0 = (4095 - adc_samples[0]) * MULTISAMPLE;
+      buttons[next_note_id+17].s0 = (4095 - adc_samples[1]) * MULTISAMPLE;
+      buttons[next_note_id+34].s0 = (4095 - adc_samples[2]) * MULTISAMPLE;
+      buttons[next_note_id+51].s0 = (4095 - adc_samples[3]) * MULTISAMPLE;
 
-      cur_phase = 2;
+      cur_phase = 101;
     } break;
-    case 2: {
+    case 101: { // read s1
       /* Open old channels */
       palSetPort(out_channels_port[cur_channel+1], out_channels_portmask[cur_channel+1]);
       /* Drain new channels */
       palClearPort(out_channels_port[cur_channel+2], out_channels_portmask[cur_channel+2]);
 
-      buttons[next_note_id   ].s1 = 4095 - adc_samples[0];
-      buttons[next_note_id+17].s1 = 4095 - adc_samples[1];
-      buttons[next_note_id+34].s1 = 4095 - adc_samples[2];
-      buttons[next_note_id+51].s1 = 4095 - adc_samples[3];
+      buttons[next_note_id   ].s1 = (4095 - adc_samples[0]) * MULTISAMPLE;
+      buttons[next_note_id+17].s1 = (4095 - adc_samples[1]) * MULTISAMPLE;
+      buttons[next_note_id+34].s1 = (4095 - adc_samples[2]) * MULTISAMPLE;
+      buttons[next_note_id+51].s1 = (4095 - adc_samples[3]) * MULTISAMPLE;
 
-      cur_phase = 3;
+      cur_phase = 102;
     } break;
-    case 3: {
+    case 102: { // read s2
       /* Open old channels */
       palSetPort(out_channels_port[cur_channel+2], out_channels_portmask[cur_channel+2]);
 
-      buttons[next_note_id   ].s2 = 4095 - adc_samples[0];
-      buttons[next_note_id+17].s2 = 4095 - adc_samples[1];
-      buttons[next_note_id+34].s2 = 4095 - adc_samples[2];
-      buttons[next_note_id+51].s2 = 4095 - adc_samples[3];
+      buttons[next_note_id   ].s2 = (4095 - adc_samples[0]) * MULTISAMPLE;
+      buttons[next_note_id+17].s2 = (4095 - adc_samples[1]) * MULTISAMPLE;
+      buttons[next_note_id+34].s2 = (4095 - adc_samples[2]) * MULTISAMPLE;
+      buttons[next_note_id+51].s2 = (4095 - adc_samples[3]) * MULTISAMPLE;
 
       // Next channel
       measure_get++;
@@ -371,7 +391,7 @@ static void adccallback(ADCDriver *adcp) {
        When more than MIN_MEASURES buttons are measured it slows down, increasing
        the velocity sensitivity */
     cur_conversion++;
-    if (cur_conversion >= 20 + 4 * MIN_MEASURES) {
+    if (cur_conversion >= 20 + (MULTISAMPLE + 3) * MIN_MEASURES) {
       // switch to detection phase
       cur_conversion = 0;
       next_note_id = 0;
@@ -580,7 +600,7 @@ int32_t linearize(int32_t s) {
   return ADCFACT * s;
 #else
   /* convert adc value to force */
-  return (ADCFACT>>6) * s/(4095-s+1);
+  return (ADCFACT>>6) * s/((MULTISAMPLE*4095)-s+1);
 #endif // CALIBRATION_MODE
 }
 
@@ -952,11 +972,11 @@ static void ThreadReadButtons(void *arg) {
         */
         float oct_fact[4] = {1.0f};
         for (int n = 0; n < 4; n++) {
-          float fact = 1.0f + buttons[note_id + n * 17].p * (0.05f / 0.9f / 4095.0f);
+          float fact = 1.0f + buttons[note_id + n * 17].p * (0.05f / 0.9f / (MULTISAMPLE*4095.0f));
           oct_fact[n] = max(oct_fact[n], fact);
           for (int k = n+1; k < 4; k++) {
             fact = 1.0f + (min(buttons[note_id + n * 17].p, buttons[note_id + k * 17].p) - (KEY_DETECT+KEY_DETECT2))
-                   * (0.9f / 0.95f / 4095.0f);
+                   * (0.9f / 0.95f / (MULTISAMPLE*4095.0f));
             oct_fact[n] = max(oct_fact[n], fact);
             oct_fact[k] = max(oct_fact[k], fact);
           }
