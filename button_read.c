@@ -45,8 +45,8 @@
 #define ZERO_LEVEL_OFFSET 4
 #define COMMON_CHANNEL_FILT 0.5
 #define KEY_DETECT 64   // key_detect threshold
-#define KEY_DETECT2 32  // additional threshold when another key in the column is pressed
-#define KEY_DETECT3 256 // additional threshold when 3 or 4 corners are pressed
+#define KEY_DETECT2 (256-KEY_DETECT)  // additional threshold when another key in the column is pressed
+#define KEY_DETECT3 (320-KEY_DETECT2-KEY_DETECT) // additional threshold when 3 or 4 corners are pressed
 #define MIN_MEASURES 4 // minimum notes to measure, must be >= 2
 #define MULTISAMPLE 4  // multisampling of pressure, also hardcoded in some places
 

@@ -270,7 +270,7 @@ class Instrument {
         int midi_channel_offset = 1;
         float midi_bend_range = 48.0;
         float bend_sensitivity = 0.25;
-        float pres_sensitivity = 1.5f;
+        float pres_sensitivity = 1.0f;
         float velo_sensitivity = 1.0f;
 
         Instrument(int* c0, int* c1, int n_buttons, synth_interface_t* si) {
@@ -408,15 +408,15 @@ class Instrument {
                         } return;
                         // row 3: 17 19 21  6  8 10 12 14 16
                         case (17): {
-                            pres_sensitivity = 1.0f;
+                            pres_sensitivity = 0.67f;
                             ws2812_write_led(0, 1, 1, 0);
                         } return;
                         case (19): {
-                            pres_sensitivity = 1.5f;
+                            pres_sensitivity = 1.0f;
                             ws2812_write_led(0, 4, 4, 0);
                         } return;
                         case (21): {
-                            pres_sensitivity = 2.0f;
+                            pres_sensitivity = 1.5f;
                             ws2812_write_led(0, 12, 12, 0);
                         } return;
                         case (6): {
@@ -621,7 +621,8 @@ class Instrument {
                         buttons[but].state = STATE_ON;
                         buttons[but].midinote = buttons[but].midinote_base + start_note_offset;
                         buttons[but].start_note_offset = start_note_offset;
-                        int velo = 0 + buttons[but].vpres * velo_sensitivity * 256;
+                        // multiply velo by 2 to cover full midi range on note on
+                        int velo = 0 + buttons[but].vpres * velo_sensitivity * 128 * 2;
                         if (velo > 127) velo = 127;
                         else if (velo < 1) velo = 1;
                         MidiSend3(MIDI_NOTE_ON | midi_channel_offset,
@@ -724,7 +725,7 @@ class Instrument {
 
                 } else { // Note off
                     buttons[but].state = STATE_OFF;
-                    int velo = 0 - buttons[but].vpres * velo_sensitivity * 256;
+                    int velo = 0 - buttons[but].vpres * velo_sensitivity * 128 * 2;
                     if (velo > 127) velo = 127;
                     else if (velo < 0) velo = 0;
                     MidiSend3(MIDI_NOTE_OFF | midi_channel_offset,
@@ -863,7 +864,7 @@ class Instrument {
                 buttons[but].state = STATE_OFF;
 
 #ifdef USE_MIDI_OUT
-                int velo = 0 - buttons[but].vpres * velo_sensitivity * 256;
+                int velo = 0 - buttons[but].vpres * velo_sensitivity * 128 * 2;
                 if (velo > 127) velo = 127;
                 else if (velo < 0) velo = 0;
                 MidiSend3(MIDI_NOTE_OFF | (midi_channel_offset + buttons[but].voice),
@@ -902,7 +903,8 @@ class Instrument {
                 last_button = but;
 
 #ifdef USE_MIDI_OUT
-                int velo = 0 + buttons[but].vpres * velo_sensitivity * 256;
+                // multiply velo by 2 to cover full midi range on note on
+                int velo = 0 + buttons[but].vpres * velo_sensitivity * 128 * 2;
                 if (velo > 127) velo = 127;
                 else if (velo < 1) velo = 1;
 
