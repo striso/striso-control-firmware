@@ -340,12 +340,8 @@ class Instrument {
         }
 
         void set_notegen1(float g) {
-            if (g < 6.85714285714286f) {
-                g = 6.85714285714286f;
-            } else if (g > 7.2f) {
-                g = 7.2f;
-            }
-            notegen1 = g;
+            // keep generator within syntonic continuum range
+            notegen1 = clamp(g, 6.85714285714286f, 7.2f);
             update_leds();
         }
 
@@ -624,8 +620,7 @@ class Instrument {
                         buttons[but].start_note_offset = start_note_offset;
                         // multiply velo by 2 to cover full midi range on note on
                         int velo = 0 + buttons[but].vpres * velo_sensitivity * 128 * 2;
-                        if (velo > 127) velo = 127;
-                        else if (velo < 1) velo = 1;
+                        velo = clamp(velo, 1, 127);
                         MidiSend3(MIDI_NOTE_ON | midi_channel_offset,
                                         buttons[but].midinote, velo);
 
@@ -640,8 +635,7 @@ class Instrument {
                         float d; // calculate direction for hysteresis
                         d = (buttons[but].last_pres > (presf)) * 0.5 - 0.25;
                         int pres = presf * 127 + 0.5 + d;
-                        if (pres > 127) pres = 127;
-                        else if (pres < 0) pres = 0;
+                        pres = clamp(pres, 0, 127);
 
                         if (pres != buttons[but].last_pres) {
                             MidiSend3(MIDI_POLY_PRESSURE | midi_channel_offset,
@@ -676,8 +670,7 @@ class Instrument {
                         if (config.midi_pres != CFG_POLY_PRESSURE) {
                             d = (buttons[0].last_pres > (presf)) * 0.5 - 0.25;
                             int pres = presf * 127 + 0.5 + d;
-                            if (pres > 127) pres = 127;
-                            else if (pres < 0) pres = 0;
+                            pres = clamp(pres, 0, 127);
                             if (pres != buttons[0].last_pres) {
                                 if (config.midi_pres == CFG_CHANNEL_PRESSURE) {
                                     MidiSend2(MIDI_CHANNEL_PRESSURE | midi_channel_offset,
@@ -693,8 +686,7 @@ class Instrument {
                             x = pow3(x) * bend_sensitivity;
                             d = (buttons[0].last_bend > (0x2000 + x * 0x2000)) * 0.5 - 0.25;
                             int bend = 0x2000 + x * 0x2000 + 0.5 + d;
-                            if (bend >= 0x4000) bend = 0x3fff;
-                            else if (bend < 0) bend = 0;
+                            bend = clamp(bend, 0, 0x3fff);
                             if (bend != buttons[0].last_bend) {
                                 MidiSend3(MIDI_PITCH_BEND | midi_channel_offset,
                                           bend & 0x7f, (bend >> 7) & 0x7f);
@@ -703,8 +695,7 @@ class Instrument {
                         } else if (config.midi_x < 120) {
                             d = (buttons[0].last_bend > (64 + x * 64)) * 0.5 - 0.25;
                             int bend = 64 + x * 64 + 0.5 + d;
-                            if (bend > 127) bend = 127;
-                            else if (bend < 0) bend = 0;
+                            bend = clamp(bend, 0, 127);
                             if (bend != buttons[0].last_bend) {
                                 MidiSend3(MIDI_CONTROL_CHANGE | midi_channel_offset,
                                                 config.midi_x, bend);
@@ -713,8 +704,7 @@ class Instrument {
                         }
                         d = (buttons[0].last_tilt > (64 + y * 64)) * 0.5 - 0.25;
                         int tilt = 64 + y * 64 + 0.5 + d;
-                        if (tilt > 127) tilt = 127;
-                        else if (tilt < 0) tilt = 0;
+                        tilt = clamp(tilt, 0, 127);
                         if (tilt != buttons[0].last_tilt) {
                             if (config.midi_y < 120) {
                                 MidiSend3(MIDI_CONTROL_CHANGE | midi_channel_offset,
@@ -727,8 +717,7 @@ class Instrument {
                 } else { // Note off
                     buttons[but].state = STATE_OFF;
                     int velo = 0 - buttons[but].vpres * velo_sensitivity * 128 * 2;
-                    if (velo > 127) velo = 127;
-                    else if (velo < 0) velo = 0;
+                    velo = clamp(velo, 0, 127);
                     MidiSend3(MIDI_NOTE_OFF | midi_channel_offset,
                                     buttons[but].midinote, velo);
                     if (but == portamento_button) {
@@ -866,8 +855,7 @@ class Instrument {
 
 #ifdef USE_MIDI_OUT
                 int velo = 0 - buttons[but].vpres * velo_sensitivity * 128 * 2;
-                if (velo > 127) velo = 127;
-                else if (velo < 0) velo = 0;
+                velo = clamp(velo, 0, 127);
                 MidiSend3(MIDI_NOTE_OFF | (midi_channel_offset + buttons[but].voice),
                                    buttons[but].midinote, velo);
 #endif
@@ -906,8 +894,7 @@ class Instrument {
 #ifdef USE_MIDI_OUT
                 // multiply velo by 2 to cover full midi range on note on
                 int velo = 0 + buttons[but].vpres * velo_sensitivity * 128 * 2;
-                if (velo > 127) velo = 127;
-                else if (velo < 1) velo = 1;
+                velo = clamp(velo, 1, 127);
 
                 MidiSend3(MIDI_NOTE_ON | (midi_channel_offset + buttons[but].voice),
                                    buttons[but].midinote, velo);
@@ -936,24 +923,18 @@ class Instrument {
             float d; // calculate direction for hysteresis
             d = (buttons[but].last_pres > (presf)) * 0.5 - 0.25;
             int pres = presf * 127 + 0.5 + d;
-            if (pres > 127) pres = 127;
-            else if (pres < 0) pres = 0;
+            pres = clamp(pres, 0, 127);
 
             d = (buttons[but].last_tilt > (64 + buttons[but].but_y * 64)) * 0.5 - 0.25;
             int tilt = 64 + buttons[but].but_y * 64 + 0.5 + d;
-            if (tilt > 127) tilt = 127;
-            else if (tilt < 0) tilt = 0;
+            tilt = clamp(tilt, 0, 127);
 
             pb = (pb
                 + buttons[but].note - buttons[but].midinote)
                 * (0x2000 / midi_bend_range) + 0x2000;
             d = (buttons[but].last_pitchbend > pb) * 0.5 - 0.25;
             int pitchbend = pb + 0.5 + d;
-            if (pitchbend >= 0x4000) {
-                pitchbend = 0x3fff;
-            } else if (pitchbend < 0) {
-                pitchbend = 0;
-            }
+            pitchbend = clamp(pitchbend, 0, 0x3fff);
 
             // pitchbend is also used for tuning and glissando
             if (pitchbend != buttons[but].last_pitchbend) {
@@ -973,8 +954,7 @@ class Instrument {
             }
             if (config.mpe_x < 120) {
                 int bend = 64.5 + buttons[but].but_x * 64;
-                if (bend > 127) bend = 127;
-                else if (bend < 0) bend = 0;
+                bend = clamp(bend, 0, 127);
                 if (bend != buttons[but].last_bend) {
                     MidiSend3(MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
                                     config.mpe_x, bend);
@@ -993,8 +973,7 @@ class Instrument {
                 // TODO: make contvelo CC configurable
                 if (velof > 0) {
                     int velo = 0 + velof * 256;
-                    if (velo > 127) velo = 127;
-                    else if (velo < 0) velo = 0;
+                    velo = clamp(velo, 0, 127);
                     if (velo != buttons[but].last_velo) {
                         MidiSend3(MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
                                         73, velo);
@@ -1007,8 +986,7 @@ class Instrument {
                     }
                 } else {
                     int rvelo = 0 - velof * 256;
-                    if (rvelo > 127) rvelo = 127;
-                    else if (rvelo < 0) rvelo = 0;
+                    rvelo = clamp(rvelo, 0, 127);
                     if (rvelo != buttons[but].last_rvelo) {
                         MidiSend3(MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
                                         72, rvelo);
