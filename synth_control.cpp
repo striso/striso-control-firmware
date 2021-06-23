@@ -83,6 +83,7 @@ float powf_schlick_d(const float a, const float b)
 #define pow3(x) ((x)*(x)*(x))
 #define max(x, y) ((x)>(y)?(x):(y))
 #define min(x, y) ((x)<(y)?(x):(y))
+#define clamp(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 
 void update_leds(void);
 void set_midi_mode(midi_mode_t mode);
@@ -794,14 +795,14 @@ class Instrument {
                             but_y += w * buttons[b].but_y;
                         }
                     }
-                    buttons[but].pres = pres;
-                    if (sw == 0) sw = 1;
-                    if (note > 0.1) {
+                    buttons[but].pres = min(pres, 1.0f);
+                    buttons[but].vpres = clamp(vpres, -1.0f, 1.0f);
+
+                    if (sw > 0.0f) {
                         buttons[but].note = note / sw;
+                        buttons[but].but_x = but_x / sw;
+                        buttons[but].but_y = but_y / sw;
                     }
-                    buttons[but].vpres = vpres;
-                    buttons[but].but_x = but_x / sw;
-                    buttons[but].but_y = but_y / sw;
 
                     update_voice(but);
                     buttons[but].pres = temp_pres;
