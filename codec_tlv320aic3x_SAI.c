@@ -112,15 +112,15 @@ void codec_aic3x_init(uint16_t samplerate) {
   // Set Audio data word length = 32 bits
   aic3xWriteRegister(AIC3X_ASD_INTF_CTRLB, 0b00110000);
   // Route Line1LP to the Left ADC, Power up Left ADC
-  //aic3xWriteRegister(LINE1L_2_LADC_CTRL, 0b00000100);
+  // aic3xWriteRegister(LINE1L_2_LADC_CTRL, 0b00000100);
   // Route Line2L to the Left ADC
-  // aic3xWriteRegister(17, 0b00001111);
+  aic3xWriteRegister(LINE2L_2_LADC_CTRL, 0b00001111);
   // Power up Left ADC
   // aic3xWriteRegister(LINE1L_2_LADC_CTRL, 0b01111100);
   // Route Line1RP to the Right ADC, Power up Right ADC
   // aic3xWriteRegister(LINE1R_2_RADC_CTRL, 0b00000100);
   // Route Line2R to the Right ADC
-  // aic3xWriteRegister(18, 0b11110000);
+  aic3xWriteRegister(LINE2R_2_RADC_CTRL, 0b11110000);
   // Power up Right ADC
   // aic3xWriteRegister(LINE1R_2_RADC_CTRL, 0b01111100);
   // Unmute Left PGA, set gain to 0 dB
@@ -138,9 +138,9 @@ void codec_aic3x_init(uint16_t samplerate) {
   // Route Left DAC output to Left line outs
   aic3xWriteRegister(DACL1_2_LLOPM_VOL, 0x80);
   // Route Left input to Left line outs
-  // aic3xWriteRegister(PGAL_2_LLOPM_VOL, 0x80);
+  aic3xWriteRegister(PGAL_2_LLOPM_VOL, 0x80);
   // Route Right input to Right line outs
-  // aic3xWriteRegister(PGAR_2_RLOPM_VOL, 0x80);
+  aic3xWriteRegister(PGAR_2_RLOPM_VOL, 0x80);
   // Route Right DAC output to Right Line outs
   aic3xWriteRegister(DACR1_2_RLOPM_VOL, 0x80);
   // Power up Left line out ± (differential), set gain to 0dB
