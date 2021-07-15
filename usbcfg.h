@@ -37,6 +37,7 @@ extern const USBConfig usbcfg;
 extern const MidiUSBConfig midiusbcfg;
 extern const BulkUSBConfig bulkusbcfg;
 
+void init_usb_descriptor(void);
 
 #endif  /* _USBCFG_H_ */
 

@@ -1,3 +1,8 @@
+## Next release
+
+### Changed
+- Include number in product string to distinguish MIDI devices when multiple Striso boards are used
+
 ## v2.1.0 - 2021-06-21
 
 This release only works well with the new hardware revision (#141 and up).

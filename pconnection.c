@@ -85,6 +85,9 @@ static void cmd_threads(BaseSequentialStream *chp) {
 
 void InitPConnection(void) {
 
+  // initializes descriptor strings
+  init_usb_descriptor();
+
   /*
    * Initializes a serial-over-USB CDC driver.
    */

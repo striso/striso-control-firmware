@@ -19,7 +19,7 @@
 #include "ch.h"
 #include "hal.h"
 #include "usbcfg.h"
-
+#include "config.h"
 
 /*
  * Serial over USB Driver structure.
@@ -128,22 +128,24 @@ static const uint8_t vcom_string0[] = {
 };
 
 /*
- * Vendor string.
+ * Manufacturer string.
  */
-static const uint8_t vcom_string1[] = {
+static const uint8_t descriptor_manufacturer_string[] = {
   USB_DESC_BYTE(14),                    /* bLength.                         */
   USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
   'S', 0, 't', 0, 'r', 0, 'i', 0, 's', 0, 'o', 0,
 };
 
 /*
- * Device Description string.
+ * Product string.
+ * modified on initialization!
  */
-static const uint8_t vcom_string2[] = {
+static uint8_t descriptor_product_string[] = {
   USB_DESC_BYTE(26),                    /* bLength.                         */
   USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
   'S', 0, 't', 0, 'r', 0, 'i', 0, 's', 0, 'o', 0, ' ', 0,
-  'b', 0, 'o', 0, 'a', 0, 'r', 0, 'd', 0
+  'b', 0, 'o', 0, 'a', 0, 'r', 0, 'd', 0, ' ', 0,
+  ' ', 0, ' ', 0, ' ', 0, ' ', 0, ' ', 0,
 };
 
 static uint8_t descriptor_serial_string[] = {
@@ -155,10 +157,6 @@ static uint8_t descriptor_serial_string[] = {
   '0', 0, '0', 0, '0', 0, '0', 0,
   '0', 0, '0', 0, '0', 0, '0', 0,
   '0', 0, '0', 0, '0', 0, '0', 0
-};
-
-static const USBDescriptor descriptor_serial = {
-   sizeof descriptor_serial_string, descriptor_serial_string,
 };
 
 /*
@@ -175,7 +173,7 @@ static const uint8_t vcom_string4[] = {
 /* WCID implementation reference:
  *  https://github.com/pbatard/libwdi/wiki/WCID-Devices
  */
-static const uint8_t vcid_string[] = {
+static const uint8_t wcid_string[] = {
   USB_DESC_BYTE(18),                    /* bLength.                         */
   USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
   'M', 0, 'S', 0, 'F', 0, 'T', 0, '1', 0, '0', 0, '0', 0, /* MSFT100        */
@@ -187,13 +185,13 @@ static const uint8_t vcid_string[] = {
  */
 static const USBDescriptor vcom_strings[] = {
   {sizeof vcom_string0, vcom_string0},
-  {sizeof vcom_string1, vcom_string1},
-  {sizeof vcom_string2, vcom_string2},
+  {sizeof descriptor_manufacturer_string, descriptor_manufacturer_string},
+  {sizeof descriptor_product_string, descriptor_product_string},
   {sizeof descriptor_serial_string, descriptor_serial_string},
   {sizeof vcom_string4, vcom_string4}
 };
 
-static const USBDescriptor vcid_descriptor = {sizeof vcid_string, vcid_string};
+static const USBDescriptor wcid_descriptor = {sizeof wcid_string, wcid_string};
 
 void inttohex(uint32_t v, unsigned char *p){
   int nibble;
@@ -206,6 +204,28 @@ void inttohex(uint32_t v, unsigned char *p){
   }
 }
 
+/*
+ * Initialize the device specific parts of the descriptor strings.
+ */
+void init_usb_descriptor(void) {
+  uint32_t* const UID = (uint32_t*)UID_BASE;
+
+  // use microcontroller unique ID as serial number (little-endian)
+  inttohex(UID[2],&descriptor_serial_string[2]);
+  inttohex(UID[1],&descriptor_serial_string[2+16]);
+  inttohex(UID[0],&descriptor_serial_string[2+32]);
+
+  // add Striso board number to product string (if available)
+  if (devspec_id->UID[0] == UID[0] &&
+      devspec_id->UID[1] == UID[1] &&
+      devspec_id->UID[2] == UID[2]) {
+    int n;
+    for (n = 0; n < 4 && devspec_id->id[n] >= 33 && devspec_id->id[n] < 128; n++) {
+      descriptor_product_string[28 + 2*n] = devspec_id->id[n];
+    }
+    descriptor_product_string[0] = USB_DESC_BYTE(28 + 2*n);
+  }
+}
 
 /*
  * Handles the GET_DESCRIPTOR callback. All required descriptors must be
@@ -223,17 +243,10 @@ static const USBDescriptor *get_descriptor(USBDriver *usbp,
   case USB_DESCRIPTOR_CONFIGURATION:
     return &vcom_configuration_descriptor;
   case USB_DESCRIPTOR_STRING:
-    if (dindex == 3) {
-      // use microcontroller unique ID as serial number (little-endian)
-      inttohex(((uint32_t*)UID_BASE)[2],&descriptor_serial_string[2]);
-      inttohex(((uint32_t*)UID_BASE)[1],&descriptor_serial_string[2+16]);
-      inttohex(((uint32_t*)UID_BASE)[0],&descriptor_serial_string[2+32]);
-      return &descriptor_serial;
-    }
     if (dindex < 5)
       return &vcom_strings[dindex];
     if (dindex == 0xEE)
-      return &vcid_descriptor;
+      return &wcid_descriptor;
     break;
   }
   return NULL;
