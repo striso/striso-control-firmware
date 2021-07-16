@@ -345,6 +345,20 @@ class Instrument {
             update_leds();
         }
 
+        /* Rotate the layout 180 degrees */
+        void flip(void) {
+            for (int n = 0; n < BUTTONCOUNT; n++) {
+                buttons[n].coord0 = -buttons[n].coord0;
+                buttons[n].coord1 = -buttons[n].coord1;
+                // calculate note number
+                buttons[n].note = start_note_offset +
+                                  notegen0 * buttons[n].coord0 +
+                                  notegen1 * buttons[n].coord1;
+                buttons[n].midinote_base = (int)(buttons[n].note + 0.5) - start_note_offset; // careful to keep rounded value above zero
+                buttons[n].midinote = buttons[n].midinote_base;
+            }
+        }
+
         void button_message(int but, float* msg) {
             // process button message and send osc messages
             buttons[but].message(msg);
@@ -402,6 +416,7 @@ class Instrument {
                                 config.debug = 1;
                                 // led_updown(0x1111);
                             }
+                            flip();
                         } return;
                         // row 3: 17 19 21  6  8 10 12 14 16
                         case (17): {
