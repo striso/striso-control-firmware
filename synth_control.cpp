@@ -45,6 +45,8 @@ extern "C" {
 
 #define VOLUME_FACTOR 0.005f;
 
+#define VELO_MIDI_FIX 4
+
 void MidiSend1(uint8_t b0) {
     midi_usb_MidiSend1(1, b0);
 #ifdef USE_MIDI_SERIAL
@@ -652,7 +654,7 @@ class Instrument {
                         buttons[but].state = STATE_ON;
                         buttons[but].midinote = buttons[but].midinote_base + start_note_offset;
                         buttons[but].start_note_offset = start_note_offset;
-                        int velo = 0 + buttons[but].vpres * velo_sensitivity * 256;
+                        int velo = 0 + buttons[but].vpres * velo_sensitivity * 128 * VELO_MIDI_FIX;
                         if (velo > 127) velo = 127;
                         else if (velo < 1) velo = 1;
                         MidiSend3(MIDI_NOTE_ON | midi_channel_offset,
@@ -755,7 +757,7 @@ class Instrument {
 
                 } else { // Note off
                     buttons[but].state = STATE_OFF;
-                    int velo = 0 - buttons[but].vpres * velo_sensitivity * 256;
+                    int velo = 0 - buttons[but].vpres * velo_sensitivity * 128 * VELO_MIDI_FIX;
                     if (velo > 127) velo = 127;
                     else if (velo < 0) velo = 0;
                     MidiSend3(MIDI_NOTE_OFF | midi_channel_offset,
@@ -895,7 +897,7 @@ class Instrument {
                 buttons[but].state = STATE_OFF;
 
 #ifdef USE_MIDI_OUT
-                int velo = 0 - buttons[but].vpres * velo_sensitivity * 256;
+                int velo = 0 - buttons[but].vpres * velo_sensitivity * 128 * VELO_MIDI_FIX;
                 if (velo > 127) velo = 127;
                 else if (velo < 0) velo = 0;
                 MidiSend3(MIDI_NOTE_OFF | (midi_channel_offset + buttons[but].voice),
@@ -934,7 +936,7 @@ class Instrument {
                 last_button = but;
 
 #ifdef USE_MIDI_OUT
-                int velo = 0 + buttons[but].vpres * velo_sensitivity * 256;
+                int velo = 0 + buttons[but].vpres * velo_sensitivity * 128 * VELO_MIDI_FIX;
                 if (velo > 127) velo = 127;
                 else if (velo < 1) velo = 1;
 
