@@ -265,7 +265,7 @@ class Instrument {
         int portamento = 0;
         int last_button = 0;
         int port_voice = -1;
-        int portamento_button = -1;
+        int master_button = -1;
         synth_interface_t* synth_interface;
         int voicecount = VOICECOUNT;
         int midi_channel_offset = 1;
@@ -305,7 +305,7 @@ class Instrument {
                 if (!portamento) {
                     portamento = 1;
                     if (buttons[last_button].state == STATE_ON) {
-                        portamento_button = last_button;
+                        master_button = last_button;
                     }
                     // TODO: else check if only one button is pressed
                 }
@@ -639,10 +639,10 @@ class Instrument {
                         MidiSend3(MIDI_NOTE_ON | midi_channel_offset,
                                         buttons[but].midinote, velo);
 
-                        portamento_button = but;
+                        master_button = but;
                     }
-                    if (portamento_button == -1) {
-                        portamento_button = but;
+                    if (master_button == -1) {
+                        master_button = but;
                     }
 
                     if (config.midi_pres == CFG_POLY_PRESSURE) {
@@ -659,7 +659,7 @@ class Instrument {
                         }
                     }
 
-                    if (but == portamento_button) { // update only once like in portamento, hence use the same variable
+                    if (but == master_button) {
                         // reduce pres, bend and tilt of all pressed buttons to single values
                         float presf = 0.0f;
                         float x = 0.0f;
@@ -735,8 +735,8 @@ class Instrument {
                     velo = clamp(velo, 0, 127);
                     MidiSend3(MIDI_NOTE_OFF | midi_channel_offset,
                                     buttons[but].midinote, velo);
-                    if (but == portamento_button) {
-                        portamento_button = -1;
+                    if (but == master_button) {
+                        master_button = -1;
                     }
                 }
                 return;
@@ -750,9 +750,9 @@ class Instrument {
                 buttons[but].start_note_offset = start_note_offset;
 
                 if (portamento) {
-                    if (portamento_button == -1) {
+                    if (master_button == -1) {
                         if (get_voice(but) >= 0) {
-                            portamento_button = but;
+                            master_button = but;
                         }
                     } else {
                         // add button to portamento button
@@ -776,7 +776,7 @@ class Instrument {
                                     notegen1 * buttons[but].coord1;
                 buttons[but].timer = chVTGetSystemTime() + CLEAR_TIMER;
 
-                if (but == portamento_button) {
+                if (but == master_button) {
                     // calculate average of portamento buttons
                     float temp_pres = buttons[but].pres; // save pres for note off detection
 
@@ -829,25 +829,25 @@ class Instrument {
                         buttons[but].state = STATE_OFF;
                         if (!portamento && count == 0) {
                             // if no portamento buttons left turn off portamento
-                            portamento_button = -1;
+                            master_button = -1;
                         }
-                    } else if (but == portamento_button) {
+                    } else if (but == master_button) {
                         // find other portamento button to take over portamento voice
                         for (int n = 0; n < MAX_PORTAMENTO_BUTTONS; n++) {
                             if (portamento_buttons[n] >= 0) {
                                 buttons[portamento_buttons[n]].midinote = buttons[but].midinote;
                                 buttons[portamento_buttons[n]].voice = buttons[but].voice;
-                                portamento_button = portamento_buttons[n];
-                                voices[buttons[portamento_button].voice] = portamento_button;
+                                master_button = portamento_buttons[n];
+                                voices[buttons[master_button].voice] = master_button;
                                 portamento_buttons[n] = -1;
-                                buttons[portamento_button].state = STATE_ON;
+                                buttons[master_button].state = STATE_ON;
                                 buttons[but].state = STATE_OFF;
                                 break;
                             }
                         }
                         // if no other portamento button is found turn off portamento
                         if (buttons[but].state) {
-                            portamento_button = -1;
+                            master_button = -1;
                         }
                     } else if (but == last_button) {
                         // if last pressed button is released check if other button can take its place
