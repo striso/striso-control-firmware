@@ -93,6 +93,7 @@ typedef enum {
     STATE_ON = 1,
     STATE_PORTAMENTO = 2,
     STATE_ALT = 3,
+    STATE_TRANSPOSE = 4,
 } button_state_t;
 
 class MotionSensor {
@@ -263,8 +264,11 @@ class Instrument {
         float max_note_offset = 92;
         int altmode = 0;
         int portamento = 0;
+        int transposemode = 0;
         int last_button = 0;
         int master_button = -1;
+        int transpose_button = -1;
+        int transpose_button2 = -1;
         synth_interface_t* synth_interface;
         int voicecount = VOICECOUNT;
         int midi_channel_offset = 1;
@@ -297,7 +301,7 @@ class Instrument {
 
         void set_portamento(int p) {
             // in mono mode portamento should stay on
-            if (config.midi_mode != MIDI_MODE_MPE) {
+            if (config.midi_mode != MIDI_MODE_MPE || transposemode) {
                 return;
             }
             if (p) {
@@ -318,6 +322,27 @@ class Instrument {
                 altmode = 1;
             } else {
                 altmode = 0;
+            }
+        }
+
+        void set_free_transpose_mode(int p) {
+            if (portamento) {
+                return;
+            }
+            if (p) {
+                if (!transposemode) {
+                    transposemode = 1;
+                    if (buttons[last_button].state == STATE_ON) {
+                        transpose_button = last_button;
+                    } else {
+                        transpose_button = -1;
+                    }
+                    transpose_button2 = -1;
+                }
+            } else if (transposemode) {
+                transposemode = 0;
+                transpose_button = -1;
+                transpose_button2 = -1;
             }
         }
 
@@ -763,6 +788,17 @@ class Instrument {
                             }
                         }
                     }
+                } else if (transposemode) {
+                    if (transpose_button == -1) {
+                        if (get_voice(but) >= 0) {
+                            transpose_button = but;
+                        }
+                    } else if (buttons[transpose_button].state == STATE_ON
+                               && buttons[but].pres > 0.1) {
+                        buttons[but].state = STATE_TRANSPOSE;
+                        transpose_button2 = but;
+                        transposemode = 0;
+                    }
                 } else {
                     get_voice(but);
                 }
@@ -810,6 +846,17 @@ class Instrument {
                     update_voice(but);
                     buttons[but].pres = temp_pres;
                 }
+                else if (but == transpose_button && transpose_button2) {
+                    // calculate average of transpose buttons
+                    // TODO: quick and dirty now, improve
+                    float temp_pres = buttons[but].pres; // save pres for note off detection
+
+                    float pres = buttons[but].pres + buttons[transpose_button2].pres;
+                    buttons[but].pres = min(pres, 1.0f);
+
+                    update_voice(but);
+                    buttons[but].pres = temp_pres;
+                }
                 else if (buttons[but].state == STATE_ON) {
                     // send synth parameters
                     update_voice(but);
@@ -848,7 +895,27 @@ class Instrument {
                         if (buttons[but].state) {
                             master_button = -1;
                         }
-                    } else if (but == last_button) {
+                    } else if (but == transpose_button) {
+                        if (transpose_button2 >= 0
+                            && buttons[transpose_button2].state == STATE_TRANSPOSE) {
+                            // do free transpose
+                            change_note_offset(buttons[transpose_button].note
+                                               - buttons[transpose_button2].note);
+                            buttons[transpose_button2].midinote = buttons[transpose_button].midinote;
+                            buttons[transpose_button2].voice = buttons[transpose_button].voice;
+                            buttons[transpose_button2].start_note_offset = start_note_offset;
+                            voices[buttons[transpose_button2].voice] = transpose_button2;
+                            buttons[transpose_button2].state = STATE_ON;
+                            buttons[but].state = STATE_OFF;
+                        }
+                        transpose_button = -1;
+                        transpose_button2 = -1;
+                    } else if (buttons[but].state == STATE_TRANSPOSE) {
+                        buttons[but].state = STATE_OFF;
+                        transpose_button = -1;
+                        transpose_button2 = -1;
+                    }
+                    if (but == last_button) {
                         // if last pressed button is released check if other button can take its place
                         for (int n = 0; n < voicecount; n++) {
                             if (voices[n] >= 0 && buttons[voices[n]].state == STATE_ON) {
@@ -1073,6 +1140,8 @@ void int2float(int *msg, float *fmsg, int n) {
     }
 }
 
+unsigned int aux_button_map = 0;
+
 int synth_message(int size, int* msg) {
     float fmsg[7];
     int src = msg[0];
@@ -1089,6 +1158,7 @@ int synth_message(int size, int* msg) {
             dis.set_portamento(msg[0]);
         }
         else if (msg[0]) {
+            aux_button_map |= 1<<id;
             int dif = 12;
             if (dis.altmode) dif = 1;
             if (id == IDC_OCT_UP) {
@@ -1096,6 +1166,14 @@ int synth_message(int size, int* msg) {
             }
             if (id == IDC_OCT_DOWN) {
                 dis.change_note_offset(-dif);
+            }
+            if (aux_button_map == (1<<IDC_OCT_UP) | (1<<IDC_OCT_DOWN)) {
+                dis.set_free_transpose_mode(1);
+            }
+        } else {
+            aux_button_map &= !(1<<id);
+            if (aux_button_map != (1<<IDC_OCT_UP) | (1<<IDC_OCT_DOWN)) {
+                dis.set_free_transpose_mode(0);
             }
         }
         update_leds();

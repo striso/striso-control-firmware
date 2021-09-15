@@ -1,4 +1,10 @@
+# Changelog
+
 ## Next release
+
+### Added
+
+- Free transpose with up+down buttons pressed
 
 ### Changed
 - Include number in product string to distinguish MIDI devices when multiple Striso boards are used
