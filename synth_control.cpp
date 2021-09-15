@@ -214,7 +214,7 @@ class Button {
         float note;
         int midinote;
         int midinote_base;
-        int start_note_offset;
+        float start_note_offset;
         float pres;
         float vpres;
         int last_pres = INT32_MAX;
@@ -258,13 +258,12 @@ class Instrument {
         float notegen0 = 12.00;
         float notegen1 = 7.00;
         float note_offset = 0;
-        int start_note_offset = 62;
+        float start_note_offset = 62;
         float min_note_offset = 32;
         float max_note_offset = 92;
         int altmode = 0;
         int portamento = 0;
         int last_button = 0;
-        int port_voice = -1;
         int master_button = -1;
         synth_interface_t* synth_interface;
         int voicecount = VOICECOUNT;
@@ -283,7 +282,7 @@ class Instrument {
                 buttons[n].note = start_note_offset +
                                   notegen0 * buttons[n].coord0 +
                                   notegen1 * buttons[n].coord1;
-                buttons[n].midinote_base = (int)(buttons[n].note + 0.5) - start_note_offset; // careful to keep rounded value above zero
+                buttons[n].midinote_base = (int)(buttons[n].note - start_note_offset + 0.5); // careful to keep rounded value above zero
                 buttons[n].midinote = buttons[n].midinote_base;
             }
             for (n = 0; n < MAX_VOICECOUNT; n++) {
@@ -322,8 +321,8 @@ class Instrument {
             }
         }
 
-        int change_note_offset(int offset) {
-            int n = start_note_offset + offset;
+        int change_note_offset(float offset) {
+            float n = start_note_offset + offset;
             if (n >= min_note_offset && n <= max_note_offset) {
                 start_note_offset = n;
                 return 0;
@@ -331,7 +330,7 @@ class Instrument {
             return 1;
         }
 
-        int set_note_offset(int offset) {
+        int set_note_offset(float offset) {
             if (offset >= min_note_offset && offset <= max_note_offset) {
                 start_note_offset = offset;
                 return 0;
@@ -354,7 +353,7 @@ class Instrument {
                 buttons[n].note = start_note_offset +
                                   notegen0 * buttons[n].coord0 +
                                   notegen1 * buttons[n].coord1;
-                buttons[n].midinote_base = (int)(buttons[n].note + 0.5) - start_note_offset; // careful to keep rounded value above zero
+                buttons[n].midinote_base = (int)(buttons[n].note - start_note_offset + 0.5); // careful to keep rounded value above zero
                 buttons[n].midinote = buttons[n].midinote_base;
             }
         }
@@ -746,7 +745,7 @@ class Instrument {
             // Note on detection
             if (buttons[but].state == STATE_OFF && buttons[but].pres > 0.0) {
                 // calculate midinote only at note on
-                buttons[but].midinote = buttons[but].midinote_base + start_note_offset;
+                buttons[but].midinote = (int)(buttons[but].midinote_base + start_note_offset + 0.5);
                 buttons[but].start_note_offset = start_note_offset;
 
                 if (portamento) {
@@ -1315,7 +1314,7 @@ void update_leds(void) {
     }
 #endif
 
-    int note_offset = dis.start_note_offset - 62;
+    int note_offset = (int)(dis.start_note_offset - 62 + 0.5f);
     if      (note_offset < -12) led_updown(0x1100);
     else if (note_offset <   0) led_updown(0x0100);
     else if (note_offset >  12) led_updown(0x0011);
