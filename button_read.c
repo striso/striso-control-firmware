@@ -42,7 +42,10 @@
 #define MSGFACT_VELO (MSGFACT/VELOFACT)
 #define FILT 8  // min: 1 (no filter), max: 64 (1<<32 / INTERNAL_ONE)
 #define FILTV 8 // min: 1 (no filter), max: 64 (1<<32 / INTERNAL_ONE)
-#define ZERO_LEVEL_OFFSET 4
+#define ZERO_LEVEL_FACT 300 / 256  // safety factor for zero level. Without brackets so multiplication goes before division
+#define ZERO_LEVEL_TIME 500
+#define ZERO_LEVEL_MAX_PRES (INTERNAL_ONE/32)
+#define ZERO_LEVEL_MAX_VELO 500
 #define COMMON_CHANNEL_FILT 0.5
 #define KEY_DETECT 64   // key_detect threshold
 #define KEY_DETECT2 (256-KEY_DETECT)  // additional threshold when another key in the column is pressed
@@ -174,9 +177,9 @@ struct struct_button {
   int32_t c_force;
   int32_t c_breakpoint;
   int32_t c_force2;
+  int32_t zero_offset;
   int32_t zero_time;
   int32_t zero_max;
-  int32_t key_detect;
   int32_t key_detect3;
   float fact;
   enum button_status status;
@@ -632,7 +635,7 @@ void update_button(button_t* but) {
 
   int key_detect2 = KEY_DETECT2 * (col_pressed[but->src_id][but_id % 17] - (but->status != OFF) >= 1);
 
-  if (but->on > but->key_detect + key_detect2 + but->key_detect3) {
+  if (but->on > KEY_DETECT + key_detect2 + but->key_detect3) {
 
     s_new = calibrate(linearize(but->p), but);
     // four corner correction algoritm
@@ -651,6 +654,23 @@ void update_button(button_t* but) {
     }
     update_and_filter(&but->pres, &but->velo, s_new);
 
+#ifdef DETECT_STUCK_NOTES
+    // adjust zero pressure level dynamically
+    if (but->pres < ZERO_LEVEL_MAX_PRES
+        && but->velo < ZERO_LEVEL_MAX_VELO
+        && but->velo > -ZERO_LEVEL_MAX_VELO) {
+      if (but->pres > but->zero_max) but->zero_max = but->pres;
+      but->zero_time++;
+      if (but->zero_time > ZERO_LEVEL_TIME) {
+        but->zero_time = 0;
+        but->zero_offset = but->zero_max * ZERO_LEVEL_FACT;
+      }
+    } else {
+      but->zero_time = 0;
+      but->zero_max = 0;
+    }
+#endif
+
     // if button is off start integration timer
     if (but->status == OFF) {
       but->status = STARTING;
@@ -659,11 +679,11 @@ void update_button(button_t* but) {
       col_pressed[but->src_id][but_id % 17]++;
     }
     // if button is in start integration reduce timer
-    if (but->status == STARTING) {
-      but->timer -= but->pres;
+    if (but->status == STARTING && but->pres > but->zero_offset) {
+      but->timer -= (but->pres - but->zero_offset);
     }
     // note off if .pres is too low even though .on is high enough
-    else if (but->pres < MSGFACT && but->status == ON) {
+    else if (but->pres < (but->zero_offset + MSGFACT) && but->status == ON) {
       but->status = STARTING;
       but->timer = INTEGRATED_PRES_TRESHOLD;
 
@@ -729,6 +749,12 @@ void update_button(button_t* but) {
     but->velo = 0;
   } else {
     but->p = 0;
+#ifdef DETECT_STUCK_NOTES
+    but->zero_time++;
+    if (but->zero_time > ZERO_LEVEL_TIME) {
+      but->zero_offset = 0;
+    }
+#endif
   }
   but->fact = 1.0f;
   but->key_detect3 = 0;
@@ -937,9 +963,14 @@ static void ThreadReadButtons(void *arg) {
   while (count < 100) {
     while (count < 100 && note_id != next_note_id) {
       for (int n = 0; n < 4; n++) {
-        int kd = buttons[note_id + n * 17].on + ZERO_LEVEL_OFFSET;
-        if (kd > buttons[note_id + n * 17].key_detect) {
-          buttons[note_id + n * 17].key_detect = kd;
+        button_t* but = &buttons[note_id + n * 17];
+        if (but->on > KEY_DETECT) {
+          int32_t s_new = calibrate(linearize(but->p), but);
+          update_and_filter(&but->pres, &but->velo, s_new);
+          s_new = but->pres * ZERO_LEVEL_FACT;
+          if (s_new > but->zero_offset) {
+            but->zero_offset = s_new;
+          }
         }
       }
       // Once per cycle, after the last buttons
@@ -1085,12 +1116,11 @@ void buttonSetCalibration(void) {
   if (base_calib_force == 0x0000) base_calib_force = ((1<<18)/64);
 
   for (int n=0; n<N_BUTTONS; n++) {
-    chprintf((BaseSequentialStream *)&BDU1, "but[%d] c_force: %d key_detect: %d\r\n", n, buttons[n].c_force, buttons[n].key_detect);
+    chprintf((BaseSequentialStream *)&BDU1, "but[%d] c_force: %d zero_offset: %d\r\n", n, buttons[n].c_force, buttons[n].zero_offset);
     buttons[n].c_force = base_calib_force;
-    buttons[n].key_detect = KEY_DETECT;
     buttons[n].c_breakpoint = INT32_MAX;
   }
-  chprintf((BaseSequentialStream *)&BDU1, "c_force: %d key_detect: %d\r\n", base_calib_force, KEY_DETECT);
+  chprintf((BaseSequentialStream *)&BDU1, "c_force: %d\r\n", base_calib_force);
 }
 
 void ButtonReadStart(void) {
@@ -1121,21 +1151,24 @@ void ButtonReadStart(void) {
     buttons[n].but_id = n;
     buttons[n].src_id = ID_DIS;
     buttons[n].c_force = CALIB_FORCE;
-    buttons[n].key_detect = KEY_DETECT;
     buttons[n].key_detect3 = 0;
     buttons[n].zero_time = 0;
     buttons[n].zero_max = 0;
     buttons[n].pres = 0;
     buttons[n].velo = 0;
+    buttons[n].zero_offset = 0;
+    buttons[n].zero_time = 0;
+    buttons[n].zero_max = 0;
+    buttons[n].fact = 1.0f;
   }
   // disable not existing buttons
-  buttons[52].key_detect = 4095;
-  buttons[54].key_detect = 4095;
-  buttons[57].key_detect = 4095;
-  buttons[59].key_detect = 4095;
-  buttons[61].key_detect = 4095;
-  buttons[64].key_detect = 4095;
-  buttons[66].key_detect = 4095;
+  buttons[52].c_force = 0;
+  buttons[54].c_force = 0;
+  buttons[57].c_force = 0;
+  buttons[59].c_force = 0;
+  buttons[61].c_force = 0;
+  buttons[64].c_force = 0;
+  buttons[66].c_force = 0;
 #ifdef USE_BAS
   for (int n=0; n<N_BUTTONS_BAS; n++) {
     buttons_bas[n].but_id = n;
