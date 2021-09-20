@@ -20,6 +20,8 @@
 #include "ch.h"
 #include "hal.h"
 
+#include "ccportab.h"
+
 extern "C" {
     #include "synth.h"
     #include "ws2812.h"
@@ -27,6 +29,7 @@ extern "C" {
 }
 
 #include "config.h"
+#include "config_store.h"
 #include "striso.h"
 #include "midi_usb.h"
 #include "midi_serial.h"
@@ -44,35 +47,6 @@ extern "C" {
 #define CLEAR_TIMER TIME_MS2I(500) // interval to clear dead notes
 
 #define VOLUME_FACTOR 0.005f;
-
-/* Custom tunings */
-// key number = 17 * buttons[but].coord0 + 10 * buttons[but].coord1 + 30
-int button_number_map[61] = {
-    56, 51, 63, 58, 53, 65, 60, 55, 67, 62, 40, 35, 47, 42, 37, 49, 44,
-    39, 34, 46, 41, 36, 48, 43, 38, 50, 45, 23, 18, 30, 25, 20, 32, 27,
-    22, 17, 29, 24, 19, 31, 26, 21, 33, 28,  6,  1, 13,  8,  3, 15, 10,
-     5,  0, 12,  7,  2, 14,  9,  4, 16, 11};
-
-// offsets from 12TET in cent
-float ji7limit[17] = {
-    0.0,
-    11.7312852697778,
-    -29.3275731357177,
-    3.91000173077484,
-    15.6412870005526,
-    -33.1290943962624,
-    -13.6862861351652,
-    -1.95500086538755,
-    17.4878073957099,
-    -17.48780739571,
-    1.95500086538743,
-    13.6862861351653,
-    -27.3725722703303,
-    -15.6412870005526,
-    -3.91000173077487,
-    -31.1740935308751,
-    -11.7312852697778,
-};
 
 void MidiSend1(uint8_t b0) {
     midi_usb_MidiSend1(1, b0);
@@ -288,8 +262,10 @@ class Instrument {
         int portamento_buttons[MAX_PORTAMENTO_BUTTONS];
         float notegen0 = 12.00;
         float notegen1 = 7.00;
+        int tuning_color = 0x00aa00;
         float note_offset = 0;
         float start_note_offset = 62;
+        float tuning_note_offset = 62;
         float min_note_offset = 32;
         float max_note_offset = 92;
         int altmode = 0;
@@ -394,13 +370,22 @@ class Instrument {
         void set_notegen1(float g) {
             // keep generator within syntonic continuum range
             notegen1 = clamp(g, 6.85714285714286f, 7.2f);
+
+            // base color depending on tuning system
+            if (notegen1 < 6.94)       {tuning_color = 0x550055;}
+            else if (notegen1 < 6.957) {tuning_color = 0x0000aa;}
+            else if (notegen1 < 6.984) {tuning_color = 0x005555;}
+            else if (notegen1 < 7.010) {tuning_color = 0x00aa00;}
+            else if (notegen1 < 7.03)  {tuning_color = 0x555500;}
+            else                       {tuning_color = 0xaa0000;}
+
             update_leds();
         }
 
         void reset_note_offsets(void) {
             for (int n = 0; n < 61; n++) {
                 int but = button_number_map[n];
-                buttons[n].tuning_note_offset = 0.0f;
+                buttons[but].tuning_note_offset = 0.0f;
             }
         }
 
@@ -419,6 +404,26 @@ class Instrument {
                     buttons[but].tuning_note_offset = offsets[(n + 7) % 17] / 100;
                 }
             }
+        }
+
+        void load_tuning(int n) {
+            CC_ALIGN(8) char key[] = "fT0fifth";
+            key[2] = '0' + n;
+            notegen1 = getConfigFloat(key) / 100;
+            strset(key, 3, "oct  ");
+            notegen0 = getConfigFloat(key) / 100;
+            strset(key, 3, "off  ");
+            tuning_note_offset = 62.0f + getConfigFloat(key) / 100;
+            start_note_offset = tuning_note_offset;
+            for (int n = 0; n < 61; n++) {
+                put_button_name(n, &key[3]);
+                int but = button_number_map[n];
+                buttons[but].tuning_note_offset = getConfigFloat(key) / 100;
+            }
+            key[0] = 'h';
+            strset(key, 3, "color");
+            tuning_color = getConfigHex(key);
+            update_leds();
         }
 
         /* Rotate the layout 180 degrees */
@@ -547,94 +552,71 @@ class Instrument {
                             config.zero_offset = 8 * ((1<<24) / 128);
                             led_rgb3(168, 84, 0);
                         } return;
+                        // Load config preset
                         // row 5: 34 36 38 23 25 27 29 31 33
                         case (34): { // set 12tet tuning
+                            // first tuning hard coded to 12tet
                             notegen0 = 12.0f;
                             set_notegen1(7.0f);
                             reset_note_offsets();
+                            // load_tuning(0);
                         } return;
-                        case (36): { // set 31tet tuning (practically equal to quarter comma meantone)
-                            notegen0 = 12.0f;
-                            set_notegen1(6.96774193548387f);
-                            reset_note_offsets();
+                        case (36): {
+                            load_tuning(1);
                         } return;
-                        case (38): { // set 19tet tuning
-                            notegen0 = 12.0f;
-                            set_notegen1(6.94736842105263f);
-                            reset_note_offsets();
+                        case (38): {
+                            load_tuning(2);
                         } return;
-                        case (23): { // set pythagorean tuning
-                            notegen0 = 12.0f;
-                            set_notegen1(7.01955000865388f);
-                            reset_note_offsets();
+                        case (23): {
+                            load_tuning(3);
                         } return;
-                        case (25): { // set 5tet tuning
-                            notegen0 = 12.0f;
-                            set_notegen1(7.2f);
-                            reset_note_offsets();
+                        case (25): {
+                            load_tuning(4);
                         } return;
-                        case (27): { // set 7tet tuning
-                            notegen0 = 12.0f;
-                            set_notegen1(6.85714285714286f);
-                            reset_note_offsets();
+                        case (27): {
+                            load_tuning(5);
                         } return;
-                        case (29): { // set Bohlen-Pierce tuning thirds 13et
-                            notegen0 = 10.2413f;
-                            notegen1 = 5.8522f;
-                            reset_note_offsets();
-                            update_leds();
+                        case (29): {
+                            load_tuning(6);
                         } return;
-                        case (31): { // set Bohlen-Pierce tuning sixts 13tet
-                            notegen0 = 19.0196f;
-                            notegen1 = 10.2413f;
-                            update_leds();
+                        case (31): {
+                            load_tuning(7);
                         } return;
-                        case (33): { // set JI 7-limit
-                            notegen0 = 12.0f;
-                            set_notegen1(7.0f);
-                            set_note_offsets(ji7limit, 17);
-                            update_leds();
+                        case (33): {
+                            load_tuning(8);
                         } return;
                         // row 6: 35 37 39 41 43 45 30 32
 #ifdef USE_MIDI_OUT
                         case (35): {
-                            MidiSend2(MIDI_PROGRAM_CHANGE,
-                                                0);
+                            MidiSend2(MIDI_PROGRAM_CHANGE, 0);
                             ws2812_write_led(0, 4, 0, 0);
                         } return;
                         case (37): {
-                            MidiSend2(MIDI_PROGRAM_CHANGE,
-                                                1);
+                            MidiSend2(MIDI_PROGRAM_CHANGE, 1);
                             ws2812_write_led(0, 4, 1, 0);
                         } return;
                         case (39): {
-                            MidiSend2(MIDI_PROGRAM_CHANGE,
-                                                2);
+                            MidiSend2(MIDI_PROGRAM_CHANGE, 2);
                             ws2812_write_led(0, 4, 4, 0);
                         } return;
                         case (41): {
-                            MidiSend2(MIDI_PROGRAM_CHANGE,
-                                                3);
+                            MidiSend2(MIDI_PROGRAM_CHANGE, 3);
                             ws2812_write_led(0, 1, 8, 0);
                         } return;
                         case (43): {
-                            MidiSend2(MIDI_PROGRAM_CHANGE,
-                                                4);
+                            MidiSend2(MIDI_PROGRAM_CHANGE, 4);
                             ws2812_write_led(0, 0, 4, 4);
                         } return;
                         case (45): {
-                            MidiSend2(MIDI_PROGRAM_CHANGE,
-                                                5);
+                            MidiSend2(MIDI_PROGRAM_CHANGE, 5);
                             ws2812_write_led(0, 0, 1, 12);
                         } return;
                         case (30): {
-                            MidiSend2(MIDI_PROGRAM_CHANGE,
-                                                6);
+                            MidiSend2(MIDI_PROGRAM_CHANGE, 6);
                             ws2812_write_led(0, 2, 0, 6);
                         } return;
                         case (32): {
-                            MidiSend2(MIDI_PROGRAM_CHANGE,
-                                                7);
+                            MidiSend2(MIDI_PROGRAM_CHANGE, 7);
                             ws2812_write_led(0, 3, 3, 3);
                         } return;
 #endif
@@ -1250,7 +1232,7 @@ int synth_message(int size, int* msg) {
             if (aux_button_map == ((1<<IDC_OCT_UP) | (1<<IDC_OCT_DOWN))) {
                 if (dis.altmode) {
                     // transpose reset
-                    dis.set_note_offset(62);
+                    dis.set_note_offset(dis.tuning_note_offset);
                 } else {
                     // cancel last transpose and enable free transpose
                     dis.set_note_offset(note_offset_old);
@@ -1258,8 +1240,8 @@ int synth_message(int size, int* msg) {
                 }
             } else {
                 note_offset_old = dis.start_note_offset;
-                int dif = 12;
-                if (dis.altmode) dif = 1;
+                float dif = dis.notegen0;
+                if (dis.altmode) dif = 1.0f;
                 if (id == IDC_OCT_UP) {
                     dis.change_note_offset(dif);
                 }
@@ -1437,16 +1419,12 @@ void synth_tick(void) {
 void update_leds(void) {
     uint8_t r = 0, g = 2, b = 0;
 
-    // base color depending on tuning system
-    if (dis.notegen1 < 6.94)       {r = 1; g = 0; b = 1;}
-    else if (dis.notegen1 < 6.957) {r = 0; g = 0; b = 2;}
-    else if (dis.notegen1 < 6.984) {r = 0; g = 1; b = 1;}
-    else if (dis.notegen1 < 7.010) {r = 0; g = 2; b = 0;}
-    else if (dis.notegen1 < 7.03)  {r = 1; g = 1; b = 0;}
-    else                           {r = 2; g = 0; b = 0;}
+    r = dis.tuning_color >> 16 & 0xff;
+    g = dis.tuning_color >>  8 & 0xff;
+    b = dis.tuning_color >>  0 & 0xff;
 
-    int m = 21 * (4 + dis.altmode + (dis.portamento & 1));
-    led_rgb3(m*r, m*g, m*b);
+    int m = 64 + 16 * (dis.altmode + (dis.portamento & 1));
+    led_rgb3(r * m / 64, g * m / 64, b * m / 64);
 
 #ifdef USE_WS2812
     ws2812_write_led(0, m*r, m*g, m*b);

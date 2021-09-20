@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="ISO-8859-1">
+
+  <title>Striso configuration editor</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#db9d5a">
+  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgAgMAAAAOFJJnAAAADFBMVEVMaXH///8AAADbnVoBLV0NAAAAAXRSTlMAQObYZgAAAJNJREFUCNdFz8ENhSAQBNBNLMwqNhwphX7wYAnYBE1w52LQ+TPyjZxewsxu1hYA3eNh68QgWnkA5J2A4c7b5WkCDtgu8Nn2IjMM1ES0Angk+C4PH5jsUVAyCPxwV3iC9XsTOPDMf7RcamBT6JFNQSP9A8O4AnFrBydqIKqn+qLrHOG5okycOpArVoL18YD5YcvE8QPr7Mbs26tpJgAAAABJRU5ErkJggg=="/>
+  <script src="https://www.striso.org/config.js"></script>
+  <script type="application/javascript">
+let infoMsg = ""
+var configuration = {}
+
+function log(msg) {
+  msg = "# " + msg
+  infoMsg += msg + "\n"
+  console.log(msg)
+}
+
+const UF2_MAGIC_START0 = 0x0A324655 // "UF2\n"
+const UF2_MAGIC_START1 = 0x9E5D5157 // Randomly selected
+const UF2_MAGIC_END = 0x0AB16F30 // Ditto
+const UF2_FAMILYID = 0xa21e1295 // Striso STM32H7 familyID
+
+function err(msg) {
+  log("Fatal error: " + msg)
+  if (typeof window == "undefined") {
+    process.exit(1)
+  } else {
+    throw new Error(msg)
+  }
+}
+
+function read32(buf, off) {
+  return (buf[off + 0] | (buf[off + 1] << 8) | (buf[off + 2] << 16) | (buf[off + 3] << 24)) >>> 0
+}
+
+function write32(buf, off, v) {
+  buf[off + 0] = v & 0xff
+  buf[off + 1] = (v >> 8) & 0xff
+  buf[off + 2] = (v >> 16) & 0xff
+  buf[off + 3] = (v >> 24) & 0xff
+}
+
+function write32Array(buf, off, a) {
+  var i = off;
+  for (let v of a) {
+    write32(buf, i, v);
+    i += 4;
+  }
+}
+
+function writeStr(buf, off, a) {
+  var i = off;
+  for (let v of a) {
+    buf[i] = v.charCodeAt(0);
+    i += 1;
+  }
+}
+
+function updateValue(evt) {
+  let key = evt.target.parentElement.parentElement.childNodes[0].innerHTML;
+  let value = evt.target.value;
+  configuration[key]["current"] = value.substring(0, 8).padEnd(8, ' ');
+  evt.target.classList.add("config-changed");
+}
+
+function resetValue(evt) {
+  let key = evt.target.parentElement.childNodes[0].innerHTML;
+  configuration[key]["current"] = undefined;
+  let input = evt.target.parentElement.childNodes[1].childNodes[0];
+  input.value = evt.target.innerHTML;
+  input.classList.remove("config-changed");
+}
+
+function showConfig() {
+  filter = document.querySelector('input[name="radioMain"]:checked').value;
+  if (filter === "T" || filter === "P") {
+    filter += document.querySelector('input[name="radioSub"]:checked').value;
+    document.getElementById("select-number").style.display = "block";
+  } else {
+    document.getElementById("select-number").style.display = "none";
+  }
+  log(filter)
+  let cfgtable = document.getElementById("config");
+  cfgtable.innerHTML = "";
+  for (let key in configuration) {
+    if (key.substring(1).startsWith(filter)) {
+      var newRow = cfgtable.insertRow(cfgtable.rows.length);
+      var value = configuration[key]['current'];
+      var changed = true;
+      if (value === undefined) {
+        value = configuration[key]['default'];
+        changed = false;
+      }
+      value = value.trim();
+      newRow.innerHTML = "<td>" + key + "</td>"
+        + "<td><input class='config-value' type='text' value='" + value + "' maxlength='8'></td>"
+        + "<td>" + configuration[key]['default'].trim() + "</td>";
+      if (changed) {
+        newRow.getElementsByTagName("input")[0].classList.add("config-changed");
+      }
+      newRow.getElementsByTagName("input")[0].onchange = updateValue;
+      newRow.childNodes[2].onclick = resetValue;
+    }
+  }
+}
+
+function parseConfig(buf) {
+  let cfgdata = {}
+  let i = 0
+  var key = buf.substring(i, i + 8)
+  if (key !== "MConfig ") return "error"
+  i += 16
+  while (true) {
+    key = buf.substring(i, i + 8)
+    if (key == "MCfgEnd " || key.length == 0 || !/^[\x20-\x7E]*$/.test(key)) break
+    value = buf.substring(i + 8, i + 16)
+    cfgdata[key] = {default: value}
+    i += 16
+  }
+  if (key !== "MCfgEnd ") return "error"
+  i += 16
+  key = buf.substring(i, i + 8)
+  if (key !== "MConfig ") {
+    log("No user config found")
+    return cfgdata
+  }
+  i += 16
+  while (true) {
+    key = buf.substring(i, i + 8)
+    if (key === "MCfgEnd " || key.length == 0 || !/^[\x20-\x7E]*$/.test(key)) break
+    value = buf.substring(i + 8, i + 16)
+    if (key in cfgdata) {
+      cfgdata[key]["current"] = value
+    }
+    else {
+      log('Unknown config key "' + key + '":"' + value + '"')
+    }
+    i += 16
+  }
+  return cfgdata;
+}
+
+function parseUserConfig(buf) {
+  if (read32(buf, 0) === UF2_MAGIC_START0) {
+    let cfgdata = {}
+    for (var j = 0; j < buf.length / 512; j++) {
+      let block = String.fromCharCode.apply(null, buf.subarray(j*512 + 32, j*512 + 32 + 256));
+      for (var i = 0; i < 256; i += 16) {
+        let key = block.substring(i, i + 8)
+        if (key === "MCfgEnd " || key.length == 0 || !/^[\x20-\x7E]*$/.test(key)) return cfgdata
+        let value = block.substring(i + 8, i + 16)
+        cfgdata[key] = value
+      }
+    }
+    return cfgdata
+  }
+}
+
+function loadConfig() {
+  var configdata = document.getElementById('configdata').innerText
+  let buf = configdata.substring(9, configdata.length - 3)
+  configuration = parseConfig(buf)
+  showConfig()
+  document.getElementById("save").onclick = getUF2;
+}
+
+function getUF2() {
+  let cfg2 = {};
+  cfg2['MConfig '] = 'v1.0    ';
+  var count = 1;
+  for (let key in configuration) {
+    value = configuration[key]['current'];
+    if (value !== undefined) {
+      cfg2[key] = value;
+      count++;
+    }
+  }
+  cfg2['MCfgEnd '] = '        ';
+  count++;
+  console.log(cfg2)
+
+  let blockCount = Math.ceil(count * 16 / 256);
+  let flags = 0x00002000; // familyID present
+  var address = 0x08020000;
+  var blockNumber = 0;
+
+  let buf = new Uint8Array(256 * blockCount);
+  var off = 0;
+  for (let key in cfg2) {
+    writeStr(buf, off, key);
+    off += 8;
+    writeStr(buf, off, cfg2[key]);
+    off += 8;
+  }
+  buf.fill(0xff, off);
+
+  let uf2 = new Uint8Array(512 * blockCount);
+  while (blockNumber < blockCount) {
+    var uf2_head = [UF2_MAGIC_START0,
+                    UF2_MAGIC_START1,
+                    flags,
+                    address + 256 * blockNumber,
+                    256,
+                    blockNumber,
+                    blockCount,
+                    UF2_FAMILYID];
+    write32Array(uf2, blockNumber * 512, uf2_head);
+
+    uf2.set(buf.subarray(blockNumber * 256, (blockNumber + 1) * 256), blockNumber * 512 + 32);
+
+    blockNumber++;
+    write32(uf2, blockNumber * 512 - 4, UF2_MAGIC_END);
+  }
+
+  download(uf2, 'CONFIG.UF2');
+}
+
+function download(buf, name) {
+  let blob = new Blob([buf], {
+    type: "application/x-uf2"
+  });
+  let url = URL.createObjectURL(blob);
+
+  let a = document.createElement("a");
+  document.body.appendChild(a);
+  a.style = "display: none";
+  a.href = url;
+  a.download = name;
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
+
+function showMSG() {
+  if (infoMsg)
+    document.getElementById("currconfig").textContent = infoMsg
+}
+
+function wrap(f) {
+  try {
+    infoMsg = ""
+    f()
+    showMSG()
+  } catch (e) {
+    log("Exception: " + e.message)
+    showMSG()
+  }
+}
+
+function dropHandler(ev) {
+  ev.preventDefault();
+
+  for (let i = 0; i < ev.dataTransfer.items.length; i++) {
+    if (ev.dataTransfer.items[i].kind === 'file') {
+      let file = ev.dataTransfer.items[i].getAsFile();
+      let reader = new FileReader();
+      infoMsg = ""
+      reader.onload = e => {
+        wrap(() => {
+          let buf = new Uint8Array(reader.result)
+          let cfg = parseUserConfig(buf)
+          console.log(cfg)
+          for (key in cfg) {
+            if (key in configuration) {
+              configuration[key]["current"] = cfg[key]
+            }
+          }
+          showConfig()
+        })
+      }
+      reader.readAsArrayBuffer(file);
+      break
+    }
+  }
+}
+
+function dragOverHandler(ev) {
+  ev.preventDefault();
+  ev.dataTransfer.dropEffect = 'copy';
+}
+  </script>
+  <style>
+#config, #config input {
+  font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  font-size: 0.9rem;
+}
+
+.page-header {
+  padding: 2rem 2rem !important;
+}
+
+.config-value {
+  width: 9ch;
+  margin: -0.5rem -1rem !important;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-width: 1px;
+}
+.config-changed {
+  background: #fc8;
+}
+
+#configdata {
+  display: none;
+}
+
+footer {
+  text-align: center;
+  margin-top: 5em;
+}
+footer a {
+  margin-right: 2em;
+}
+
+/* radio buttons */
+.radio-toolbar {
+  margin: 10px;
+}
+
+.radio-toolbar input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: fixed;
+}
+
+.radio-toolbar label {
+  display: inline-block;
+  background-color: #ddd;
+  padding: 10px 20px;
+  border: 2px solid #444;
+  border-radius: 4px;
+}
+
+.radio-toolbar label:hover {
+  background-color: #dfd;
+}
+
+.radio-toolbar input[type="radio"]:checked + label {
+  background-color: #bfb;
+  border-color: #4c4;
+}
+
+.radio-toolbar input[type="radio"]:focus + label {
+  border: 2px dashed #444;
+}
+
+/*! normalize.css v3.0.2 | MIT License | git.io/normalize */
+
+body {
+  margin: 0;
+  overflow-y: scroll; /* Show vertical scrollbar */
+}
+
+section {
+  display: block;
+}
+
+h1 {
+  font-size: 2em;
+  margin: 0.67em 0;
+}
+
+input {
+  line-height: normal;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+td,th {
+  padding: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  padding: 0;
+  margin: 0;
+  font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #606c71;
+}
+
+.btn {
+  /* display: inline-block; */
+  float: right;
+  text-decoration: none;
+  margin-bottom: 1rem;
+  color: #fff;
+  background-color: #8f5416;
+  border-color: rgba(255,255,255,0.2);
+  border-style: solid;
+  border-width: 1px;
+  border-radius: 0.3rem;
+  transition: background-color 0.2s;
+}
+
+.btn:hover, .btn:focus {
+  background-color: #ac6c29;
+}
+
+.btn+.btn {
+  margin-left: 1rem;
+}
+
+@media screen and (min-width: 64em) {
+  .btn {
+    padding: 0.75rem 1rem;
+  }
+}
+
+@media screen and (min-width: 42em) and (max-width: 64em) {
+  .btn {
+    padding: 0.6rem 0.9rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media screen and (max-width: 42em) {
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .btn+.btn {
+    margin-top: 1rem;
+    margin-left: 0;
+  }
+}
+
+.page-header {
+  color: #fff;
+  text-align: center;
+  background-color: #db9d5a;
+  background-image: linear-gradient(120deg, #6e3d08, #db9d5a);
+}
+
+@media screen and (min-width: 64em) {
+  .page-header {
+    padding: 5rem 6rem;
+  }
+}
+
+@media screen and (min-width: 42em) and (max-width: 64em) {
+  .page-header {
+    padding: 3rem 4rem;
+  }
+}
+
+@media screen and (max-width: 42em) {
+  .page-header {
+    padding: 2rem 1rem;
+  }
+}
+
+.project-name {
+  margin-top: 0;
+  margin-bottom: 0.1rem;
+}
+
+@media screen and (min-width: 64em) {
+  .project-name {
+    font-size: 3.25rem;
+  }
+}
+
+@media screen and (min-width: 42em) and (max-width: 64em) {
+  .project-name {
+    font-size: 2.25rem;
+  }
+}
+
+@media screen and (max-width: 42em) {
+  .project-name {
+    font-size: 1.75rem;
+  }
+}
+
+.main-content {
+  word-wrap: break-word;
+}
+
+.main-content :first-child {
+  margin-top: 0;
+}
+
+@media screen and (min-width: 64em) {
+  .main-content {
+    max-width: 64rem;
+    padding: 2rem 6rem;
+    margin: 0 auto;
+    font-size: 1.1rem;
+  }
+}
+
+@media screen and (min-width: 42em) and (max-width: 64em) {
+  .main-content {
+    padding: 2rem 4rem;
+    font-size: 1.1rem;
+  }
+}
+
+@media screen and (max-width: 42em) {
+  .main-content {
+    padding: 2rem 1rem;
+    font-size: 1rem;
+  }
+}
+
+.main-content img {
+  max-width: 100%;
+}
+
+.main-content h1,.main-content h2,.main-content h3,.main-content h4,.main-content h5,.main-content h6 {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  font-weight: normal;
+  color: #159957;
+}
+
+.main-content p {
+  margin-bottom: 1em;
+}
+
+.main-content code {
+  padding: 2px 4px;
+  font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  font-size: 0.9rem;
+  color: #567482;
+  background-color: #f3f6fa;
+  border-radius: 0.3rem;
+}
+
+.main-content pre {
+  padding: 0.8rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font: 1rem Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  color: #567482;
+  word-wrap: normal;
+  background-color: #f3f6fa;
+  border: solid 1px #dce6f0;
+  border-radius: 0.3rem;
+}
+
+.main-content pre>code {
+  padding: 0;
+  margin: 0;
+  font-size: 0.9rem;
+  color: #567482;
+  word-break: normal;
+  white-space: pre;
+  background: transparent;
+  border: 0;
+}
+
+.main-content .highlight {
+  margin-bottom: 1rem;
+}
+
+.main-content .highlight pre {
+  margin-bottom: 0;
+  word-break: normal;
+}
+
+.main-content .highlight pre,.main-content pre {
+  padding: 0.8rem;
+  overflow: auto;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  border-radius: 0.3rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.main-content pre code,.main-content pre tt {
+  display: inline;
+  max-width: initial;
+  padding: 0;
+  margin: 0;
+  overflow: initial;
+  line-height: inherit;
+  word-wrap: normal;
+  background-color: transparent;
+  border: 0;
+}
+
+.main-content pre code:before,.main-content pre code:after,.main-content pre tt:before,.main-content pre tt:after {
+  content: normal;
+}
+
+.main-content ul,.main-content ol {
+  margin-top: 0;
+}
+
+.main-content blockquote {
+  padding: 0 1rem;
+  margin-left: 0;
+  color: #819198;
+  border-left: 0.3rem solid #dce6f0;
+}
+
+.main-content blockquote>:first-child {
+  margin-top: 0;
+}
+
+.main-content blockquote>:last-child {
+  margin-bottom: 0;
+}
+
+.main-content table {
+  display: block;
+  width: 100%;
+  overflow: auto;
+  word-break: normal;
+  word-break: keep-all;
+  -webkit-overflow-scrolling: touch;
+}
+
+.main-content table th {
+  font-weight: bold;
+}
+
+.main-content table th,.main-content table td {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e9ebec;
+}
+
+.main-content dl {
+  padding: 0;
+}
+
+.main-content dl dt {
+  padding: 0;
+  margin-top: 1rem;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.main-content dl dd {
+  padding: 0;
+  margin-bottom: 1rem;
+}
+
+.main-content hr {
+  height: 2px;
+  padding: 0;
+  margin: 1rem 0;
+  background-color: #eff0f1;
+  border: 0;
+}
+  </style>
+</head>
+
+<body ondrop="dropHandler(event);" ondragover="dragOverHandler(event);" onload="loadConfig();">
+  <section class="page-header">
+    <h1 class="project-name">Striso configuration editor</h1>
+  </section>
+
+  <section class="main-content">
+    <h2>Configuration</h2>
+    <a href="#" id="save" class="btn btn-dl">Save configuration</a>
+    <div class="radio-toolbar" id="select-cat">
+      <input type="radio" id="radioGeneral" name="radioMain" value="G" checked onchange="showConfig()">
+      <label for="radioGeneral">General</label>
+      <input type="radio" id="radioPreset" name="radioMain" value="P" onchange="showConfig()">
+      <label for="radioPreset">Preset</label>
+      <input type="radio" id="radioTuning" name="radioMain" value="T" onchange="showConfig()">
+      <label for="radioTuning">Tuning</label>
+      <input type="radio" id="radioCalibration" name="radioMain" value="C" onchange="showConfig()">
+      <label for="radioCalibration">Calibration</label>
+    </div>
+    <div class="radio-toolbar" id="select-number">
+      <input type="radio" id="radio1" name="radioSub" value="1" checked onchange="showConfig()">
+      <label for="radio1">1</label>
+      <input type="radio" id="radio2" name="radioSub" value="2" onchange="showConfig()">
+      <label for="radio2">2</label>
+      <input type="radio" id="radio3" name="radioSub" value="3" onchange="showConfig()">
+      <label for="radio3">3</label>
+      <input type="radio" id="radio4" name="radioSub" value="4" onchange="showConfig()">
+      <label for="radio4">4</label>
+      <input type="radio" id="radio5" name="radioSub" value="5" onchange="showConfig()">
+      <label for="radio5">5</label>
+      <input type="radio" id="radio6" name="radioSub" value="6" onchange="showConfig()">
+      <label for="radio6">6</label>
+      <input type="radio" id="radio7" name="radioSub" value="7" onchange="showConfig()">
+      <label for="radio7">7</label>
+      <input type="radio" id="radio8" name="radioSub" value="8" onchange="showConfig()">
+      <label for="radio8">8</label>
+    </div>
+    <table>
+      <thead><tr><th>Key</th><th>Value</th><th>Default</th></tr></thead>
+      <tbody id="config"></tbody>
+    </table>
+
+    <h2>Information</h2>
+    <pre><code id="currconfig"></code></pre>
+
+    <p>Striso board {FWVERSION}</p>
+
+  <footer>
+    <span>&copy; 2021 <a href="https://www.striso.org" target="_blank" rel="noopener">Striso</a></span>
+  </footer>
+
+  </section>
+
+  <xmp id="configdata"><![CDATA[{CONFIGDATA}]]></xmp>
+</body>
+</html>

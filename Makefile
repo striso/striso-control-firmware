@@ -135,6 +135,7 @@ CSRC = $(ALLCSRC) \
 	motionsensor.c \
 	codec_tlv320aic3x_SAI.c \
 	led.c \
+	config_store.c \
 	main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
@@ -211,6 +212,9 @@ prog_uf2: all
 	@./utils/striso_util -B 2>/dev/null && sleep 5 || true
 	@BINSTART=`readelf -l $(BUILDDIR)/$(PROJECT).elf | grep LOAD -m1 | awk '{print $$3}'` ;\
 	python3 uf2/utils/uf2conv.py -f 0xa21e1295 -b $$BINSTART $(BUILDDIR)/$(PROJECT).bin -o $(BUILDDIR)/$(PROJECT).uf2
+
+config_editor/config_editor.h: config_editor/config.htm
+	python3 config_editor/config_editor.py
 
 release: uf2
 	mkdir -p releases

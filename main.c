@@ -35,19 +35,25 @@
 #include "version.h"
 #include "midi_serial.h"
 #include "led.h"
-
-const char confightm[] = "Test bla die bla die bla";
+#include "config_editor/config_editor.h"
 
 /**
  *  Firmware version description on fixed flash address for bootloader
  */
+#define FWVERSION_PREFIX "Firmware version: striso_control_"
 __attribute__ ((section(".fwinfo"))) __attribute__((used))
 const struct {
   char fwversion[512];
   uint32_t confightm[16];
 } fwinfo = {
-  .fwversion = "Firmware version: striso_control_" FWVERSION "\r\n",
-  .confightm = {confightm, sizeof(confightm)}, // sizeof() -1?
+  .fwversion = FWVERSION_PREFIX FWVERSION "\r\n",
+  .confightm = {(uint32_t)confightm_p1, sizeof(confightm_p1),
+                (uint32_t)devspec_id->id, sizeof(devspec_id->id),
+                (uint32_t)fwinfo.fwversion, sizeof(FWVERSION_PREFIX FWVERSION) - 1,
+                (uint32_t)confightm_p2, sizeof(confightm_p2),
+                (uint32_t)default_config, sizeof(default_config),
+                (uint32_t)flash_config, sizeof(default_config),
+                (uint32_t)confightm_p3, sizeof(confightm_p3)}
 };
 
 // force sqrtf to use FPU, the standard one apparently doesn't
