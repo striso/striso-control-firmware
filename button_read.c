@@ -1187,7 +1187,13 @@ void ButtonReadStart(void) {
 #ifdef BREAKPOINT_CALIBRATION
       buttons[n].c_force = calib_dis_force->calib[n];
 #else
-      buttons[n].c_force = 2 * calib_dis_force->calib[n]; // * 2 to make up for non-linearity
+      if (calib_dis_force->type == 0x02) { /* devspec_id->hardware_revision == 1 */
+        buttons[n].c_force = 2 * calib_dis_force->calib[n]; // * 2 to make up for non-linearity
+      } else if (calib_dis_force->type == 0x00) { /* devspec_id->hardware_revision == 0 */
+        // calibrated per sensor, so should be / 3 to get the same sensitivity.
+        // However with 10k pullup the higher force measurement is not stable, so make it 1.5 times more sensitive
+        buttons[n].c_force = 2 * calib_dis_force->calib[n] / 2;
+      }
 #endif
     }
   } else {
