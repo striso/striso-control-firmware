@@ -600,7 +600,7 @@ void update_and_filter(int32_t* s, int32_t* v, int32_t s_new) {
 int32_t linearize(int32_t s) {
 #ifdef CALIBRATION_MODE
   /* keep linear voltage for calibration */
-  return ADCFACT * s;
+  return ADCFACT / MULTISAMPLE * s;
 #else
   /* convert adc value to force */
   return (ADCFACT>>6) * s/((MULTISAMPLE*4095)-s+1);
