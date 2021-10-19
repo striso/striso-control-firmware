@@ -39,7 +39,7 @@
 #define MSGFACT_VELO (MSGFACT/VELOFACT)
 #define FILT 8  // min: 1 (no filter), max: 64 (1<<32 / INTERNAL_ONE)
 #define FILTV 8 // min: 1 (no filter), max: 64 (1<<32 / INTERNAL_ONE)
-#define ZERO_LEVEL_OFFSET 4
+#define ZERO_LEVEL_OFFSET CALIB_OFFSET
 #define ZERO_LEVEL_MAX_VELO 500
 #define COMMON_CHANNEL_FILT 0.5
 
