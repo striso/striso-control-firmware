@@ -2,16 +2,27 @@
 
 ## Next release
 
-### Added
+## v2.1.1 - 2021-10-20
 
-- Free transpose with up+down buttons pressed
+This release brings the new button read algoritm to rev0 hardware (white aux buttons).
+
+With the rev0 hardware the signals are a bit more noisy, the button crosstalk
+is much reduced compared to the v2.0.x firmware though. Feedback welcome!
+
+### Added
+- Free transpose with up+down buttons pressed. With this mode the pitch of one button can be transfered to another button.
+- Option to flip layout (rotate 180 degrees) with settings + B3
+- Support for rev0 hardware
 
 ### Changed
 - Include number in product string to distinguish MIDI devices when multiple Striso boards are used
+- Stuck note detection improved (dynamic zero level detection). Feedback welcome!
 
 ## v2.1.0 - 2021-06-21
 
-This release only works well with the new hardware revision (#141 and up).
+v2.1.x features an improved button read algoritm, hardware is updated to rev1 for improved button sensitivity.
+
+This release only works well with the new hardware revision (rev1, #141 and up, black aux buttons).
 
 ### Changed
 - Custom protocol button messages new format
