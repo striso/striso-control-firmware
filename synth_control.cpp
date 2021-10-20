@@ -847,12 +847,12 @@ class Instrument {
                     buttons[but].pres = temp_pres;
                 }
                 else if (but == transpose_button && transpose_button2) {
-                    // calculate average of transpose buttons
-                    // TODO: quick and dirty now, improve
+                    // calculate combined transpose buttons
+                    // TODO: quick and dirty, x/y not calculated
                     float temp_pres = buttons[but].pres; // save pres for note off detection
 
-                    float pres = buttons[but].pres + buttons[transpose_button2].pres;
-                    buttons[but].pres = min(pres, 1.0f);
+                    buttons[but].pres = max(buttons[but].pres, buttons[transpose_button2].pres);
+                    buttons[but].vpres = buttons[but].vpres + buttons[transpose_button2].vpres;
 
                     update_voice(but);
                     buttons[but].pres = temp_pres;
