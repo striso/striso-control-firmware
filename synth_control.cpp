@@ -286,8 +286,9 @@ class Instrument {
                 buttons[n].note = start_note_offset +
                                   notegen0 * buttons[n].coord0 +
                                   notegen1 * buttons[n].coord1;
-                buttons[n].midinote_base = (int)(buttons[n].note - start_note_offset + 0.5); // careful to keep rounded value above zero
-                buttons[n].midinote = buttons[n].midinote_base;
+                buttons[n].midinote_base = (int)(notegen0 * buttons[n].coord0 +
+                                                 notegen1 * buttons[n].coord1 + 0.5 + 100) - 100; // careful to keep rounded value above zero
+                buttons[n].midinote = buttons[n].midinote_base + (int)(start_note_offset + 0.5);
             }
             for (n = 0; n < MAX_VOICECOUNT; n++) {
                 voices[n] = -1;
@@ -347,19 +348,16 @@ class Instrument {
         }
 
         int change_note_offset(float offset) {
-            float n = start_note_offset + offset;
-            if (n >= min_note_offset && n <= max_note_offset) {
-                start_note_offset = n;
-                return 0;
-            }
-            return 1;
+            return set_note_offset(start_note_offset + offset);
         }
 
         int set_note_offset(float offset) {
             if (offset >= min_note_offset && offset <= max_note_offset) {
                 start_note_offset = offset;
+                update_leds();
                 return 0;
             }
+            led_rgb3(255,0,0);
             return 1;
         }
 
@@ -378,8 +376,8 @@ class Instrument {
                 buttons[n].note = start_note_offset +
                                   notegen0 * buttons[n].coord0 +
                                   notegen1 * buttons[n].coord1;
-                buttons[n].midinote_base = (int)(buttons[n].note - start_note_offset + 0.5); // careful to keep rounded value above zero
-                buttons[n].midinote = buttons[n].midinote_base;
+                buttons[n].midinote_base = -buttons[n].midinote_base;
+                buttons[n].midinote = buttons[n].midinote_base + (int)(start_note_offset + 0.5);
             }
         }
 
@@ -655,7 +653,7 @@ class Instrument {
                     // Note on detection
                     if (buttons[but].state == STATE_OFF) {
                         buttons[but].state = STATE_ON;
-                        buttons[but].midinote = buttons[but].midinote_base + start_note_offset;
+                        buttons[but].midinote = buttons[but].midinote_base + (int)(start_note_offset + 0.5);
                         buttons[but].start_note_offset = start_note_offset;
                         // multiply velo by 2 to cover full midi range on note on
                         int velo = 0 + buttons[but].vpres * velo_sensitivity * 128 * 2;
@@ -770,7 +768,7 @@ class Instrument {
             // Note on detection
             if (buttons[but].state == STATE_OFF && buttons[but].pres > 0.0) {
                 // calculate midinote only at note on
-                buttons[but].midinote = (int)(buttons[but].midinote_base + start_note_offset + 0.5);
+                buttons[but].midinote = buttons[but].midinote_base + (int)(start_note_offset + 0.5);
                 buttons[but].start_note_offset = start_note_offset;
 
                 if (portamento) {
@@ -848,9 +846,17 @@ class Instrument {
                 }
                 else if (but == transpose_button && transpose_button2) {
                     // calculate combined transpose buttons
-                    // TODO: quick and dirty, x/y not calculated
                     float temp_pres = buttons[but].pres; // save pres for note off detection
 
+                    float sw = buttons[but].pres + buttons[transpose_button2].pres;
+                    if (sw > 0.0f) {
+                        buttons[but].but_x = (buttons[but].pres * buttons[but].but_x +
+                                            buttons[transpose_button2].pres * buttons[transpose_button2].but_x)
+                                            / sw;
+                        buttons[but].but_y = (buttons[but].pres * buttons[but].but_y +
+                                            buttons[transpose_button2].pres * buttons[transpose_button2].but_y)
+                                            / sw;
+                    }
                     buttons[but].pres = max(buttons[but].pres, buttons[transpose_button2].pres);
                     buttons[but].vpres = buttons[but].vpres + buttons[transpose_button2].vpres;
 
@@ -1143,6 +1149,7 @@ void int2float(int *msg, float *fmsg, int n) {
 unsigned int aux_button_map = 0;
 
 int synth_message(int size, int* msg) {
+    static float note_offset_old;
     float fmsg[7];
     int src = msg[0];
     int id = msg[1];
@@ -1152,31 +1159,36 @@ int synth_message(int size, int* msg) {
     if (src == ID_CONTROL) {
         if (id == IDC_ALT) {
             dis.set_altmode(msg[0]);
+            update_leds();
         }
         else if (id == IDC_PORTAMENTO) {
             // Portamento button
             dis.set_portamento(msg[0]);
+            update_leds();
         }
         else if (msg[0]) {
             aux_button_map |= 1<<id;
-            int dif = 12;
-            if (dis.altmode) dif = 1;
-            if (id == IDC_OCT_UP) {
-                dis.change_note_offset(dif);
-            }
-            if (id == IDC_OCT_DOWN) {
-                dis.change_note_offset(-dif);
-            }
-            if (aux_button_map == (1<<IDC_OCT_UP) | (1<<IDC_OCT_DOWN)) {
+            if (aux_button_map == ((1<<IDC_OCT_UP) | (1<<IDC_OCT_DOWN))) {
+                dis.set_note_offset(note_offset_old);
                 dis.set_free_transpose_mode(1);
+            } else {
+                note_offset_old = dis.start_note_offset;
+                int dif = 12;
+                if (dis.altmode) dif = 1;
+                if (id == IDC_OCT_UP) {
+                    dis.change_note_offset(dif);
+                }
+                if (id == IDC_OCT_DOWN) {
+                    dis.change_note_offset(-dif);
+                }
             }
         } else {
-            aux_button_map &= !(1<<id);
-            if (aux_button_map != (1<<IDC_OCT_UP) | (1<<IDC_OCT_DOWN)) {
+            aux_button_map &= ~(1<<id);
+            if (aux_button_map != ((1<<IDC_OCT_UP) | (1<<IDC_OCT_DOWN))) {
                 dis.set_free_transpose_mode(0);
             }
+            update_leds();
         }
-        update_leds();
     }
     else if (src == ID_ACCEL && size == 7) {
         motion.message(msg);
@@ -1392,7 +1404,7 @@ void update_leds(void) {
     }
 #endif
 
-    int note_offset = (int)(dis.start_note_offset - 62 + 0.5f);
+    int note_offset = (int)(dis.start_note_offset + 0.5f) - 62;
     if      (note_offset < -12) led_updown(0x1100);
     else if (note_offset <   0) led_updown(0x0100);
     else if (note_offset >  12) led_updown(0x0011);

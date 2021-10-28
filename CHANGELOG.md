@@ -2,6 +2,15 @@
 
 ## Next release
 
+## v2.1.2 - 2021-10-28
+
+### Changed
+- Red led when transpose is out of valid range
+
+### Fixed
+- MIDI semitone offset (introduced in v2.1.1)
+- Free transpose improvements
+
 ## v2.1.1 - 2021-10-20
 
 This release brings the new button read algoritm to rev0 hardware (white aux buttons).
