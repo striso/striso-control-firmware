@@ -2,6 +2,9 @@
 
 ## Next release
 
+### Added
+- Transpose reset with settings+up+down buttons
+
 ## v2.1.2 - 2021-10-28
 
 ### Changed

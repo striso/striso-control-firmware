@@ -1169,8 +1169,14 @@ int synth_message(int size, int* msg) {
         else if (msg[0]) {
             aux_button_map |= 1<<id;
             if (aux_button_map == ((1<<IDC_OCT_UP) | (1<<IDC_OCT_DOWN))) {
-                dis.set_note_offset(note_offset_old);
-                dis.set_free_transpose_mode(1);
+                if (dis.altmode) {
+                    // transpose reset
+                    dis.set_note_offset(62);
+                } else {
+                    // cancel last transpose and enable free transpose
+                    dis.set_note_offset(note_offset_old);
+                    dis.set_free_transpose_mode(1);
+                }
             } else {
                 note_offset_old = dis.start_note_offset;
                 int dif = 12;
