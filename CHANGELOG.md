@@ -4,6 +4,7 @@
 
 ### Added
 - Transpose reset with settings+up+down buttons
+- Irregular tuning support, JI 7-limit on settings + A#3
 
 ## v2.1.2 - 2021-10-28
 
@@ -23,7 +24,7 @@ is much reduced compared to the v2.0.x firmware though. Feedback welcome!
 
 ### Added
 - Free transpose with up+down buttons pressed. With this mode the pitch of one button can be transfered to another button.
-- Option to flip layout (rotate 180 degrees) with settings + B3
+- Option to flip layout (rotate 180 degrees) with settings + B4
 - Support for rev0 hardware
 
 ### Changed

@@ -45,6 +45,35 @@ extern "C" {
 
 #define VOLUME_FACTOR 0.005f;
 
+/* Custom tunings */
+// key number = 17 * buttons[but].coord0 + 10 * buttons[but].coord1 + 30
+int button_number_map[61] = {
+    56, 51, 63, 58, 53, 65, 60, 55, 67, 62, 40, 35, 47, 42, 37, 49, 44,
+    39, 34, 46, 41, 36, 48, 43, 38, 50, 45, 23, 18, 30, 25, 20, 32, 27,
+    22, 17, 29, 24, 19, 31, 26, 21, 33, 28,  6,  1, 13,  8,  3, 15, 10,
+     5,  0, 12,  7,  2, 14,  9,  4, 16, 11};
+
+// offsets from 12TET in cent
+float ji7limit[17] = {
+    0.0,
+    11.7312852697778,
+    -29.3275731357177,
+    3.91000173077484,
+    15.6412870005526,
+    -33.1290943962624,
+    -13.6862861351652,
+    -1.95500086538755,
+    17.4878073957099,
+    -17.48780739571,
+    1.95500086538743,
+    13.6862861351653,
+    -27.3725722703303,
+    -15.6412870005526,
+    -3.91000173077487,
+    -31.1740935308751,
+    -11.7312852697778,
+};
+
 void MidiSend1(uint8_t b0) {
     midi_usb_MidiSend1(1, b0);
 #ifdef USE_MIDI_SERIAL
@@ -216,6 +245,7 @@ class Button {
         int midinote;
         int midinote_base;
         float start_note_offset;
+        float tuning_note_offset = 0.0f;
         float pres;
         float vpres;
         int last_pres = INT32_MAX;
@@ -283,7 +313,7 @@ class Instrument {
                 buttons[n].coord0 = c0[n];
                 buttons[n].coord1 = c1[n];
                 // calculate note number
-                buttons[n].note = start_note_offset +
+                buttons[n].note = start_note_offset + buttons[n].tuning_note_offset +
                                   notegen0 * buttons[n].coord0 +
                                   notegen1 * buttons[n].coord1;
                 buttons[n].midinote_base = (int)(notegen0 * buttons[n].coord0 +
@@ -367,13 +397,37 @@ class Instrument {
             update_leds();
         }
 
+        void reset_note_offsets(void) {
+            for (int n = 0; n < 61; n++) {
+                int but = button_number_map[n];
+                buttons[n].tuning_note_offset = 0.0f;
+            }
+        }
+
+        void set_note_offsets(float* offsets, int n_buttons) {
+            if (n_buttons == 61) {
+                // all 61 offsets are given
+                for (int n = 0; n < 61; n++) {
+                    int but = button_number_map[n];
+                    buttons[but].tuning_note_offset = offsets[n] / 100;
+                }
+            }
+            else if (n_buttons == 17) {
+                // one repeating octave starting with C
+                for (int n = 0; n < 61; n++) {
+                    int but = button_number_map[n];
+                    buttons[but].tuning_note_offset = offsets[(n + 7) % 17] / 100;
+                }
+            }
+        }
+
         /* Rotate the layout 180 degrees */
         void flip(void) {
             for (int n = 0; n < BUTTONCOUNT; n++) {
                 buttons[n].coord0 = -buttons[n].coord0;
                 buttons[n].coord1 = -buttons[n].coord1;
                 // calculate note number
-                buttons[n].note = start_note_offset +
+                buttons[n].note = start_note_offset + buttons[n].tuning_note_offset +
                                   notegen0 * buttons[n].coord0 +
                                   notegen1 * buttons[n].coord1;
                 buttons[n].midinote_base = -buttons[n].midinote_base;
@@ -482,41 +536,55 @@ class Instrument {
                         case (34): { // set 12tet tuning
                             notegen0 = 12.0f;
                             set_notegen1(7.0f);
+                            reset_note_offsets();
                         } return;
                         case (36): { // set quarter comma meantone tuning
                             notegen0 = 12.0f;
                             set_notegen1(6.96578428466209f);
+                            reset_note_offsets();
                         } return;
                         case (38): { // set 19tet tuning
                             notegen0 = 12.0f;
                             set_notegen1(6.94736842105263f);
+                            reset_note_offsets();
                         } return;
                         case (23): { // set pythagorean tuning
                             notegen0 = 12.0f;
                             set_notegen1(7.01955000865388f);
+                            reset_note_offsets();
                         } return;
                         case (25): { // set 5tet tuning
                             notegen0 = 12.0f;
                             set_notegen1(7.2f);
+                            reset_note_offsets();
                         } return;
                         case (27): { // set 7tet tuning
                             notegen0 = 12.0f;
                             set_notegen1(6.85714285714286f);
+                            reset_note_offsets();
                         } return;
                         case (29): { // set 31tet tuning
                             notegen0 = 12.0f;
                             set_notegen1(6.96774193548387f);
+                            reset_note_offsets();
                         } return;
                         case (31): { // set Bohlen-Pierce tuning thirds 13et
                             notegen0 = 10.2413f;
                             notegen1 = 5.8522f;
+                            reset_note_offsets();
                             update_leds();
                         } return;
-                        case (33): { // set Bohlen-Pierce tuning sixts 13tet
-                            notegen0 = 19.0196f;
-                            notegen1 = 10.2413f;
+                        case (33): { // set JI 7-limit
+                            notegen0 = 12.0f;
+                            set_notegen1(7.0f);
+                            set_note_offsets(ji7limit, 17);
                             update_leds();
                         } return;
+                        // case (33): { // set Bohlen-Pierce tuning sixts 13tet
+                        //     notegen0 = 19.0196f;
+                        //     notegen1 = 10.2413f;
+                        //     update_leds();
+                        // } return;
                         // row 6: 35 37 39 41 43 45 30 32
 #ifdef USE_MIDI_OUT
                         case (35): {
@@ -804,9 +872,10 @@ class Instrument {
 
             if (buttons[but].state) {
                 // calculate note pitch
-                buttons[but].note = buttons[but].start_note_offset + note_offset +
+                buttons[but].note = buttons[but].start_note_offset + buttons[but].tuning_note_offset +
                                     notegen0 * buttons[but].coord0 +
-                                    notegen1 * buttons[but].coord1;
+                                    notegen1 * buttons[but].coord1
+                                    + note_offset;
                 buttons[but].timer = chVTGetSystemTime() + CLEAR_TIMER;
 
                 if (but == master_button) {
