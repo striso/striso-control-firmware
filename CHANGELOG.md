@@ -6,6 +6,9 @@
 - Transpose reset with settings+up+down buttons
 - Irregular tuning support, JI 7-limit on settings + A#3
 
+### Fixed
+- Correctly lower message frequency when multiple keys are pressed (was too low in some cases)
+
 ## v2.1.2 - 2021-10-28
 
 ### Changed

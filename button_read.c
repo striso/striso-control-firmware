@@ -675,7 +675,6 @@ void update_button(button_t* but) {
     if (but->status == OFF) {
       but->status = STARTING;
       but->timer = INTEGRATED_PRES_TRESHOLD;
-      buttons_pressed[but->src_id]++;
       col_pressed[but->src_id][but_id % 17]++;
     }
     // if button is in start integration reduce timer
@@ -685,6 +684,7 @@ void update_button(button_t* but) {
     // note off if .pres is too low even though .on is high enough
     else if (but->pres < (but->zero_offset + MSGFACT) && but->status == ON) {
       but->status = STARTING;
+      buttons_pressed[but->src_id]--;
       but->timer = INTEGRATED_PRES_TRESHOLD;
 
       msg[1] = but_id;
@@ -698,7 +698,10 @@ void update_button(button_t* but) {
     }
     // if integration is succesful and interval is ready send note message
     if (--but->timer <= 0) {
-      but->status = ON;
+      if (but->status != ON) {
+        but->status = ON;
+        buttons_pressed[but->src_id]++;
+      }
 
       // calculate values from signals
       #define CENTERTEND 0.02f
@@ -739,10 +742,10 @@ void update_button(button_t* but) {
       while (msgSend(6, msg)) { // note off messages are more important so keep trying
         chThdSleep(1);
       }
+      buttons_pressed[but->src_id]--;
     }
     but->status = OFF;
     but->p = 0;
-    buttons_pressed[but->src_id]--;
     col_pressed[but->src_id][but_id % 17]--;
     // reset filter
     but->pres = 0;
