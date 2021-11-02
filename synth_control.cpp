@@ -485,14 +485,17 @@ class Instrument {
                             ws2812_write_led(0, 3, 0, 0);
                         } return;
                         case (11): { // debug setting for easy testing
-                            if (config.debug) {
-                                config.debug = 0;
-                                // led_updown(0x1000);
+                            if (portamento & 1) {
+                                if (config.debug) {
+                                    config.debug = 0;
+                                    // led_updown(0x1000);
+                                } else {
+                                    config.debug = 1;
+                                    // led_updown(0x1111);
+                                }
                             } else {
-                                config.debug = 1;
-                                // led_updown(0x1111);
+                                flip();
                             }
-                            flip();
                         } return;
                         // row 3: 17 19 21  6  8 10 12 14 16
                         case (17): {
@@ -1403,7 +1406,7 @@ void set_midi_mode(midi_mode_t mode) {
             config.midi_mode = mode;
             dis.midi_channel_offset = 0;
             dis.voicecount = 1;
-            dis.portamento = 1;
+            dis.portamento = 2; // 2 keeps led from brightening
             ws2812_write_led(0, 0, 1, 18);
         } break;
     }
@@ -1435,7 +1438,7 @@ void update_leds(void) {
     else if (dis.notegen1 < 7.03)  {r = 1; g = 1; b = 0;}
     else                           {r = 2; g = 0; b = 0;}
 
-    int m = 21 * (4 + dis.altmode + dis.portamento);
+    int m = 21 * (4 + dis.altmode + (dis.portamento & 1));
     led_rgb3(m*r, m*g, m*b);
 
 #ifdef USE_WS2812

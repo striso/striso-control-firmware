@@ -750,11 +750,12 @@ void update_button(button_t* but) {
     // reset filter
     but->pres = 0;
     but->velo = 0;
+    but->zero_time = 0;
   } else {
     but->p = 0;
 #ifdef DETECT_STUCK_NOTES
     but->zero_time++;
-    if (but->zero_time > ZERO_LEVEL_TIME) {
+    if (but->zero_time == ZERO_LEVEL_TIME) {
       but->zero_offset = 0;
     }
 #endif
@@ -1155,8 +1156,6 @@ void ButtonReadStart(void) {
     buttons[n].src_id = ID_DIS;
     buttons[n].c_force = CALIB_FORCE;
     buttons[n].key_detect3 = 0;
-    buttons[n].zero_time = 0;
-    buttons[n].zero_max = 0;
     buttons[n].pres = 0;
     buttons[n].velo = 0;
     buttons[n].zero_offset = 0;
