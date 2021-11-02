@@ -6,6 +6,10 @@
 - Transpose reset with settings+up+down buttons
 - Irregular tuning support, JI 7-limit on settings + A#3
 
+### Changed
+- Keep stuck notes forever. They were allowed to come back, which they often did.
+  This is now changed, so if a note is detected as stuck it doesn't come back (e.g. when a key is held down during start up)
+
 ### Fixed
 - Correctly lower message frequency when multiple keys are pressed (was too low in some cases)
 

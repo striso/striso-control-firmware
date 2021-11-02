@@ -663,7 +663,11 @@ void update_button(button_t* but) {
       but->zero_time++;
       if (but->zero_time > ZERO_LEVEL_TIME) {
         but->zero_time = 0;
+#ifdef DETECT_STUCK_NOTES_DECREASE
         but->zero_offset = but->zero_max * ZERO_LEVEL_FACT;
+#else
+        but->zero_offset = max(but->zero_offset, but->zero_max * ZERO_LEVEL_FACT);
+#endif
       }
     } else {
       but->zero_time = 0;
@@ -753,7 +757,7 @@ void update_button(button_t* but) {
     but->zero_time = 0;
   } else {
     but->p = 0;
-#ifdef DETECT_STUCK_NOTES
+#ifdef DETECT_STUCK_NOTES_DECREASE
     but->zero_time++;
     if (but->zero_time == ZERO_LEVEL_TIME) {
       but->zero_offset = 0;
