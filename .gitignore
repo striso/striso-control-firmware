@@ -5,6 +5,13 @@ releases/
 *.tmp
 .git_version
 
+faust.*/
+*.dsp.json
+
+.gdb_history
+openocd.log
+.vscode/
+
 __pycache__
 *.pyc
 
