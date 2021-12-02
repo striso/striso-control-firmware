@@ -15,6 +15,9 @@
  * You should have received a copy of the GNU General Public License along with
  * Striso Control. If not, see <http://www.gnu.org/licenses/>.
  */
+
+#include "hal.h"
+
 #define ADC_CCR_MULTI_INDEPENDENT   (0x00 << 0)
 #define ADC_CCR_MULTI_REG_SIMUL_AND_INJECTED_SIMUL   (0x01 << 0)
 #define ADC_CCR_MULTI_REG_SIMUL_AND_ALTERNATE_TRIG   (0x02 << 0)
