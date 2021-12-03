@@ -2,6 +2,14 @@
 
 ## Next release
 
+## v2.1.4 - 2021-12-03
+
+### Added
+- Setting for key detection threshold on Db3-Eb3-F3 to stop erroneous notes
+
+### Changed
+- Merge 31TET and meantone tunings, keep both Bohlen-Pierce mappings
+
 ## v2.1.3 - 2021-12-02
 
 ### Added

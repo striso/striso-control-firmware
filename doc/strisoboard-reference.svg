@@ -1,15 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:xlink="http://www.w3.org/1999/xlink"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    sodipodi:docname="strisoboard-reference.svg"
-   inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
+   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
    id="svg21682"
    version="1.1"
    viewBox="0 0 297 209.99999"
@@ -18,7 +10,15 @@
    style="enable-background:new"
    inkscape:export-filename="/home/ptt/projecten/striso/software/striso_control/doc/strisoboard-reference.png"
    inkscape:export-xdpi="199.98849"
-   inkscape:export-ydpi="199.98849">
+   inkscape:export-ydpi="199.98849"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
   <sodipodi:namedview
      inkscape:snap-bbox-midpoints="true"
      inkscape:snap-to-guides="true"
@@ -32,20 +32,20 @@
      inkscape:measure-start="94.5,2036"
      inkscape:object-paths="true"
      inkscape:snap-nodes="false"
-     inkscape:current-layer="svg21682"
+     inkscape:current-layer="layer1"
      inkscape:window-maximized="1"
-     inkscape:window-y="-10"
-     inkscape:window-x="72"
-     inkscape:cy="468.81174"
-     inkscape:cx="658.06457"
-     inkscape:zoom="0.78363065"
+     inkscape:window-y="0"
+     inkscape:window-x="0"
+     inkscape:cy="379.27496"
+     inkscape:cx="154.1192"
+     inkscape:zoom="2.8224906"
      inkscape:document-units="mm"
      inkscape:snap-smooth-nodes="true"
      inkscape:object-nodes="true"
      showgrid="false"
      id="namedview21756"
-     inkscape:window-height="1053"
-     inkscape:window-width="1848"
+     inkscape:window-height="1003"
+     inkscape:window-width="1920"
      inkscape:pageshadow="2"
      inkscape:pageopacity="0"
      guidetolerance="10"
@@ -55,7 +55,9 @@
      bordercolor="#666666"
      pagecolor="#ffffff"
      showguides="true"
-     inkscape:guide-bbox="true">
+     inkscape:guide-bbox="true"
+     inkscape:pagecheckerboard="0"
+     inkscape:bbox-paths="true">
     <inkscape:grid
        spacingy="1"
        spacingx="1"
@@ -77,10 +79,28 @@
   </metadata>
   <defs
      id="defs21758">
+    <marker
+       style="overflow:visible;"
+       id="marker7003"
+       refX="0.0"
+       refY="0.0"
+       orient="auto"
+       inkscape:stockid="Arrow1Mend"
+       inkscape:isstock="true">
+      <path
+         transform="scale(0.4) rotate(180) translate(10,0)"
+         style="fill-rule:evenodd;fill:context-stroke;stroke:context-stroke;stroke-width:1.0pt;"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         id="path6751" />
+    </marker>
     <filter
        id="filter10374"
        style="color-interpolation-filters:sRGB"
-       inkscape:collect="always">
+       inkscape:collect="always"
+       x="-0.0026027485"
+       y="-0.0028751291"
+       width="1.0052055"
+       height="1.0057503">
       <feBlend
          id="feBlend10376"
          in2="BackgroundImage"
@@ -133,14 +153,15 @@
      inkscape:label="export_size"
      style="display:none">
     <rect
-       style="display:inline;opacity:1;fill:#806600;fill-opacity:1;stroke:#ffffff;stroke-width:0.19652647;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.97115383;enable-background:new"
+       style="display:inline;opacity:1;fill:#e6e6e6;fill-opacity:1;stroke:none;stroke-width:0.196526;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.971154;enable-background:new"
        id="rect1342"
-       width="200"
-       height="182"
-       x="34.999996"
-       y="14"
+       width="234.94994"
+       height="182.03334"
+       x="0.062568761"
+       y="13.98333"
        inkscape:export-xdpi="200"
-       inkscape:export-ydpi="200" />
+       inkscape:export-ydpi="200"
+       inkscape:export-filename="/home/ptt/projecten/striso/software/striso_control/doc/strisoboard-reference.png" />
   </g>
   <g
      transform="translate(0,-417.4555)"
@@ -1438,322 +1459,317 @@
        style="font-size:7px;text-anchor:middle;stroke:none"
        id="g1286">
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="27.737373"
          y="166.97624"
-         id="text1164">0</text>
+         id="text1164">1</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="44.652775"
          y="160.5508"
-         id="text1166">0</text>
+         id="text1166">1</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="61.723965"
          y="154.12537"
-         id="text1168">0</text>
+         id="text1168">1</text>
       <text
          x="68.352448"
          y="170.18724"
          id="text1170"
-         style="font-size:2.33333325px;stroke-width:0.33333334">0</text>
+         style="font-size:2.33333px;stroke-width:0.333333">1</text>
       <text
          x="86.756462"
          y="163.76352"
          id="text1172"
-         style="font-size:2.33333325px;stroke-width:0.33333334">0</text>
+         style="font-size:2.33333px;stroke-width:0.333333">1</text>
       <text
          x="103.8009"
          y="157.33638"
          id="text1174"
-         style="font-size:2.33333325px;stroke-width:0.33333334">0</text>
+         style="font-size:2.33333px;stroke-width:0.333333">1</text>
       <text
          x="120.25874"
          y="150.91095"
          id="text1176"
-         style="font-size:2.33333325px;stroke-width:0.33333334">0</text>
+         style="font-size:2.33333px;stroke-width:0.333333">1</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="129.80487"
          y="166.97112"
-         id="text1178">0</text>
+         id="text1178">1</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="146.73138"
          y="160.5508"
-         id="text1180">0</text>
+         id="text1180">1</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="163.64679"
          y="154.12024"
-         id="text1182">0</text>
+         id="text1182">1</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="27.747911"
          y="128.42305"
-         id="text1184">1</text>
+         id="text1184">2</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="36.321396"
          y="144.48665"
-         id="text1186">1</text>
+         id="text1186">2</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="44.663315"
          y="121.99761"
-         id="text1188">1</text>
+         id="text1188">2</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="53.321396"
          y="138.06122"
-         id="text1190">1</text>
+         id="text1190">2</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="61.734501"
          y="115.57218"
-         id="text1192">1</text>
+         id="text1192">2</text>
       <text
          x="68.362984"
          y="131.63408"
          id="text1194"
-         style="font-size:2.33333325px;stroke-width:0.33333334">1</text>
+         style="font-size:2.33333px;stroke-width:0.333333">2</text>
       <text
          x="78.315704"
          y="147.69937"
          id="text1196"
-         style="font-size:2.33333325px;stroke-width:0.33333334">1</text>
+         style="font-size:2.33333px;stroke-width:0.333333">2</text>
       <text
          x="86.766998"
          y="125.21034"
          id="text1198"
-         style="font-size:2.33333325px;stroke-width:0.33333334">1</text>
+         style="font-size:2.33333px;stroke-width:0.333333">2</text>
       <text
          x="94.962837"
          y="141.27223"
          id="text1200"
-         style="font-size:2.33333325px;stroke-width:0.33333334">1</text>
+         style="font-size:2.33333px;stroke-width:0.333333">2</text>
       <text
          x="103.81144"
          y="118.78319"
          id="text1202"
-         style="font-size:2.33333325px;stroke-width:0.33333334">1</text>
+         style="font-size:2.33333px;stroke-width:0.333333">2</text>
       <text
          x="111.78123"
          y="134.8468"
          id="text1204"
-         style="font-size:2.33333325px;stroke-width:0.33333334">1</text>
+         style="font-size:2.33333px;stroke-width:0.333333">2</text>
       <text
          x="120.26929"
          y="112.35776"
          id="text1206"
-         style="font-size:2.33333325px;stroke-width:0.33333334">1</text>
+         style="font-size:2.33333px;stroke-width:0.333333">2</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="129.81541"
          y="128.41792"
-         id="text1208">1</text>
+         id="text1208">2</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="138.24193"
          y="144.48665"
-         id="text1210">1</text>
+         id="text1210">2</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="146.74193"
          y="121.99761"
-         id="text1212">1</text>
+         id="text1212">2</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="155.31541"
          y="138.05609"
-         id="text1214">1</text>
+         id="text1214">2</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="163.65733"
          y="115.56706"
-         id="text1216">1</text>
+         id="text1216">2</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="27.721992"
          y="89.862762"
-         id="text1218">2</text>
+         id="text1218">3</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="36.295475"
          y="105.92635"
-         id="text1220">2</text>
+         id="text1220">3</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="44.637394"
          y="83.437332"
-         id="text1222">2</text>
+         id="text1222">3</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="53.295475"
          y="99.500916"
-         id="text1224">2</text>
+         id="text1224">3</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="61.708584"
          y="77.011902"
-         id="text1226">2</text>
+         id="text1226">3</text>
       <text
          x="68.337067"
          y="93.073776"
          id="text1228"
-         style="font-size:2.33333325px;stroke-width:0.33333334">2</text>
+         style="font-size:2.33333px;stroke-width:0.333333">3</text>
       <text
          x="78.289787"
          y="109.13907"
          id="text1230"
-         style="font-size:2.33333325px;stroke-width:0.33333334">2</text>
+         style="font-size:2.33333px;stroke-width:0.333333">3</text>
       <text
          x="86.741081"
          y="86.650047"
          id="text1232"
-         style="font-size:2.33333325px;stroke-width:0.33333334">2</text>
+         style="font-size:2.33333px;stroke-width:0.333333">3</text>
       <text
          x="94.93692"
          y="102.71192"
          id="text1234"
-         style="font-size:2.33333325px;stroke-width:0.33333334">2</text>
+         style="font-size:2.33333px;stroke-width:0.333333">3</text>
       <text
          x="103.78553"
          y="80.222908"
          id="text1236"
-         style="font-size:2.33333325px;stroke-width:0.33333334">2</text>
+         style="font-size:2.33333px;stroke-width:0.333333">3</text>
       <text
          x="111.75532"
          y="96.286491"
          id="text1238"
-         style="font-size:2.33333325px;stroke-width:0.33333334">2</text>
+         style="font-size:2.33333px;stroke-width:0.333333">3</text>
       <text
          x="120.24335"
          y="73.79747"
          id="text1240"
-         style="font-size:2.33333325px;stroke-width:0.33333334">2</text>
+         style="font-size:2.33333px;stroke-width:0.333333">3</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="129.78949"
          y="89.857635"
-         id="text1242">2</text>
+         id="text1242">3</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="138.216"
          y="105.92635"
-         id="text1244">2</text>
+         id="text1244">3</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="146.716"
          y="83.437332"
-         id="text1246">2</text>
+         id="text1246">3</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="155.28949"
          y="99.495789"
-         id="text1248">2</text>
+         id="text1248">3</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="163.63141"
          y="77.006775"
-         id="text1250">2</text>
+         id="text1250">3</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="27.735378"
          y="51.318428"
-         id="text1252">3</text>
+         id="text1252">4</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="36.308865"
          y="67.382011"
-         id="text1254">3</text>
+         id="text1254">4</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="44.650784"
          y="44.892994"
-         id="text1256">3</text>
+         id="text1256">4</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="53.308865"
          y="60.956577"
-         id="text1258">3</text>
+         id="text1258">4</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="61.721966"
          y="38.46756"
-         id="text1260">3</text>
+         id="text1260">4</text>
       <text
          x="68.350449"
          y="54.529434"
          id="text1262"
-         style="font-size:2.33333325px;stroke-width:0.33333334">3</text>
+         style="font-size:2.33333px;stroke-width:0.333333">4</text>
       <text
          x="78.303169"
          y="70.594727"
          id="text1264"
-         style="font-size:2.33333325px;stroke-width:0.33333334">3</text>
+         style="font-size:2.33333px;stroke-width:0.333333">4</text>
       <text
          x="86.754463"
          y="48.105713"
          id="text1266"
-         style="font-size:2.33333325px;stroke-width:0.33333334">3</text>
+         style="font-size:2.33333px;stroke-width:0.333333">4</text>
       <text
          x="94.950302"
          y="64.167587"
          id="text1268"
-         style="font-size:2.33333325px;stroke-width:0.33333334">3</text>
+         style="font-size:2.33333px;stroke-width:0.333333">4</text>
       <text
          x="103.7989"
          y="41.67857"
          id="text1270"
-         style="font-size:2.33333325px;stroke-width:0.33333334">3</text>
+         style="font-size:2.33333px;stroke-width:0.333333">4</text>
       <text
          x="111.76871"
          y="57.742153"
          id="text1272"
-         style="font-size:2.33333325px;stroke-width:0.33333334">3</text>
+         style="font-size:2.33333px;stroke-width:0.333333">4</text>
       <text
          x="120.25674"
          y="35.253136"
          id="text1274"
-         style="font-size:2.33333325px;stroke-width:0.33333334">3</text>
+         style="font-size:2.33333px;stroke-width:0.333333">4</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="129.80289"
          y="51.313301"
-         id="text1276">3</text>
+         id="text1276">4</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="138.2294"
          y="67.382011"
-         id="text1278">3</text>
+         id="text1278">4</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="146.7294"
          y="44.892994"
-         id="text1280">3</text>
+         id="text1280">4</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="155.30289"
          y="60.95145"
-         id="text1282">3</text>
+         id="text1282">4</text>
       <text
-         style="font-size:2.33333325px;fill:#000000;stroke-width:0.33333334"
+         style="font-size:2.33333px;fill:#000000;stroke-width:0.333333"
          x="163.64481"
          y="38.462433"
-         id="text1284">3</text>
+         id="text1284">4</text>
     </g>
     <text
        xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:2.11666656px;line-height:1.25;font-family:'Gentium Plus';-inkscape-font-specification:'Gentium Plus';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:2.11667px;line-height:1.25;font-family:'Gentium Plus';-inkscape-font-specification:'Gentium Plus';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
        x="181.48032"
        y="683.04443"
-       id="text1292"><tspan
-         sodipodi:role="line"
-         x="181.48032"
-         y="684.89655"
-         style="stroke-width:0.26458332"
-         id="tspan1298" /></text>
+       id="text1292" />
   </g>
   <g
      inkscape:groupmode="layer"
@@ -1763,12 +1779,48 @@
      transform="translate(0,-548)">
     <g
        inkscape:groupmode="layer"
+       id="layer1"
+       inkscape:label="reference extra"
+       style="display:none">
+      <text
+         id="text2447"
+         y="661.13733"
+         x="35.051006"
+         style="font-size:3.175px;line-height:6.61458px;font-family:Andika;-inkscape-font-specification:Andika;text-align:end;letter-spacing:0px;word-spacing:0px;text-anchor:end;display:inline;fill:#000000;enable-background:new"
+         xml:space="preserve"><tspan
+           style="font-size:4.93889px;text-align:end;text-anchor:end"
+           y="661.13733"
+           x="35.051006"
+           id="tspan2445"
+           sodipodi:role="line">Free transpose</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-weight:normal;font-size:3.12051px;line-height:1.25;font-family:sans-serif;display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583;enable-background:new"
+         x="35.53997"
+         y="660.81488"
+         id="text4693"><tspan
+           sodipodi:role="line"
+           id="tspan4691"
+           style="stroke-width:0.264583"
+           x="35.53997"
+           y="660.81488">+</tspan></text>
+      <path
+         style="display:inline;fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker7003);enable-background:new"
+         d="m 34.381855,657.82356 3.086129,-1.62508"
+         id="path6658" />
+      <path
+         style="display:inline;fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker7003);enable-background:new"
+         d="m 34.381855,662.01935 3.086129,1.62508"
+         id="path6660" />
+    </g>
+    <g
+       inkscape:groupmode="layer"
        id="layer7"
        inkscape:label="reference"
        style="display:inline">
       <text
          xml:space="preserve"
-         style="font-size:3.17499995px;line-height:6.61458302px;font-family:Andika;-inkscape-font-specification:Andika;text-align:end;letter-spacing:0px;word-spacing:0px;text-anchor:end;display:inline;fill:#000000"
+         style="font-size:3.175px;line-height:6.61458px;font-family:Andika;-inkscape-font-specification:Andika;text-align:end;letter-spacing:0px;word-spacing:0px;text-anchor:end;display:inline;fill:#000000"
          x="35.051006"
          y="622.89911"
          id="text13415"><tspan
@@ -1776,14 +1828,14 @@
            id="tspan13413"
            x="35.051006"
            y="622.89911"
-           style="font-size:4.93888903px;text-align:end;text-anchor:end">Glissando</tspan></text>
+           style="font-size:4.93889px;text-align:end;text-anchor:end">Glissando</tspan></text>
       <text
          id="text13423"
          y="700.33942"
          x="35.051006"
-         style="font-size:3.17499995px;line-height:6.61458302px;font-family:Andika;-inkscape-font-specification:Andika;text-align:end;letter-spacing:0px;word-spacing:0px;text-anchor:end;display:inline;fill:#000000"
+         style="font-size:3.175px;line-height:6.61458px;font-family:Andika;-inkscape-font-specification:Andika;text-align:end;letter-spacing:0px;word-spacing:0px;text-anchor:end;display:inline;fill:#000000"
          xml:space="preserve"><tspan
-           style="font-size:4.93888903px;text-align:end;text-anchor:end"
+           style="font-size:4.93889px;text-align:end;text-anchor:end"
            y="700.33942"
            x="35.051006"
            id="tspan13421"
@@ -1792,16 +1844,16 @@
          id="text13437"
          y="653.19971"
          x="35.051006"
-         style="font-size:3.17499995px;line-height:6.61458302px;font-family:Andika;-inkscape-font-specification:Andika;text-align:end;letter-spacing:0px;word-spacing:0px;text-anchor:end;display:inline;fill:#000000"
+         style="font-size:3.175px;line-height:6.61458px;font-family:Andika;-inkscape-font-specification:Andika;text-align:end;letter-spacing:0px;word-spacing:0px;text-anchor:end;display:inline;fill:#000000"
          xml:space="preserve"><tspan
-           style="font-size:4.93888903px;text-align:end;text-anchor:end"
+           style="font-size:4.93889px;text-align:end;text-anchor:end"
            y="653.19971"
            x="35.051006"
            id="tspan13435"
            sodipodi:role="line">Octave up</tspan></text>
       <text
          xml:space="preserve"
-         style="font-size:3.17499995px;line-height:6.61458302px;font-family:Andika;-inkscape-font-specification:Andika;text-align:end;letter-spacing:0px;word-spacing:0px;text-anchor:end;display:inline;fill:#000000"
+         style="font-size:3.175px;line-height:6.61458px;font-family:Andika;-inkscape-font-specification:Andika;text-align:end;letter-spacing:0px;word-spacing:0px;text-anchor:end;display:inline;fill:#000000"
          x="35.051006"
          y="668.89911"
          id="text13441"><tspan
@@ -1809,21 +1861,21 @@
            sodipodi:role="line"
            x="35.051006"
            y="668.89911"
-           style="font-size:4.93888903px;text-align:end;text-anchor:end">Octave down</tspan></text>
+           style="font-size:4.93889px;text-align:end;text-anchor:end">Octave down</tspan></text>
       <text
          id="text20547"
          y="601.89911"
          x="35.051006"
-         style="font-size:3.17499995px;line-height:6.61458302px;font-family:Andika;-inkscape-font-specification:Andika;letter-spacing:0px;word-spacing:0px;display:inline;fill:#000000"
+         style="font-size:3.175px;line-height:6.61458px;font-family:Andika;-inkscape-font-specification:Andika;letter-spacing:0px;word-spacing:0px;display:inline;fill:#000000"
          xml:space="preserve"><tspan
-           style="font-size:4.93888903px;text-align:end;text-anchor:end"
+           style="font-size:4.93889px;text-align:end;text-anchor:end"
            y="601.89911"
            x="35.051006"
            id="tspan20545"
            sodipodi:role="line">Indicator led</tspan></text>
       <text
          xml:space="preserve"
-         style="font-size:3.17499995px;line-height:6.61458302px;font-family:Andika;-inkscape-font-specification:Andika;letter-spacing:0px;word-spacing:0px;display:inline;fill:#000000"
+         style="font-size:3.175px;line-height:6.61458px;font-family:Andika;-inkscape-font-specification:Andika;letter-spacing:0px;word-spacing:0px;display:inline;fill:#000000"
          x="35.051006"
          y="681.6156"
          id="text20551"><tspan
@@ -1831,14 +1883,14 @@
            id="tspan20549"
            x="35.051006"
            y="681.6156"
-           style="font-size:4.93888903px;text-align:end;text-anchor:end">Down leds</tspan></text>
+           style="font-size:4.93889px;text-align:end;text-anchor:end">Down leds</tspan></text>
       <text
          id="text20555"
          y="640.6897"
          x="35.051006"
-         style="font-size:3.17499995px;line-height:6.61458302px;font-family:Andika;-inkscape-font-specification:Andika;letter-spacing:0px;word-spacing:0px;display:inline;fill:#000000"
+         style="font-size:3.175px;line-height:6.61458px;font-family:Andika;-inkscape-font-specification:Andika;letter-spacing:0px;word-spacing:0px;display:inline;fill:#000000"
          xml:space="preserve"><tspan
-           style="font-size:4.93888903px;text-align:end;text-anchor:end"
+           style="font-size:4.93889px;text-align:end;text-anchor:end"
            y="640.6897"
            x="35.051006"
            id="tspan20553"
@@ -1950,7 +2002,7 @@
        style="display:inline;fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.99999994;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#Arrow1Mstart);marker-end:url(#Arrow1Mend);enable-background:new" />
     <text
        xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.38666677px;line-height:0%;font-family:'Bitstream Charter';-inkscape-font-specification:'Bitstream Charter';text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.28222224;enable-background:new"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.38667px;line-height:0%;font-family:'Bitstream Charter';-inkscape-font-specification:'Bitstream Charter';text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.282222;enable-background:new"
        x="280.00754"
        y="182.97397"
        id="text5805"><tspan
@@ -1958,15 +2010,15 @@
          x="280.00754"
          y="182.97397"
          id="tspan5809"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:1.25;font-family:Andika;-inkscape-font-specification:Andika;stroke-width:0.28222224">Key, following the</tspan><tspan
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;line-height:1.25;font-family:Andika;-inkscape-font-specification:Andika;stroke-width:0.282222">Key, following the</tspan><tspan
          sodipodi:role="line"
          x="280.00754"
          y="189.14758"
          id="tspan5817"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:1.25;font-family:Andika;-inkscape-font-specification:Andika;stroke-width:0.28222224">Circle of Fifths</tspan></text>
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;line-height:1.25;font-family:Andika;-inkscape-font-specification:Andika;stroke-width:0.282222">Circle of Fifths</tspan></text>
     <text
        xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.38666677px;line-height:0%;font-family:'Bitstream Charter';-inkscape-font-specification:'Bitstream Charter';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.28222224;enable-background:new"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.38667px;line-height:0%;font-family:'Bitstream Charter';-inkscape-font-specification:'Bitstream Charter';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.282222;enable-background:new"
        x="-170.94917"
        y="276.75754"
        id="text5813"
@@ -1975,7 +2027,7 @@
          id="tspan5815"
          x="-170.94917"
          y="276.75754"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:1.25;font-family:Andika;-inkscape-font-specification:Andika;stroke-width:0.28222224">Pitch</tspan></text>
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;line-height:1.25;font-family:Andika;-inkscape-font-specification:Andika;stroke-width:0.282222">Pitch</tspan></text>
     <g
        transform="matrix(0.26458333,0,0,0.26458333,234.44893,-99.456825)"
        style="font-style:normal;font-weight:normal;font-size:24px;font-family:'Bitstream Vera Sans';text-align:center;text-anchor:middle;display:inline;fill:#000000;fill-opacity:1;stroke:none;enable-background:new"
@@ -2000,16 +2052,16 @@
        id="text22189"
        y="183.89192"
        x="247.15367"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.38666677px;line-height:0%;font-family:'Bitstream Charter';-inkscape-font-specification:'Bitstream Charter';text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.28222224;enable-background:new"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.38667px;line-height:0%;font-family:'Bitstream Charter';-inkscape-font-specification:'Bitstream Charter';text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.282222;enable-background:new"
        xml:space="preserve"><tspan
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:1.25;font-family:Andika;-inkscape-font-specification:Andika;stroke-width:0.28222224"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;line-height:1.25;font-family:Andika;-inkscape-font-specification:Andika;stroke-width:0.282222"
          y="183.89192"
          x="247.15367"
          sodipodi:role="line"
          id="tspan22193">minor</tspan></text>
     <text
        xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.38666677px;line-height:0%;font-family:'Bitstream Charter';-inkscape-font-specification:'Bitstream Charter';text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.28222224;enable-background:new"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.38667px;line-height:0%;font-family:'Bitstream Charter';-inkscape-font-specification:'Bitstream Charter';text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.282222;enable-background:new"
        x="310.98401"
        y="183.89192"
        id="text22199"><tspan
@@ -2017,6 +2069,6 @@
          sodipodi:role="line"
          x="310.98401"
          y="183.89192"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:1.25;font-family:Andika;-inkscape-font-specification:Andika;stroke-width:0.28222224">major</tspan></text>
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;line-height:1.25;font-family:Andika;-inkscape-font-specification:Andika;stroke-width:0.282222">major</tspan></text>
   </g>
 </svg>
