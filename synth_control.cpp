@@ -541,9 +541,9 @@ class Instrument {
                             set_notegen1(7.0f);
                             reset_note_offsets();
                         } return;
-                        case (36): { // set quarter comma meantone tuning
+                        case (36): { // set 31tet tuning (practically equal to quarter comma meantone)
                             notegen0 = 12.0f;
-                            set_notegen1(6.96578428466209f);
+                            set_notegen1(6.96774193548387f);
                             reset_note_offsets();
                         } return;
                         case (38): { // set 19tet tuning
@@ -566,15 +566,15 @@ class Instrument {
                             set_notegen1(6.85714285714286f);
                             reset_note_offsets();
                         } return;
-                        case (29): { // set 31tet tuning
-                            notegen0 = 12.0f;
-                            set_notegen1(6.96774193548387f);
-                            reset_note_offsets();
-                        } return;
-                        case (31): { // set Bohlen-Pierce tuning thirds 13et
+                        case (29): { // set Bohlen-Pierce tuning thirds 13et
                             notegen0 = 10.2413f;
                             notegen1 = 5.8522f;
                             reset_note_offsets();
+                            update_leds();
+                        } return;
+                        case (31): { // set Bohlen-Pierce tuning sixts 13tet
+                            notegen0 = 19.0196f;
+                            notegen1 = 10.2413f;
                             update_leds();
                         } return;
                         case (33): { // set JI 7-limit
@@ -583,11 +583,6 @@ class Instrument {
                             set_note_offsets(ji7limit, 17);
                             update_leds();
                         } return;
-                        // case (33): { // set Bohlen-Pierce tuning sixts 13tet
-                        //     notegen0 = 19.0196f;
-                        //     notegen1 = 10.2413f;
-                        //     update_leds();
-                        // } return;
                         // row 6: 35 37 39 41 43 45 30 32
 #ifdef USE_MIDI_OUT
                         case (35): {
