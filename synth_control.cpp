@@ -535,6 +535,18 @@ class Instrument {
                             ws2812_write_led(0, 12, 0, 0);
                         } return;
                         // row 4: 18 20 22 24 26 28 13 15
+                        case (18): {
+                            config.zero_offset = 0 * ((1<<24) / 128);
+                            led_rgb3(14, 7, 0);
+                        } return;
+                        case (20): {
+                            config.zero_offset = 4 * ((1<<24) / 128);
+                            led_rgb3(56, 28, 0);
+                        } return;
+                        case (22): {
+                            config.zero_offset = 8 * ((1<<24) / 128);
+                            led_rgb3(168, 84, 0);
+                        } return;
                         // row 5: 34 36 38 23 25 27 29 31 33
                         case (34): { // set 12tet tuning
                             notegen0 = 12.0f;

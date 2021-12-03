@@ -682,11 +682,11 @@ void update_button(button_t* but) {
       col_pressed[but->src_id][but_id % 17]++;
     }
     // if button is in start integration reduce timer
-    if (but->status == STARTING && but->pres > but->zero_offset) {
-      but->timer -= (but->pres - but->zero_offset);
+    if (but->status == STARTING && but->pres > (config.zero_offset + but->zero_offset + MSGFACT)) {
+      but->timer -= (but->pres - but->zero_offset - MSGFACT);
     }
     // note off if .pres is too low even though .on is high enough
-    else if (but->pres < (but->zero_offset + MSGFACT) && but->status == ON) {
+    else if (but->status == ON && but->pres < (config.zero_offset / 2 + but->zero_offset + MSGFACT)) {
       but->status = STARTING;
       buttons_pressed[but->src_id]--;
       but->timer = INTEGRATED_PRES_TRESHOLD;

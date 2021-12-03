@@ -75,15 +75,16 @@ typedef struct struct_config {
   int send_motion_interval;
   int send_motion_14bit;
   int send_button_14bit;
+  int zero_offset;
   int debug;
   midi_mode_t midi_mode;
-  unsigned int midi_pres;
-  unsigned int midi_x;
-  unsigned int midi_y;
-  unsigned int mpe_pres;
-  unsigned int mpe_x;
-  unsigned int mpe_y;
-  unsigned int mpe_contvelo;
+  uint8_t midi_pres;
+  uint8_t midi_x;
+  uint8_t midi_y;
+  uint8_t mpe_pres;
+  uint8_t mpe_x;
+  uint8_t mpe_y;
+  uint8_t mpe_contvelo;
 } config_t;
 extern config_t config;
 
@@ -100,6 +101,7 @@ config_t config = {
   .send_motion_interval = 1,  // 0 = disable, else x10ms
   .send_motion_14bit = 0,     // send 14 bit motion CC
   .send_button_14bit = 0,     // send 14 bit MPE CC
+  .zero_offset = 0,
   .debug = 0,
   .midi_mode = MIDI_MODE_MPE,
   // for the following: < 120: CC, or CFG_* (not all options are supported)
