@@ -1,3 +1,4 @@
+# clangd configuration file (for use with for example the clangd vscode extension)
 --target=arm-none-eabi
 -I/usr/include/newlib
 -mcpu=cortex-m7
@@ -50,3 +51,8 @@
 -I./ChibiOS/os/common/ports/ARMCMx
 -I./ChibiOS/os/common/ports/ARMCMx/compilers/GCC
 -I./ChibiOS/os/hal/lib/streams
+# include ch.h and hal.h by default to fix checking ChibiOS header files
+-include
+ch.h
+-include
+hal.h
