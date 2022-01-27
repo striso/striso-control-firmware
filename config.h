@@ -99,7 +99,7 @@ extern config_t config;
 config_t config = {
   .message_interval = 1,      // interval in ms
   .send_usb_bulk = 0,         // send Striso binary protocol
-  .send_motion_interval = 1,  // 0 = disable, else x10ms
+  .send_motion_interval = 127,// 0 = disable, 127 only internal, else x10ms
   .send_motion_14bit = 0,     // send 14 bit motion CC
   .send_button_14bit = 0,     // send 14 bit MPE CC
   .zero_offset = 0,

@@ -215,14 +215,17 @@ static void ThreadAccel(void *arg) {
     }
 
     if (config.send_motion_interval) {
-      msg[2] = ax>>2;
-      msg[3] = ay>>2;
-      msg[4] = az>>2;
-      msg[5] = ((int16_t)(acc_abs * 32768.0/8.0))>>2;
-      msg[6] = gx>>2;
-      msg[7] = gy>>2;
-      msg[8] = gz>>2;
-      msgSend(9,msg);
+      if (config.send_motion_interval != 127) {
+        // 127 means only internal synth
+        msg[2] = ax>>2;
+        msg[3] = ay>>2;
+        msg[4] = az>>2;
+        msg[5] = ((int16_t)(acc_abs * 32768.0/8.0))>>2;
+        msg[6] = gx>>2;
+        msg[7] = gy>>2;
+        msg[8] = gz>>2;
+        msgSend(9,msg);
+      }
 
 #ifdef USE_INTERNAL_SYNTH
       float rot_x = ((float)gx)*(1.0/32768.0);
