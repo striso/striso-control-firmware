@@ -1408,6 +1408,17 @@ void midi_config(void) {
 #endif
 }
 
+void synth_control_init(void) {
+    int s = getConfigInt("iGoct   ");
+    if (s >= -2 && s <= 2) {
+        dis.change_note_offset(s * dis.notegen0);
+    }
+    s = getConfigInt("iGmotion");
+    if (s >= 0 && s <= 127) {
+        config.send_motion_interval = s;
+    }
+}
+
 void clear_dead_notes(void) {
     dis.clear_dead_notes();
 }

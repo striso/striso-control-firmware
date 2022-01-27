@@ -35,4 +35,7 @@ extern void computebufI(int32_t *inp, int32_t *outp);
 
 void codec_clearbuffer(void);
 
+void codec_linein_enable(void);
+void codec_linein_disable(void);
+
 #endif /* __CODEC_H */

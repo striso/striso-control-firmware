@@ -70,6 +70,13 @@ typedef enum {
   MIDI_MODE_MONO,
 } midi_mode_t;
 
+typedef enum {
+  JACK2_MODE_DISABLED = 0,
+  JACK2_MODE_MIDI,
+  JACK2_MODE_PEDAL,
+  JACK2_MODE_LINEIN,
+} jack2_mode_t;
+
 typedef struct struct_config {
   int message_interval;
   int send_usb_bulk;
@@ -79,6 +86,7 @@ typedef struct struct_config {
   int zero_offset;
   int debug;
   midi_mode_t midi_mode;
+  jack2_mode_t jack2_mode;
   uint8_t midi_pres;
   uint8_t midi_x;
   uint8_t midi_y;
@@ -105,6 +113,7 @@ config_t config = {
   .zero_offset = 0,
   .debug = 0,
   .midi_mode = MIDI_MODE_MPE,
+  .jack2_mode = JACK2_MODE_DISABLED,
   // for the following: < 120: CC, or CFG_* (not all options are supported)
   .midi_pres = CFG_POLY_PRESSURE,
   .midi_x = CFG_PITCH_BEND,
@@ -138,7 +147,16 @@ User calibration values
 
 // CC_ALIGN(8)
 const ConfigParam default_config[] = {
-  {"MConfig ", "v1.0    "},
+  {"MConfig ", "v1.0    "}, // start tag
+
+  // general settings
+  {"iGoct   ", "0       "}, // default octave [-2..2]
+  {"sGjack2 ", "midi    "}, // midi/pedal/linein
+  {"iGmotion", "127     "}, // motion message interval, 0=disable, 127=internal only
+
+  // preset 1
+  {"sP1name ", "preset1 "},
+  {"hP1color", "eeeeee  "},
 
   // tuning 0, 12tet
   // don't use, hard coded as default

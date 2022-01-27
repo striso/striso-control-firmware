@@ -36,6 +36,7 @@
 #include "midi_serial.h"
 #include "led.h"
 #include "config_editor/config_editor.h"
+#include "aux_jack.h"
 
 /**
  *  Firmware version description on fixed flash address for bootloader
@@ -63,12 +64,14 @@ float vsqrtf(float op1) {
   return (result);
 }
 
+#ifdef USE_UART
 static SerialConfig ser_cfg = {
     500000,
     0,
     0,
     0,
 };
+#endif
 
 /*
  * LED flash thread.
@@ -166,10 +169,6 @@ int main(void) {
   sdStart(&SD1, &ser_cfg);
 #endif
 
-#ifdef USE_MIDI_SERIAL
-  serial_midi_init();
-#endif
-
 #ifdef USE_WS2812
   ws2812_init();
   ws2812_write_led(0, 15, 31,  0);
@@ -206,6 +205,9 @@ int main(void) {
   codec_init(SAMPLERATE);
   start_synth_thread();
 #endif
+
+  aux_jack_init();
+  synth_control_init();
 
   ButtonReadStart();
   

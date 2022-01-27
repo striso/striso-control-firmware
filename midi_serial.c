@@ -20,6 +20,7 @@
 
 #include "midi.h"
 #include "midi_serial.h"
+#include "config.h"
 
 // static unsigned char StatusLengthLookup[16] = {0, 0, 0, 0, 0, 0, 0, 0, 3, // 0x80=note off, 3 bytes
 //                                                3, // 0x90=note on, 3 bytes
@@ -105,22 +106,28 @@
 // Midi OUT
 
 void serial_MidiSend1(uint8_t b0) {
-  sdPut(&SDMIDI, b0);
+  if (config.jack2_mode == JACK2_MODE_MIDI) { // or SDMIDI.state == SD_READY ?
+    sdPut(&SDMIDI, b0);
+  }
 }
 
 void serial_MidiSend2(uint8_t b0, uint8_t b1) {
-  unsigned char tx[2];
-  tx[0] = b0;
-  tx[1] = b1;
-  sdWrite(&SDMIDI, tx, 2);
+  if (config.jack2_mode == JACK2_MODE_MIDI) {
+    unsigned char tx[2];
+    tx[0] = b0;
+    tx[1] = b1;
+    sdWrite(&SDMIDI, tx, 2);
+  }
 }
 
 void serial_MidiSend3(uint8_t b0, uint8_t b1, uint8_t b2) {
-  unsigned char tx[3];
-  tx[0] = b0;
-  tx[1] = b1;
-  tx[2] = b2;
-  sdWrite(&SDMIDI, tx, 3);
+  if (config.jack2_mode == JACK2_MODE_MIDI) {
+    unsigned char tx[3];
+    tx[0] = b0;
+    tx[1] = b1;
+    tx[2] = b2;
+    sdWrite(&SDMIDI, tx, 3);
+  }
 }
 
 int serial_MidiGetOutputBufferPending(void) {
