@@ -2,10 +2,20 @@
 
 ## Next release
 
+This release adds a long planned feature: Persistent configuration and a configuration editor.
+
+The editor can be opened on a computer. Connect the USB cable with the settings (square) button pressed, now it should attach as a flash drive. Open the file CONFIG.HTM, which should open a web browser with the configuration editor.
+
+## Added
+- Persistent configuration and configuration editor
+
+### Changed
+- Don't send motion sensor data over MIDI by default, this behaviour can be changed in the config editor
+
 ## v2.1.4 - 2021-12-03
 
 ### Added
-- Setting for key detection threshold on Db3-Eb3-F3 to stop erroneous notes
+- Setting for key detection threshold, to stop false MIDI note-on messages
 
 ### Changed
 - Merge 31TET and meantone tunings, keep both Bohlen-Pierce mappings

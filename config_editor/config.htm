@@ -83,7 +83,6 @@ function showConfig() {
   } else {
     document.getElementById("select-number").style.display = "none";
   }
-  log(filter)
   let cfgtable = document.getElementById("config");
   cfgtable.innerHTML = "";
   for (let key in configuration) {
@@ -100,9 +99,9 @@ function showConfig() {
         + "<td><input class='config-value' type='text' value='" + value + "' maxlength='8'></td>"
         + "<td>" + configuration[key]['default'].trim() + "</td>";
       if (changed) {
-        newRow.getElementsByTagName("input")[0].classList.add("config-changed");
+        newRow.childNodes[1].childNodes[0].classList.add("config-changed");
       }
-      newRow.getElementsByTagName("input")[0].onchange = updateValue;
+      newRow.childNodes[1].childNodes[0].onchange = updateValue;
       newRow.childNodes[2].onclick = resetValue;
     }
   }
@@ -283,7 +282,7 @@ function dragOverHandler(ev) {
 }
   </script>
   <style>
-#config, #config input {
+#config, #config input, #config select {
   font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
   font-size: 0.9rem;
 }
@@ -703,9 +702,20 @@ body {
     </table>
 
     <h2>Information</h2>
+    <p>
+      This configuration editor let's you change the persistent configuration of the Striso board.
+      To save the changed settings, click 'Save configuration', and save or copy the file on the Striso USB drive.
+    </p>
+    <p>
+      The first letter of a key defines the expected type, i=integer, f=float, h=hexadecimal color code, s=string.
+      To reset a value click on de default. A more intuitive interface is in the making.
+    </p>
+    <p>
+      This editor is still work in progress, please share your experiences on the <a href="http://forum.striso.org">forum</a> or send an email to info@striso.org.
+    </p>
     <pre><code id="currconfig"></code></pre>
 
-    <p>Striso board {FWVERSION}</p>
+    <p id="version">Striso board {FWVERSION}</p>
 
   <footer>
     <span>&copy; 2021 <a href="https://www.striso.org" target="_blank" rel="noopener">Striso</a></span>
