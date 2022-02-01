@@ -28,7 +28,7 @@ class Visualizer(object):
         self.count = 0
 
     def start(self, calibrate=False):
-        self.win = win = pg.GraphicsWindow()
+        self.win = win = pg.GraphicsLayoutWidget()
         win.setWindowTitle('Striso visualizer')
         win.showMaximized()
         pg.setConfigOptions(antialias=True)
@@ -57,8 +57,8 @@ class Visualizer(object):
 
         p3 = win.addPlot()
         # Use automatic downsampling and clipping to reduce the drawing load
-        p3.setDownsampling(mode='peak')
-        p3.setClipToView(True)
+        # p3.setDownsampling(mode='peak')
+        # p3.setClipToView(True)
         # p4.setClipToView(True)
         p3.setRange(xRange=[-self.graph_length, 0], yRange=[0,1200])
         # p3.setLimits(xMax=0)
