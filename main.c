@@ -216,7 +216,7 @@ int main(void) {
 #endif
 
   for (int i=8; i<168; i++) {
-    led_rgb3(0,i,0);
+    led_rgb3(i,i,i);
     chThdSleepMilliseconds(1);
   }
 
