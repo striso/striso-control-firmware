@@ -19,10 +19,36 @@ function log(msg) {
   console.log(msg)
 }
 
+function clamp(x, min, max) {
+  return Math.max(min, Math.min(x, max));
+}
+
 const UF2_MAGIC_START0 = 0x0A324655 // "UF2\n"
 const UF2_MAGIC_START1 = 0x9E5D5157 // Randomly selected
 const UF2_MAGIC_END = 0x0AB16F30 // Ditto
 const UF2_FAMILYID = 0xa21e1295 // Striso STM32H7 familyID
+
+const doc = {
+  iGoct: {text:"Default octave", help:"[-2..2]", check:function(x) {return clamp(x, -2, 2);}},
+  sGjack2: {text:"Pedal/MIDI jack mode", options:["midi", "pedal", "linein"]},
+  iGmotion: {text:"Default motion sensor state", help:"0=disable, 127=internal only, else motion message interval x10ms, ", check:function(x) {return clamp(x, 0, 127);}},
+  hTxcolor: {text:"LED color", help:"hexadecimal rgb representation"},
+  fTxoff: {text:"Tuning offset", help:"offset in cents"},
+  fTxoct: {text:"Octave interval", help:"octave interval in cents"},
+  fTxfifth: {text:"Fifth interval", help:"fifth interval in cents"},
+}
+
+function getDoc(key) {
+  var docKey = key.trim();
+  if (docKey[1] === 'T' || docKey[1] === 'P') {
+    docKey = docKey.substring(0,2) + "x" + docKey.substring(3);
+  }
+  if (docKey in doc) {
+    return doc[docKey];
+  } else {
+    return {};
+  }
+}
 
 function err(msg) {
   log("Fatal error: " + msg)
@@ -62,8 +88,14 @@ function writeStr(buf, off, a) {
 
 function updateValue(evt) {
   let key = evt.target.parentElement.parentElement.childNodes[0].innerHTML;
-  let value = evt.target.value;
-  configuration[key]["current"] = value.substring(0, 8).padEnd(8, ' ');
+  var value = evt.target.value;
+  var d = getDoc(key);
+  if ("check" in d) {
+    value = String(d.check(value));
+  }
+  value = value.substring(0, 8).padEnd(8, ' ');
+  configuration[key]["current"] = value;
+  evt.target.value = value.trim();
   evt.target.classList.add("config-changed");
 }
 
@@ -77,16 +109,17 @@ function resetValue(evt) {
 
 function showConfig() {
   filter = document.querySelector('input[name="radioMain"]:checked').value;
-  if (filter === "T" || filter === "P") {
-    filter += document.querySelector('input[name="radioSub"]:checked').value;
-    document.getElementById("select-number").style.display = "block";
-  } else {
-    document.getElementById("select-number").style.display = "none";
+  showOnlyById(filter);
+  if (filter === "T") {
+    filter += document.querySelector('input[name="radioT"]:checked').value;
+  } else if (filter === "P") {
+    filter += document.querySelector('input[name="radioP"]:checked').value;
   }
   let cfgtable = document.getElementById("config");
   cfgtable.innerHTML = "";
   for (let key in configuration) {
     if (key.substring(1).startsWith(filter)) {
+      var d = getDoc(key);
       var newRow = cfgtable.insertRow(cfgtable.rows.length);
       var value = configuration[key]['current'];
       var changed = true;
@@ -95,14 +128,35 @@ function showConfig() {
         changed = false;
       }
       value = value.trim();
-      newRow.innerHTML = "<td>" + key + "</td>"
-        + "<td><input class='config-value' type='text' value='" + value + "' maxlength='8'></td>"
-        + "<td>" + configuration[key]['default'].trim() + "</td>";
-      if (changed) {
-        newRow.childNodes[1].childNodes[0].classList.add("config-changed");
+      newRow.innerHTML = "<td class='mono'>" + key + "</td>"
+        + "<td class='mono'></td>"
+        + "<td class='mono'>" + configuration[key]['default'].trim() + "</td>"
+        + "<td></td>";
+      var td = newRow.children[1];
+      if ("options" in d) {
+        var options = "";
+        for (let o of d.options) {
+          options += "<option value='" + o + "'>" + o + "</option>"
+        }
+        td.innerHTML = "<select class='config-value'>"
+          + options
+          + "</select>";
+        td.children[0].value = value;
+      } else {
+        td.innerHTML += "<input class='config-value' type='text' value='" + value + "' maxlength='8'>";
       }
-      newRow.childNodes[1].childNodes[0].onchange = updateValue;
-      newRow.childNodes[2].onclick = resetValue;
+      if ("text" in d) {
+        var help = d.text;
+        if ('help' in d) {
+          help += ", " + d.help;
+        }
+        newRow.children[3].innerHTML = help;
+      }
+      if (changed) {
+        newRow.children[1].children[0].classList.add("config-changed");
+      }
+      newRow.children[1].children[0].onchange = updateValue;
+      newRow.children[2].onclick = resetValue;
     }
   }
 }
@@ -233,6 +287,16 @@ function download(buf, name) {
   window.URL.revokeObjectURL(url);
 }
 
+function showOnlyById(s) {
+  for (e of document.getElementById(s).parentNode.children) {
+    if (e.id === s) {
+      e.style.display = "block";
+    } else {
+      e.style.display = "none";
+    }
+  }
+}
+
 function showMSG() {
   if (infoMsg)
     document.getElementById("currconfig").textContent = infoMsg
@@ -282,7 +346,7 @@ function dragOverHandler(ev) {
 }
   </script>
   <style>
-#config, #config input, #config select {
+.mono, #config input, #config select {
   font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
   font-size: 0.9rem;
 }
@@ -663,12 +727,13 @@ body {
 <body ondrop="dropHandler(event);" ondragover="dragOverHandler(event);" onload="loadConfig();">
   <section class="page-header">
     <h1 class="project-name">Striso configuration editor</h1>
+    <div id="version">Striso board {FWVERSION}</div>
   </section>
 
   <section class="main-content">
     <h2>Configuration</h2>
     <a href="#" id="save" class="btn btn-dl">Save configuration</a>
-    <div class="radio-toolbar" id="select-cat">
+    <div class="radio-toolbar">
       <input type="radio" id="radioGeneral" name="radioMain" value="G" checked onchange="showConfig()">
       <label for="radioGeneral">General</label>
       <input type="radio" id="radioPreset" name="radioMain" value="P" onchange="showConfig()">
@@ -678,26 +743,57 @@ body {
       <input type="radio" id="radioCalibration" name="radioMain" value="C" onchange="showConfig()">
       <label for="radioCalibration">Calibration</label>
     </div>
-    <div class="radio-toolbar" id="select-number">
-      <input type="radio" id="radio1" name="radioSub" value="1" checked onchange="showConfig()">
-      <label for="radio1">1</label>
-      <input type="radio" id="radio2" name="radioSub" value="2" onchange="showConfig()">
-      <label for="radio2">2</label>
-      <input type="radio" id="radio3" name="radioSub" value="3" onchange="showConfig()">
-      <label for="radio3">3</label>
-      <input type="radio" id="radio4" name="radioSub" value="4" onchange="showConfig()">
-      <label for="radio4">4</label>
-      <input type="radio" id="radio5" name="radioSub" value="5" onchange="showConfig()">
-      <label for="radio5">5</label>
-      <input type="radio" id="radio6" name="radioSub" value="6" onchange="showConfig()">
-      <label for="radio6">6</label>
-      <input type="radio" id="radio7" name="radioSub" value="7" onchange="showConfig()">
-      <label for="radio7">7</label>
-      <input type="radio" id="radio8" name="radioSub" value="8" onchange="showConfig()">
-      <label for="radio8">8</label>
+    <div>
+      <div id="G">
+      </div>
+      <div id="P">
+        <div class="radio-toolbar">
+          <input type="radio" id="radioP1" name="radioP" value="1" checked onchange="showConfig()">
+          <label for="radioP1">1</label>
+          <input type="radio" id="radioP2" name="radioP" value="2" onchange="showConfig()">
+          <label for="radioP2">2</label>
+          <input type="radio" id="radioP3" name="radioP" value="3" onchange="showConfig()">
+          <label for="radioP3">3</label>
+          <input type="radio" id="radioP4" name="radioP" value="4" onchange="showConfig()">
+          <label for="radioP4">4</label>
+          <input type="radio" id="radioP5" name="radioP" value="5" onchange="showConfig()">
+          <label for="radioP5">5</label>
+          <input type="radio" id="radioP6" name="radioP" value="6" onchange="showConfig()">
+          <label for="radioP6">6</label>
+        </div>
+        Presets, not yet implemented.
+      </div>
+      <div id="T">
+        <div class="radio-toolbar">
+          <input type="radio" id="radioT1" name="radioT" value="1" checked onchange="showConfig()">
+          <label for="radioT1">1</label>
+          <input type="radio" id="radioT2" name="radioT" value="2" onchange="showConfig()">
+          <label for="radioT2">2</label>
+          <input type="radio" id="radioT3" name="radioT" value="3" onchange="showConfig()">
+          <label for="radioT3">3</label>
+          <input type="radio" id="radioT4" name="radioT" value="4" onchange="showConfig()">
+          <label for="radioT4">4</label>
+          <input type="radio" id="radioT5" name="radioT" value="5" onchange="showConfig()">
+          <label for="radioT5">5</label>
+          <input type="radio" id="radioT6" name="radioT" value="6" onchange="showConfig()">
+          <label for="radioT6">6</label>
+          <input type="radio" id="radioT7" name="radioT" value="7" onchange="showConfig()">
+          <label for="radioT7">7</label>
+          <input type="radio" id="radioT8" name="radioT" value="8" onchange="showConfig()">
+          <label for="radioT8">8</label>
+        </div>
+        <p>Tunings in the Striso are defined by the size of the octave and fifth intervals, which define the pitch of all notes in a regular way.</p>
+        <p>The tuning offset can be used to change the reference, to change the A from 440Hz to <input value="443" style="width:4ch" oninput="x=this.value; document.getElementById('tuninghz').innerHTML=x; document.getElementById('tuningcent').innerHTML=(1200*Math.log2(x/440)).toFixed(2);">Hz use 1200*log2(<span id="tuninghz">443</span>/440) = <span id="tuningcent">11.76</span> cent.</p>
+        <p>For irregular tunings an offset per note can be given.</p>
+        <p>All values are given in cents.</p>
+        <p>The default tuning is fixed to the standard western tuning: 12tet with A=440Hz, which has an octave of 1200 and a fifth of 700 cent.</p>
+      </div>
+      <div id="C">
+        The keys of the Striso board are calibrated, however if keys feel more or less sensitive than the rest it's possible to set an additional factor (<span class="mono">fac</span>) or offset (<span class="mono">off</span>).
+      </div>
     </div>
     <table>
-      <thead><tr><th>Key</th><th>Value</th><th>Default</th></tr></thead>
+      <thead><tr><th>Key</th><th>Value</th><th>Default</th><th></th></tr></thead>
       <tbody id="config"></tbody>
     </table>
 
@@ -708,14 +804,12 @@ body {
     </p>
     <p>
       The first letter of a key defines the expected type, i=integer, f=float, h=hexadecimal color code, s=string.
-      To reset a value click on de default. A more intuitive interface is in the making.
+      To reset a value click on the default.
     </p>
     <p>
       This editor is still work in progress, please share your experiences on the <a href="http://forum.striso.org">forum</a> or send an email to info@striso.org.
     </p>
     <pre><code id="currconfig"></code></pre>
-
-    <p id="version">Striso board {FWVERSION}</p>
 
   <footer>
     <span>&copy; 2021 <a href="https://www.striso.org" target="_blank" rel="noopener">Striso</a></span>
