@@ -450,7 +450,8 @@ class Instrument {
             // handle alternative functions of note buttons
             if ((altmode && buttons[but].state == STATE_OFF)
                 || (buttons[but].state == STATE_ALT)) {
-                if (pow2(buttons[but].but_x) + pow2(buttons[but].but_y) > 0.2) {
+                if (pow2(buttons[but].but_x) + pow2(buttons[but].but_y) > 0.2
+                    && buttons[but].vpres > -0.1f) {
                     // handle knob mode
                     // TODO: handle cases with two buttons in alt mode
                     int angle = (int)(atan2f(buttons[but].but_x, buttons[but].but_y)*8/3.1416 + 8.5f) % 16;
