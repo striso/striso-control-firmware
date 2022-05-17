@@ -1,0 +1,321 @@
+
+
+Tunings 1-9: 9*64=576
+fT0off     -31.76
+fT0oct     1200.123
+fT0fifth   685.7142
+fT0C2      +0.01324
+fT0Db2     0
+fT0C#2     -10.2412
+fT0D2     0
+fT0Eb2     0
+fT0D#2     0
+fT0E2     0
+fT0F2     0
+fT0Gb2     0
+fT0F#2     0
+fT0G2     0
+fT0Ab2     0
+fT0G#2     0
+fT0A2     0
+fT0Bb2     0
+fT0A#2     0
+fT0B2     0
+
+Tuning mode:
+- Regular
+- Octave
+- Free
+
+Edit mode
+- Raw
+- GUI
+- Text
+
+iGPdef   default preset number
+iGTdef
+iGoct      start octave
+
+
+Default settings are restricted to make sure the Striso board doesn't get in a nonfunctional state
+
+iGoct      default octave
+sGjack2    default aux jack mode
+iGmotion
+
+
+Safe:
+fT0off     usefull to set default octave, tuning will still be 12tet OR
+iGoct      start octave, even safer, only configure the start octave
+iP0jack2   to set the default jack2 mode
+iP0motio   motion sensor rate, to be able to disable the motion sensor by default
+
+Presets 1-8: 8*20?=160
+iP0motio   motion sensor rate
+sP0mode    midi mode normal/MPE/mono
+iP0tunin   selected tuning
+sP0jack2   midi/pedal/linein
+sP0pedal   pedal/midi jack mode: midi/sustain/breath/fifth/linein
+           OR pedal mode
+sP0audio   stereo/balanced/mono
+
+iCfifth0
+fCfifth0
+iCfifth1
+fCfifth1
+iCfifth2
+fCfifth2
+iCfifth3
+fCfifth3
+
+pres offset
+pres factor
+pres curve
+
+velo factor
+velo curve
+
+
+1000 properties = 32 of 48 of 64 kb
+
+
+
+Ideen Joris
+
+- Meer pitch bend
+- Druk minder afhankelijk van vibrato
+- Gyro/accelerometer loskoppelen
+
+hardware
+- Rij met 10 feedback ledjes (of meer up/down ledjes?)
+
+
+New knob mode config
+WIP new config layout with knob mode
+
+- increased default bend sensitivity and possible range
+- slightly changed default volume
+
+
+// row 1:  0  2  4
+// row 2:   1  3  5  7  9 11
+// row 3: 17 19 21  6  8 10 12 14 16
+// row 4:  18 20 22 24 26 28 13 15
+// row 5: 34 36 38 23 25 27 29 31 33
+// row 6:  35 37 39 41 43 45 30 32
+// row 7: 51 53 55 40 42 44 46 48 50
+// row 8:        56 58 60 62 47 49
+// row 9:                   63 65 67
+
+
+## MIDI parameters
+MIDI mode 3x
+message rate 1x
+motion sensor message rate 1x
+
+## synth/MIDI parameters
+tunings 9x
+presets 8x
+volume 1x
+pitchbend range + curve
+press factor + offset + curve
+velo factor + curve
+y factor + curve
+
+response curves
+motion sensor
+
+## synth parameters
+
+
+## System
+Panic
+Send config
+Reset
+
+row 1: 3x
+row 2: 6x
+row 3: 9x
+row 4: 8x
+row 5: 9x tunings
+row 6: 8x
+row 7: 9x
+row 8: 6x
+row 9: 3x
+
+
+## Curves
+
+The quadratic bezier curve formula
+B(t) = ((1 - t) * (1 - t) * p0) + (2 * (1 - t) * t * p1) + (t * t * p2)
+
+Bezier with p1 (0.5,0) - (0.5,1)
+
+y = (2 * (1 - t) * t * c) + (t * t)
+x = t
+
+Bezier with p1 (0,0) - (1,1)
+
+y = (2 * (1 - t) * t * c) + (t * t)
+x = (2 * (1 - t) * t * (1 - c)) + (t * t)
+
+Cubic bezier with p1 (0.333,0) - (0.333,1) and p2 (0.667,0) - (0.667,1)
+
+yc = (3 * pow2(1 - t) * t * c1) + (3 * (1 - t) * pow2(t) * c2) + (t * t * t)
+
+c1 = c * 0.667 + (c > 0.5) * (c-0.5) * 0.666
+c2 = c * 1.333 - (c > 0.5) * (c-0.5) * 0.666
+
+
+Simplify
+
+c = c_[-1:1.1:.2]
+Quadratic: works!
+y = t * (1 - c) + t * t * c
+Cubic: doesn't
+y = t * (1 - c) + t * t * t * c
+
+
+curve2(float x, float c) {
+    return x * (1 - c) + x * x * c;
+}
+
+curve3(float x, float c) {
+    if (c < 0) {
+        if (x < 0) {
+            x = 1 + x;
+        } else {
+            x = 1 - x;
+        }
+        c = -c;
+        return x * (1 - c) + (1 - x * x * x) * c;
+    }
+    return x * (1 - c) + x * x * x * c;
+}
+
+curve4(float x, float c) {
+    if (x < 0) {
+        if (c < 0) {
+            x = 1 + x;
+            c = -c;
+            return x * (1 - c) - (1 - x * x * x * x) * c;
+        }
+        return x * (1 - c) - x * x * x * x * c;
+    }
+    if (c < 0) {
+        x = 1 - x;
+        c = -c;
+        return x * (1 - c) + (1 - x * x * x * x) * c;
+    }
+    return x * (1 - c) + x * x * x * x * c;
+}
+
+/**
+ * Curve correction based on x^4 for x in [-1:1] and c in [-1:1]
+ */
+curve4(float x, float c) {
+    float xc;
+    if (x < 0) {
+        if (c < 0) {
+            c = -c;
+            xc = 1 + x;
+            xc = -(1 - xc * xc * xc * xc);
+        } else {
+            xc = -x;
+            xc = -(xc * xc * xc * xc);
+        }
+    } else {
+        if (c < 0) {
+            c = -c;
+            xc = 1 - x;
+            xc = 1 - xc * xc * xc * xc;
+        } else {
+            xc = x * x * x * x;
+        }
+    }
+    return x * (1 - c) + xc * c;
+}
+
+curve: apply an exponential function f(x) = 127 * (exp(p*x/127)-1) / (exp(p)-1). Positive values increase velocity, while negative values decrease it.
+c = c_[-5:5.1:.5]
+y = (exp(c*t)-1) / (exp(c)-1)
+gamma: apply a simple power function f(x) = 127 * (x/127)**(1/p). Values greater than 1 increase velocity, while values between 0 and 1 decrease it.
+c = c_[0.25:4.1:.25]
+y = t**(1/c)
+
+Quadratic Bezier
+c = c_[0:1.1:.1]
+y = (2 * (1 - t) * t * c) + (t * t)
+x = (2 * (1 - t) * t * (1 - c)) + (t * t)
+figure(figsize=(10,10))
+plot(x.T,y.T)
+grid()
+axis('equal')
+savefig('bezier.png')
+
+Quadratic
+c = c_[-1:1.1:.2]
+y = t * (1 - c) + t * t * c
+figure(figsize=(10,10))
+plot(t,y.T)
+grid()
+axis('equal')
+savefig('2th.png')
+
+Cubic
+c = c_[0:1.1:.2]
+y = t * (1 - c) + t * t * t * c
+figure(figsize=(10,10))
+plot(t,y.T)
+x = 1 - t
+y = t * (1 - c) + (1 - x * x * x) * c
+plot(t,y.T)
+grid()
+axis('equal')
+savefig('3th.png')
+
+4th order
+c = c_[0:1.1:.2]
+y = t * (1 - c) + t * t * t * t * c
+figure(figsize=(10,10))
+plot(t,y.T)
+x = 1 - t
+y = t * (1 - c) + (1 - x * x * x * x) * c
+plot(t,y.T)
+grid()
+axis('equal')
+savefig('4th.png')
+
+5th order
+c = c_[0:1.1:.2]
+y = t * (1 - c) + t * t * t * t * t * c
+figure(figsize=(10,10))
+plot(t,y.T)
+x = 1 - t
+y = t * (1 - c) + (1 - x * x * x * x * x) * c
+plot(t,y.T)
+grid()
+axis('equal')
+savefig('5th.png')
+
+def pow2(x):
+    return x*x
+
+t = r_[0:1.01:0.01]
+c = c_[0:1.1:.1]
+c1 = c * 0.667 + (c > 0.5) * (c-0.5) * 0.666
+c2 = c * 1.333 - (c > 0.5) * (c-0.5) * 0.666
+y = (2 * (1 - t) * t * c) + (t * t)
+yc = (3 * pow2(1 - t) * t * c1) + (3 * (1 - t) * pow2(t) * c2) + (t * t * t)
+
+figure(figsize=(10,10))
+plot(t,y.T)
+grid()
+axis('equal')
+savefig('quadratic.png')
+
+figure(figsize=(10,10))
+plot(t,yc.T)
+grid()
+axis('equal')
+savefig('cubic.png')
