@@ -450,7 +450,7 @@ class Instrument {
             // handle alternative functions of note buttons
             if ((altmode && buttons[but].state == STATE_OFF)
                 || (buttons[but].state == STATE_ALT)) {
-                if (pow2(buttons[but].but_x) + pow2(buttons[but].but_y) > 0.3f
+                if (pow2(buttons[but].but_x) + pow2(buttons[but].but_y) > 0.25f
                     && buttons[but].vpres > -0.01f) {
                     // handle knob mode
                     // TODO: handle cases with two buttons in alt mode
@@ -1378,65 +1378,7 @@ bool config_but(int but, bool init, int angle) {
             }
         } return 0;
     // row 3: 17 19 21  6  8 10 12 14 16
-    case (17): // knob: pres sensitivity
-        if (init) {
-            led_updown_dial(dis.pres_sensitivity * 7 + 0.5f);
-            led_rgb3(dis.pres_sensitivity * 64.0f, dis.pres_sensitivity * 64.0f, 0);
-        } else {
-            dis.pres_sensitivity = (1.0f/7.0f) * angle;
-            led_rgb3(dis.pres_sensitivity * 64.0f, dis.pres_sensitivity * 64.0f, 0);
-            return 1;
-        } return 0;
-    case (19):
-        if (init) {
-            dis.pres_sensitivity = 1.0f;
-            ws2812_write_led(0, 4, 4, 0);
-        } return 0;
-    case (21):
-        if (init) {
-            dis.pres_sensitivity = 1.5f;
-            ws2812_write_led(0, 12, 12, 0);
-        } return 0;
-    case (6): // knob: velo sensitivity
-        if (init) {
-            led_updown_dial(dis.velo_sensitivity * 7 + 0.5f);
-            led_rgb3(dis.velo_sensitivity * 64.0f, 0, dis.velo_sensitivity * 64.0f);
-        } else {
-            dis.velo_sensitivity = (1.0f/7.0f) * angle;
-            led_rgb3(dis.velo_sensitivity * 64.0f, 0, dis.velo_sensitivity * 64.0f);
-            return 1;
-        } return 0;
-    case (8):
-        if (init) {
-            dis.velo_sensitivity = 1.0f;
-            ws2812_write_led(0, 4, 0, 4);
-        } return 0;
-    case (10):
-        if (init) {
-            dis.velo_sensitivity = 1.5f;
-            ws2812_write_led(0, 12, 0, 12);
-        } return 0;
-    case (12):
-        if (init) {
-            led_rgb3(dis.bend_sensitivity * 64.0f, 0, 0);
-            led_updown_dial(dis.bend_sensitivity * 4);
-        } else {
-            dis.bend_sensitivity = 0.25f * angle;
-            led_rgb3(dis.bend_sensitivity * 64.0f, 0, 0);
-            return 1;
-        } return 0;
-    case (14):
-        if (init) {
-            dis.bend_sensitivity = 0.5f;
-            ws2812_write_led(0, 4, 0, 0);
-        } return 0;
-    case (16):
-        if (init) {
-            dis.bend_sensitivity = 1.0f;
-            ws2812_write_led(0, 12, 0, 0);
-        } return 0;
-    // row 4: 18 20 22 24 26 28 13 15
-    case (18): // knob: key detection threshold
+    case (17): // knob: key detection threshold
         if (init) {
             int dial = (1.0f / ((1 << 24) / 128 / 2)) * config.zero_offset + 0.5f;
             led_updown_dial(dial);
@@ -1447,16 +1389,80 @@ bool config_but(int but, bool init, int angle) {
             led_rgb3(dial * 10, dial * 5, 0);
             return 1;
         } return 0;
-    case (20):
+    case (19): // knob: pres sensitivity
         if (init) {
-            config.zero_offset = 4 * ((1 << 24) / 128);
-            led_rgb3(56, 28, 0);
+            led_updown_dial(dis.pres_sensitivity * 7 + 0.5f);
+            led_rgb3(dis.pres_sensitivity * 64.0f, dis.pres_sensitivity * 64.0f, 0);
+        } else {
+            dis.pres_sensitivity = (1.0f/7.0f) * angle;
+            led_rgb3(dis.pres_sensitivity * 64.0f, dis.pres_sensitivity * 64.0f, 0);
+            return 1;
         } return 0;
-    case (22):
+    case (21): // knob: velo sensitivity
         if (init) {
-            config.zero_offset = 8 * ((1 << 24) / 128);
-            led_rgb3(168, 84, 0);
+            led_updown_dial(dis.velo_sensitivity * 7 + 0.5f);
+            led_rgb3(dis.velo_sensitivity * 64.0f, 0, dis.velo_sensitivity * 64.0f);
+        } else {
+            dis.velo_sensitivity = (1.0f/7.0f) * angle;
+            led_rgb3(dis.velo_sensitivity * 64.0f, 0, dis.velo_sensitivity * 64.0f);
+            return 1;
         } return 0;
+    case (6): // knob: pitchbend range
+        if (init) {
+            led_rgb3(dis.bend_sensitivity * 64.0f, 0, 0);
+            led_updown_dial(dis.bend_sensitivity * 4);
+        } else {
+            dis.bend_sensitivity = 0.25f * angle;
+            led_rgb3(dis.bend_sensitivity * 64.0f, 0, 0);
+            return 1;
+        } return 0;
+    // case (8): // knob: y flip & offset
+    // case (10):
+    //     if (init) {
+    //         dis.velo_sensitivity = 1.5f;
+    //         ws2812_write_led(0, 12, 0, 12);
+    //     } return 0;
+    // case (12):
+    //     if (init) {
+    //         led_rgb3(dis.bend_sensitivity * 64.0f, 0, 0);
+    //         led_updown_dial(dis.bend_sensitivity * 4);
+    //     } else {
+    //         dis.bend_sensitivity = 0.25f * angle;
+    //         led_rgb3(dis.bend_sensitivity * 64.0f, 0, 0);
+    //         return 1;
+    //     } return 0;
+    // case (14):
+    //     if (init) {
+    //         dis.bend_sensitivity = 0.5f;
+    //         ws2812_write_led(0, 4, 0, 0);
+    //     } return 0;
+    // case (16):
+    //     if (init) {
+    //         dis.bend_sensitivity = 1.0f;
+    //         ws2812_write_led(0, 12, 0, 0);
+    //     } return 0;
+    // row 4: 18 20 22 24 26 28 13 15
+    // case (18): // knob: key detection threshold
+    //     if (init) {
+    //         int dial = (1.0f / ((1 << 24) / 128 / 2)) * config.zero_offset + 0.5f;
+    //         led_updown_dial(dial);
+    //         led_rgb3(dial * 10, dial * 5, 0);
+    //     } else {
+    //         config.zero_offset = ((1 << 24) / 128 / 2) * angle;
+    //         int dial = (1.0f / ((1 << 24) / 128 / 2)) * config.zero_offset + 0.5f;
+    //         led_rgb3(dial * 10, dial * 5, 0);
+    //         return 1;
+    //     } return 0;
+    // case (20):
+    //     if (init) {
+    //         config.zero_offset = 4 * ((1 << 24) / 128);
+    //         led_rgb3(56, 28, 0);
+    //     } return 0;
+    // case (22):
+    //     if (init) {
+    //         config.zero_offset = 8 * ((1 << 24) / 128);
+    //         led_rgb3(168, 84, 0);
+    //     } return 0;
     // Load config preset
     // row 5: 34 36 38 23 25 27 29 31 33
     case (34): // set 12tet tuning, knob: tuning offset

@@ -113,6 +113,10 @@ MIDI mode 3x
 message rate 1x
 motion sensor message rate 1x
 
+change CC number of last pressed setting
+
+MIDI Program Change
+
 ## synth/MIDI parameters
 tunings 9x
 presets 8x
@@ -125,6 +129,16 @@ y factor + curve
 response curves
 motion sensor
 
+
+acc xyz factor / curve
+acc abs factor / curve
+rot xyz factor / curve
+rot abs factor / curve
+angle xy on/off
+velo highpass xyz factor + hp cutoff
+velo highpass abs factor + hp cutoff
+motion sensor message rate
+
 ## synth parameters
 
 
@@ -133,15 +147,15 @@ Panic
 Send config
 Reset
 
-row 1: 3x
-row 2: 6x
-row 3: 9x
-row 4: 8x
+row 1: 3x MIDI modes
+row 2: 6x curves: press - velo - y - pitchbend
+row 3: 9x press offset - press factor - velo factor - y factor - pitchbend range
+row 4: 8x motion sensor
 row 5: 9x tunings
-row 6: 8x
-row 7: 9x
+row 6: 8x presets
+row 7: 9x Volume + Synth/CC
 row 8: 6x
-row 9: 3x
+row 9: 3x System
 
 
 ## Curves
