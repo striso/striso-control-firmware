@@ -433,12 +433,8 @@ class Instrument {
             for (int n = 0; n < BUTTONCOUNT; n++) {
                 buttons[n].coord0 = -buttons[n].coord0;
                 buttons[n].coord1 = -buttons[n].coord1;
-                // calculate note number
-                buttons[n].note = start_note_offset + buttons[n].tuning_note_offset +
-                                  notegen0 * buttons[n].coord0 +
-                                  notegen1 * buttons[n].coord1;
+                // invert midi note number
                 buttons[n].midinote_base = -buttons[n].midinote_base;
-                buttons[n].midinote = buttons[n].midinote_base + (int)(start_note_offset + 0.5);
             }
         }
 
