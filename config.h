@@ -71,6 +71,12 @@ typedef enum {
 } midi_mode_t;
 
 typedef enum {
+  MIDINOTE_MODE_DEFAULT,
+  MIDINOTE_MODE_TUNING,
+  MIDINOTE_MODE_BUTTON,
+} midinote_mode_t;
+
+typedef enum {
   JACK2_MODE_DISABLED = 0,
   JACK2_MODE_MIDI,
   JACK2_MODE_PEDAL,
@@ -86,6 +92,7 @@ typedef struct struct_config {
   int zero_offset;
   int debug;
   midi_mode_t midi_mode;
+  midinote_mode_t midinote_mode;
   jack2_mode_t jack2_mode;
   uint8_t midi_pres;
   uint8_t midi_x;
@@ -113,6 +120,7 @@ config_t config = {
   .zero_offset = 0,
   .debug = 0,
   .midi_mode = MIDI_MODE_MPE,
+  .midinote_mode = MIDINOTE_MODE_DEFAULT,
   .jack2_mode = JACK2_MODE_DISABLED,
   // for the following: < 120: CC, or CFG_* (not all options are supported)
   .midi_pres = CFG_POLY_PRESSURE,
@@ -161,6 +169,7 @@ const ConfigParam default_config[] = {
   {"iP1Mint ", "1       "}, // MIDI message interval in ms [1-127]
   {"iP1Mmint", "127     "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
   {"sP1Mmode", "mpe     "}, // MIDI mode [mpe/normal/mono]
+  {"sP1Mnote", "default "}, // MIDI note mode [default/tuning/button]
   {"sP1jack2", "midi    "}, // jack2 mode [midi/pedal/linein]
   {"iP1tunin", "0       "}, // load tuning [0-8]
   {"iP1Mpres", "121     "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
@@ -182,6 +191,7 @@ const ConfigParam default_config[] = {
   {"iP2Mint ", "        "}, // MIDI message interval in ms [1-127]
   {"iP2Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
   {"sP2Mmode", "        "}, // MIDI mode [mpe/normal/mono]
+  {"sP2Mnote", "        "}, // MIDI note mode [default/tuning/button]
   {"sP2jack2", "        "}, // jack2 mode [midi/pedal/linein]
   {"iP2tunin", "        "}, // load tuning [0-8]
   {"iP2Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
@@ -203,6 +213,7 @@ const ConfigParam default_config[] = {
   {"iP3Mint ", "        "}, // MIDI message interval in ms [1-127]
   {"iP3Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
   {"sP3Mmode", "        "}, // MIDI mode [mpe/normal/mono]
+  {"sP3Mnote", "        "}, // MIDI note mode [default/tuning/button]
   {"sP3jack2", "        "}, // jack2 mode [midi/pedal/linein]
   {"iP3tunin", "        "}, // load tuning [0-8]
   {"iP3Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
@@ -224,6 +235,7 @@ const ConfigParam default_config[] = {
   {"iP4Mint ", "        "}, // MIDI message interval in ms [1-127]
   {"iP4Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
   {"sP4Mmode", "        "}, // MIDI mode [mpe/normal/mono]
+  {"sP4Mnote", "        "}, // MIDI note mode [default/tuning/button]
   {"sP4jack2", "        "}, // jack2 mode [midi/pedal/linein]
   {"iP4tunin", "        "}, // load tuning [0-8]
   {"iP4Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
@@ -245,6 +257,7 @@ const ConfigParam default_config[] = {
   {"iP5Mint ", "        "}, // MIDI message interval in ms [1-127]
   {"iP5Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
   {"sP5Mmode", "        "}, // MIDI mode [mpe/normal/mono]
+  {"sP5Mnote", "        "}, // MIDI note mode [default/tuning/button]
   {"sP5jack2", "        "}, // jack2 mode [midi/pedal/linein]
   {"iP5tunin", "        "}, // load tuning [0-8]
   {"iP5Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
@@ -266,6 +279,7 @@ const ConfigParam default_config[] = {
   {"iP6Mint ", "        "}, // MIDI message interval in ms [1-127]
   {"iP6Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
   {"sP6Mmode", "        "}, // MIDI mode [mpe/normal/mono]
+  {"sP6Mnote", "        "}, // MIDI note mode [default/tuning/button]
   {"sP6jack2", "        "}, // jack2 mode [midi/pedal/linein]
   {"iP6tunin", "        "}, // load tuning [0-8]
   {"iP6Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
@@ -287,6 +301,7 @@ const ConfigParam default_config[] = {
   {"iP7Mint ", "        "}, // MIDI message interval in ms [1-127]
   {"iP7Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
   {"sP7Mmode", "        "}, // MIDI mode [mpe/normal/mono]
+  {"sP7Mnote", "        "}, // MIDI note mode [default/tuning/button]
   {"sP7jack2", "        "}, // jack2 mode [midi/pedal/linein]
   {"iP7tunin", "        "}, // load tuning [0-8]
   {"iP7Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
@@ -308,6 +323,7 @@ const ConfigParam default_config[] = {
   {"iP8Mint ", "        "}, // MIDI message interval in ms [1-127]
   {"iP8Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
   {"sP8Mmode", "        "}, // MIDI mode [mpe/normal/mono]
+  {"sP8Mnote", "        "}, // MIDI note mode [default/tuning/button]
   {"sP8jack2", "        "}, // jack2 mode [midi/pedal/linein]
   {"iP8tunin", "        "}, // load tuning [0-8]
   {"iP8Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure

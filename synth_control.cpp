@@ -604,7 +604,16 @@ class Instrument {
             // Note on detection
             if (buttons[but].state == STATE_OFF && buttons[but].pres > 0.0) {
                 // calculate midinote only at note on
-                buttons[but].midinote = buttons[but].midinote_base + (int)(start_note_offset + 0.5);
+                if (config.midinote_mode == MIDINOTE_MODE_DEFAULT) {
+                    buttons[but].midinote = buttons[but].midinote_base + (int)(start_note_offset + 0.5);
+                } else if (config.midinote_mode == MIDINOTE_MODE_TUNING) {
+                    buttons[but].midinote = (int)(notegen0 * buttons[but].coord0 +
+                                                  notegen1 * buttons[but].coord1 +
+                                                  start_note_offset +
+                                                  note_offset + 0.5);
+                } else if (config.midinote_mode == MIDINOTE_MODE_BUTTON) {
+                    buttons[but].midinote = 17 * buttons[but].coord0 + 10 * buttons[but].coord1 + 30;
+                }
                 buttons[but].start_note_offset = start_note_offset;
 
                 if (portamento) {
@@ -1089,6 +1098,16 @@ void load_preset(int n) {
         set_midi_mode(MIDI_MODE_POLY);
     } else if (cmp8(s, "mono    ")) {
         set_midi_mode(MIDI_MODE_MONO);
+    }
+
+    strset(key, 3, "Mnote");
+    s = getConfigSetting(key);
+    if (cmp8(s, "default ")) {
+        config.midinote_mode = MIDINOTE_MODE_DEFAULT;
+    } else if (cmp8(s, "tuning  ")) {
+        config.midinote_mode = MIDINOTE_MODE_TUNING;
+    } else if (cmp8(s, "button  ")) {
+        config.midinote_mode = MIDINOTE_MODE_BUTTON;
     }
 
     //strset(key, 3, "jack2");
