@@ -88,6 +88,8 @@ float powf_schlick_d(const float a, const float b)
 #define min(x, y) ((x)<(y)?(x):(y))
 #define clamp(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 
+static inline uint32_t log2i(const uint32_t x){return (31 - __builtin_clz (x));}
+
 void update_leds(void);
 void set_midi_mode(midi_mode_t mode);
 bool config_but(int but, bool firstpress, int angle);
@@ -1654,6 +1656,15 @@ bool config_but(int but, bool init, int angle) {
         } return 0;
 
     // row 8:       56 58 60 62 47 49
+    case (58): // knob: MPE pitchbend range
+        if (init) {
+            led_rgb3(dis.midi_bend_range, 0, 0);
+            led_updown_dial(2 + 2 * log2i(dis.midi_bend_range / 12));
+        } else {
+            dis.midi_bend_range = 12 << (angle / 4);
+            led_rgb3(dis.midi_bend_range, 0, 0);
+            led_updown_dial(2 + 2 * log2i(dis.midi_bend_range / 12));
+        } return 0;
     // row 9:                   63 65 67
     case (63): // panic/request config
         if (init) {
