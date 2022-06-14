@@ -1318,49 +1318,6 @@ bool config_but(int but, bool init, int angle) {
             set_midi_mode(MIDI_MODE_MONO);
         } return 0;
     // row 2:  1  3  5  7  9 11
-    case (1): // knob: MIDI message interval
-        if (init) {
-            led_updown_dial(config.message_interval);
-        } else if (angle >= 1) {
-            config.message_interval = angle;
-            return 1;
-        } return 0;
-    case (3):
-        if (init) {
-            config.message_interval = 10;
-            ws2812_write_led(0, 4, 2, 0);
-        } return 0;
-    case (5): // knob: MIDI motion message interval
-        if (init) {
-            led_updown_dial(config.send_motion_interval);
-        } else {
-            if (angle == 0) {
-                config.send_motion_interval = 0;
-                *(dis.synth_interface->acc_abs) = 1.0f;
-                *(dis.synth_interface->acc_x) = 0.0f;
-                *(dis.synth_interface->acc_y) = 0.0f;
-                *(dis.synth_interface->acc_z) = 0.0f;
-                *(dis.synth_interface->rot_x) = 0.0f;
-                *(dis.synth_interface->rot_y) = 0.0f;
-                *(dis.synth_interface->rot_z) = 0.0f;
-            } else if (angle == 15) {
-                config.send_motion_interval = 127;
-            } else {
-                config.send_motion_interval = angle;
-            }
-            config.message_interval = 1;
-            return 1;
-        } return 0;
-    case (7):
-        if (init) {
-            config.send_motion_interval = 10;
-            ws2812_write_led(0, 4, 2, 0);
-        } return 0;
-    case (9):
-        if (init) {
-            config.send_motion_interval = 0;
-            ws2812_write_led(0, 3, 0, 0);
-        } return 0;
     case (11): // debug setting for easy testing
         if (init) {
             if (dis.portamento & 1) {
@@ -1378,12 +1335,12 @@ bool config_but(int but, bool init, int angle) {
     // row 3: 17 19 21  6  8 10 12 14 16
     case (17): // knob: key detection threshold
         if (init) {
-            int dial = (1.0f / ((1 << 24) / 128 / 2)) * config.zero_offset + 0.5f;
+            int dial = (1.0f / ((1 << 24) / 256)) * config.zero_offset + 0.5f;
             led_updown_dial(dial);
             led_rgb3(dial * 10, dial * 5, 0);
         } else {
-            config.zero_offset = ((1 << 24) / 128 / 2) * angle;
-            int dial = (1.0f / ((1 << 24) / 128 / 2)) * config.zero_offset + 0.5f;
+            config.zero_offset = ((1 << 24) / 256) * angle;
+            int dial = (1.0f / ((1 << 24) / 256)) * config.zero_offset + 0.5f;
             led_rgb3(dial * 10, dial * 5, 0);
             return 1;
         } return 0;
@@ -1415,53 +1372,28 @@ bool config_but(int but, bool init, int angle) {
             return 1;
         } return 0;
     // case (8): // knob: y flip & offset
-    // case (10):
-    //     if (init) {
-    //         dis.velo_sensitivity = 1.5f;
-    //         ws2812_write_led(0, 12, 0, 12);
-    //     } return 0;
-    // case (12):
-    //     if (init) {
-    //         led_rgb3(dis.bend_sensitivity * 64.0f, 0, 0);
-    //         led_updown_dial(dis.bend_sensitivity * 4);
-    //     } else {
-    //         dis.bend_sensitivity = 0.25f * angle;
-    //         led_rgb3(dis.bend_sensitivity * 64.0f, 0, 0);
-    //         return 1;
-    //     } return 0;
-    // case (14):
-    //     if (init) {
-    //         dis.bend_sensitivity = 0.5f;
-    //         ws2812_write_led(0, 4, 0, 0);
-    //     } return 0;
-    // case (16):
-    //     if (init) {
-    //         dis.bend_sensitivity = 1.0f;
-    //         ws2812_write_led(0, 12, 0, 0);
-    //     } return 0;
     // row 4: 18 20 22 24 26 28 13 15
-    // case (18): // knob: key detection threshold
-    //     if (init) {
-    //         int dial = (1.0f / ((1 << 24) / 128 / 2)) * config.zero_offset + 0.5f;
-    //         led_updown_dial(dial);
-    //         led_rgb3(dial * 10, dial * 5, 0);
-    //     } else {
-    //         config.zero_offset = ((1 << 24) / 128 / 2) * angle;
-    //         int dial = (1.0f / ((1 << 24) / 128 / 2)) * config.zero_offset + 0.5f;
-    //         led_rgb3(dial * 10, dial * 5, 0);
-    //         return 1;
-    //     } return 0;
-    // case (20):
-    //     if (init) {
-    //         config.zero_offset = 4 * ((1 << 24) / 128);
-    //         led_rgb3(56, 28, 0);
-    //     } return 0;
-    // case (22):
-    //     if (init) {
-    //         config.zero_offset = 8 * ((1 << 24) / 128);
-    //         led_rgb3(168, 84, 0);
-    //     } return 0;
-    // Load config preset
+    case (15): // knob: MIDI motion message interval
+        if (init) {
+            led_updown_dial(config.send_motion_interval);
+        } else {
+            if (angle == 0) {
+                config.send_motion_interval = 0;
+                *(dis.synth_interface->acc_abs) = 1.0f;
+                *(dis.synth_interface->acc_x) = 0.0f;
+                *(dis.synth_interface->acc_y) = 0.0f;
+                *(dis.synth_interface->acc_z) = 0.0f;
+                *(dis.synth_interface->rot_x) = 0.0f;
+                *(dis.synth_interface->rot_y) = 0.0f;
+                *(dis.synth_interface->rot_z) = 0.0f;
+            } else if (angle == 15) {
+                config.send_motion_interval = 127;
+            } else {
+                config.send_motion_interval = angle;
+            }
+            config.message_interval = 1;
+            return 1;
+        } return 0;
     // row 5: 34 36 38 23 25 27 29 31 33
     case (34): // set 12tet tuning, knob: tuning offset
         if (init) {
@@ -1606,56 +1538,14 @@ bool config_but(int but, bool init, int angle) {
             led_rgb3(vol*2, vol*2, vol*2);
             return 1;
         } return 0;
-    case (53):
-        if (init) {
-            MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_MAIN_VOLUME, 15);
-            volume = 15.0 * VOLUME_FACTOR;
-            ws2812_write_led(0, 2, 2, 2);
-        } return 0;
-    case (55):
-        if (init) {
-            MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_MAIN_VOLUME, 31);
-            volume = 31.0 * VOLUME_FACTOR;
-            ws2812_write_led(0, 3, 3, 3);
-        } return 0;
-    case (40):
-        if (init) {
-            MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_MAIN_VOLUME, 47);
-            volume = 47.0 * VOLUME_FACTOR;
-            ws2812_write_led(0, 4, 4, 4);
-        } return 0;
-    case (42):
-        if (init) {
-            MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_MAIN_VOLUME, 63);
-            volume = 63.0 * VOLUME_FACTOR;
-            ws2812_write_led(0, 6, 6, 6);
-        } return 0;
-    case (44):
-        if (init) {
-            MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_MAIN_VOLUME, 79);
-            volume = 79.0 * VOLUME_FACTOR;
-            ws2812_write_led(0, 8, 8, 8);
-        } return 0;
-    case (46):
-        if (init) {
-            MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_MAIN_VOLUME, 95);
-            volume = 95.0 * VOLUME_FACTOR;
-            ws2812_write_led(0, 10, 10, 10);
-        } return 0;
-    case (48):
-        if (init) {
-            MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_MAIN_VOLUME, 111);
-            volume = 111.0 * VOLUME_FACTOR;
-            ws2812_write_led(0, 14, 14, 14);
-        } return 0;
-    case (50):
-        if (init) {
-            MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_MAIN_VOLUME, 127);
-            volume = 127.0 * VOLUME_FACTOR;
-            ws2812_write_led(0, 18, 18, 18);
-        } return 0;
-
     // row 8:       56 58 60 62 47 49
+    case (56): // knob: MIDI message interval
+        if (init) {
+            led_updown_dial(config.message_interval);
+        } else if (angle >= 1) {
+            config.message_interval = angle;
+            return 1;
+        } return 0;
     case (58): // knob: MPE pitchbend range
         if (init) {
             led_rgb3(dis.midi_bend_range, 0, 0);
