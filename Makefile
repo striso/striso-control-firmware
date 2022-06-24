@@ -204,7 +204,7 @@ uf2: $(BUILDDIR)/$(PROJECT).uf2
 synth.cpp: synth.dsp faust_synth_template.cpp faust2striso.py
 	./faust2striso.py
 
-$(BUILDDIR)/$(PROJECT).uf2: $(BUILDDIR)/$(PROJECT).bin
+$(BUILDDIR)/$(PROJECT).uf2: all $(BUILDDIR)/$(PROJECT).bin
 	@BINSTART=`readelf -l $(BUILDDIR)/$(PROJECT).elf | grep LOAD -m1 | awk '{print $$3}'` ;\
 	python3 uf2/utils/uf2conv.py -c -f 0xa21e1295 -b $$BINSTART $(BUILDDIR)/$(PROJECT).bin -o $(BUILDDIR)/$(PROJECT).uf2
 
@@ -213,6 +213,8 @@ prog_uf2: all
 	@./utils/striso_util -B 2>/dev/null && sleep 5 || true
 	@BINSTART=`readelf -l $(BUILDDIR)/$(PROJECT).elf | grep LOAD -m1 | awk '{print $$3}'` ;\
 	python3 uf2/utils/uf2conv.py -f 0xa21e1295 -b $$BINSTART $(BUILDDIR)/$(PROJECT).bin -o $(BUILDDIR)/$(PROJECT).uf2
+
+all: config_editor/config_editor.h
 
 config_editor/config_editor.h: config_editor/config.htm
 	python3 config_editor/config_editor.py
