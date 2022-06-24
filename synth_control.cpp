@@ -1784,9 +1784,13 @@ void update_leds(void) {
 #endif
 
     int note_offset = (int)(dis.start_note_offset + 0.5f) - 62;
-    if      (note_offset < -12) led_updown(0xff00);
-    else if (note_offset <   0) led_updown(0x0f00);
-    else if (note_offset >  12) led_updown(0x00ff);
-    else if (note_offset >   0) led_updown(0x00f0);
-    else                        led_updown(0x0000);
+    if      (note_offset <= -24) led_updown(0xff00);
+    else if (note_offset <  -12) led_updown(0xaf00);
+    else if (note_offset <= -12) led_updown(0x0f00);
+    else if (note_offset <    0) led_updown(0x0a00);
+    else if (note_offset >=  24) led_updown(0x00ff);
+    else if (note_offset >   12) led_updown(0x00fa);
+    else if (note_offset >=  12) led_updown(0x00f0);
+    else if (note_offset >    0) led_updown(0x00a0);
+    else                         led_updown(0x0000);
 }

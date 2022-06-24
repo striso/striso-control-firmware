@@ -11,6 +11,7 @@ The editor can be opened on a computer. Connect the USB cable with the settings 
 
 ### Changed
 - Don't send motion sensor data over MIDI by default, this behaviour can be changed in the config editor
+- Dim up/down leds when the note shift is less than a whole octave
 
 ## v2.1.4 - 2021-12-03
 
