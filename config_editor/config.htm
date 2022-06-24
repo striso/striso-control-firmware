@@ -12,6 +12,8 @@
   <script type="application/javascript">
 let infoMsg = ""
 var configuration = {}
+var undoStack = []
+var redoStack = []
 
 function log(msg) {
   msg = "# " + msg
@@ -87,6 +89,9 @@ function writeStr(buf, off, a) {
 }
 
 function updateValue(evt) {
+  if (evt.type) {
+    saveUndoStep();
+  }
   let key = evt.target.parentElement.parentElement.childNodes[0].innerHTML;
   var value = evt.target.value;
   var d = getDoc(key);
@@ -100,11 +105,85 @@ function updateValue(evt) {
 }
 
 function resetValue(evt) {
+  if (evt.type) {
+  saveUndoStep();
+  }
   let key = evt.target.parentElement.childNodes[0].innerHTML;
   configuration[key]["current"] = undefined;
   let input = evt.target.parentElement.childNodes[1].childNodes[0];
   input.value = evt.target.innerHTML;
   input.classList.remove("config-changed");
+}
+
+function resetAll() {
+  saveUndoStep();
+  let cfgtable = document.getElementById("config");
+  for (let row of cfgtable.children) {
+    resetValue({target:row.childNodes[2]});
+  }
+}
+
+function pasteCell(evt) {
+  let paste = evt.clipboardData.getData('text');
+  var input = evt.target;
+  let lines = paste.split("\n");
+  var cell = 0;
+  if (lines[0].startsWith("Key\tValue\tDefault")) {
+    cell = 1;
+    lines = lines.slice(1);
+  }
+  if (lines.length > 1) {
+    saveUndoStep();
+    if (evt.preventDefault) {evt.preventDefault();}
+    for (let line of lines) {
+      let value = line.split("\t")[cell].substring(0,8).trim();
+      if (value !== input.value && value !== "") {
+        input.value = value;
+        updateValue({target:input});
+      }
+      if (input.parentElement.parentElement.nextElementSibling === null) {
+        return;
+      }
+      input = input.parentElement.parentElement.nextElementSibling.childNodes[1].childNodes[0];
+    }
+  }
+}
+
+function copyTable() {
+  let cfgtable = document.getElementById("config");
+  let values = [];
+  for (let row of cfgtable.children) {
+    values.push(row.childNodes[1].childNodes[0].value);
+  }
+  navigator.clipboard.writeText(values.join("\n"));
+}
+
+function pasteTable() {
+  alert("Use Ctrl-V or paste in first value cell.");
+}
+
+function saveUndoStep() {
+  redoStack = [];
+  undoStack.push(structuredClone(configuration));
+}
+
+function undo() {
+  if (undoStack.length > 0) {
+    console.log(undoStack)
+    redoStack.push(configuration);
+    configuration = undoStack.pop();
+    showConfig();
+  }
+}
+
+function redo() {
+  if (redoStack.length > 0) {
+    undoStack.push(configuration);
+    configuration = redoStack.pop();
+    showConfig();
+    return true;
+  }
+  return false;
 }
 
 function showConfig() {
@@ -156,6 +235,7 @@ function showConfig() {
         newRow.children[1].children[0].classList.add("config-changed");
       }
       newRow.children[1].children[0].onchange = updateValue;
+      newRow.children[1].children[0].onpaste = pasteCell;
       newRow.children[2].onclick = resetValue;
     }
   }
@@ -169,7 +249,7 @@ function parseConfig(buf) {
   i += 16
   while (true) {
     key = buf.substring(i, i + 8)
-    if (key == "MCfgEnd " || key.length == 0 || !/^[\x20-\x7E]*$/.test(key)) break
+    if (key === "MCfgEnd " || key.length === 0 || !/^[\x20-\x7E]*$/.test(key)) break
     value = buf.substring(i + 8, i + 16)
     cfgdata[key] = {default: value}
     i += 16
@@ -184,7 +264,7 @@ function parseConfig(buf) {
   i += 16
   while (true) {
     key = buf.substring(i, i + 8)
-    if (key === "MCfgEnd " || key.length == 0 || !/^[\x20-\x7E]*$/.test(key)) break
+    if (key === "MCfgEnd " || key.length === 0 || !/^[\x20-\x7E]*$/.test(key)) break
     value = buf.substring(i + 8, i + 16)
     if (key in cfgdata) {
       cfgdata[key]["current"] = value
@@ -204,12 +284,38 @@ function parseUserConfig(buf) {
       let block = String.fromCharCode.apply(null, buf.subarray(j*512 + 32, j*512 + 32 + 256));
       for (var i = 0; i < 256; i += 16) {
         let key = block.substring(i, i + 8)
-        if (key === "MCfgEnd " || key.length == 0 || !/^[\x20-\x7E]*$/.test(key)) return cfgdata
+        if (key === "MCfgEnd " || key.length === 0 || !/^[\x20-\x7E]*$/.test(key)) return cfgdata
         let value = block.substring(i + 8, i + 16)
         cfgdata[key] = value
       }
     }
     return cfgdata
+  }
+}
+
+function checkUndoWanted() {
+  if (document.activeElement.classList[0] === "config-value") {
+    let key = document.activeElement.parentElement.parentElement.childNodes[0].innerHTML;
+    return (configuration[key]["current"] || configuration[key]["default"]).trim() === document.activeElement.value;
+  }
+  return true;
+}
+
+function keybindings(e) {
+  if (e.ctrlKey && !e.altKey && !e.shiftKey) {
+    if (e.code === "KeyZ") {
+      if (checkUndoWanted()) {
+        e.preventDefault();
+        undo();
+      }
+    }
+  }
+  if (e.ctrlKey && !e.altKey && e.shiftKey) {
+    if (e.code === "KeyZ") {
+      if (redo()) {
+        e.preventDefault();
+      }
+    }
   }
 }
 
@@ -219,6 +325,21 @@ function loadConfig() {
   configuration = parseConfig(buf)
   showConfig()
   document.getElementById("save").onclick = getUF2;
+  document.getElementById("copy").onclick = copyTable;
+  document.getElementById("paste").onclick = pasteTable;
+  document.getElementById("undo").onclick = undo;
+  document.getElementById("redo").onclick = redo;
+  document.getElementById("default").onclick = resetAll;
+  document.onkeydown = keybindings;
+  document.onpaste = function(evt) {
+    pasteCell({target: document.getElementById('config').children[0].children[1].children[0], clipboardData: evt.clipboardData});
+  };
+  document.oncopy = function(evt) {
+    if (evt.target.tagName !== "INPUT" && window.getSelection().toString() === "") {
+      copyTable();
+      evt.preventDefault();
+    }
+  }
 }
 
 function getUF2() {
@@ -452,11 +573,14 @@ body {
   color: #606c71;
 }
 
-.btn {
-  /* display: inline-block; */
+.btn-float {
   float: right;
-  text-decoration: none;
   margin-bottom: 1rem;
+}
+
+.btn {
+  display: inline-block;
+  text-decoration: none;
   color: #fff;
   background-color: #8f5416;
   border-color: rgba(255,255,255,0.2);
@@ -732,7 +856,7 @@ body {
 
   <section class="main-content">
     <h2>Configuration</h2>
-    <a href="#" id="save" class="btn btn-dl">Save configuration</a>
+    <a href="#" id="save" class="btn btn-float">Save configuration</a>
     <div class="radio-toolbar">
       <input type="radio" id="radioGeneral" name="radioMain" value="G" checked onchange="showConfig()">
       <label for="radioGeneral">General</label>
@@ -793,7 +917,7 @@ body {
       </div>
     </div>
     <table>
-      <thead><tr><th>Key</th><th>Value</th><th>Default</th><th></th></tr></thead>
+      <thead><tr><th>Key</th><th>Value</th><th id="default">Default</th><th><div id="undo" class="btn">Undo</div><div id="redo" class="btn">Redo</div><div id="copy" class="btn">Copy</div><div id="paste" class="btn">Paste</div></th></tr></thead>
       <tbody id="config"></tbody>
     </table>
 
@@ -804,7 +928,9 @@ body {
     </p>
     <p>
       The first letter of a key defines the expected type, i=integer, f=float, h=hexadecimal color code, s=string.
-      To reset a value click on the default.
+    </p>
+    <p>
+      To reset a value click on the default. To reset all values in the table click on the Default header.
     </p>
     <p>
       This editor is still work in progress, please share your experiences on the <a href="http://forum.striso.org">forum</a> or send an email to info@striso.org.
