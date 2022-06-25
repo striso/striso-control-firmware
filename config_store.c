@@ -80,6 +80,11 @@ int atox8(const char* str) {
   int i = 0;
 
   int value = 0;
+  if (str[i] == '#') {
+    i++;
+  } else if (str[i] == '0' && str[i+1] == 'x') {
+    i += 2;
+  }
   while (i < 8) {
     if (str[i] >= '0' && str[i] <= '9') {
       value *= 16;

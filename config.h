@@ -156,12 +156,12 @@ const ConfigParam default_config[] = {
 
   // preset 1
   {"sP1name ", "preset1 "},
-  {"hP1color", "eeeeee  "},
+  {"hP1color", "#eeeeee "},
 
   // tuning 0, 12tet
   // don't use, hard coded as default
   // {"sT0name ", "12tet   "},
-  // {"hT0color", "00aa00  "},
+  // {"hT0color", "#00aa00 "},
   // {"fT0off  ", "0.0     "},
   // {"fT0oct  ", "1200.0  "},
   // {"fT0fifth", "700     "},
@@ -229,7 +229,7 @@ const ConfigParam default_config[] = {
 
   // tuning 1, 31tet (very close to quarter comma meantone tuning 696.5784)
   {"sT1name ", "31tet   "},
-  {"hT1color", "005555  "},
+  {"hT1color", "#005555 "},
   {"fT1off  ", "0.0     "},
   {"fT1oct  ", "1200.0  "},
   {"fT1fifth", "696.7742"}, // 1200/31*18
@@ -297,7 +297,7 @@ const ConfigParam default_config[] = {
 
   // tuning 2, 19tet
   {"sT2name ", "19tet   "},
-  {"hT2color", "0000aa  "},
+  {"hT2color", "#0000aa "},
   {"fT2off  ", "0.0     "},
   {"fT2oct  ", "1200.0  "},
   {"fT2fifth", "694.7368"}, // 1200/19*11
@@ -365,7 +365,7 @@ const ConfigParam default_config[] = {
 
   // tuning 3, pythagorean (pure fifth)
   {"sT3name ", "pythagor"},
-  {"hT3color", "555500  "},
+  {"hT3color", "#555500 "},
   {"fT3off  ", "0.0     "},
   {"fT3oct  ", "1200.0  "},
   {"fT3fifth", "701.9550"}, // 1200*log2(3/2)
@@ -433,7 +433,7 @@ const ConfigParam default_config[] = {
 
   // tuning 4, 5tet
   {"sT4name ", "5tet    "},
-  {"hT4color", "aa0000  "},
+  {"hT4color", "#aa0000 "},
   {"fT4off  ", "0.0     "},
   {"fT4oct  ", "1200.0  "},
   {"fT4fifth", "720     "}, // 1200/5*3
@@ -501,7 +501,7 @@ const ConfigParam default_config[] = {
 
   // tuning 5, 7tet
   {"sT5name ", "7tet    "},
-  {"hT5color", "550055  "},
+  {"hT5color", "#550055 "},
   {"fT5off  ", "0.0     "},
   {"fT5oct  ", "1200.0  "},
   {"fT5fifth", "685.7142"}, // 1200/7*4
@@ -569,7 +569,7 @@ const ConfigParam default_config[] = {
 
   // tuning 6, Bohlen-Pierce tuning thirds 13et
   {"sT6name ", "BP 13tet"},
-  {"hT6color", "55aa00  "},
+  {"hT6color", "#55aa00 "},
   {"fT6off  ", "0.0     "},
   {"fT6oct  ", "1024.130"}, // 1200*log2(3)/13*7
   {"fT6fifth", "585.2169"}, // 1200*log2(3)/13*4
@@ -637,7 +637,7 @@ const ConfigParam default_config[] = {
 
   // tuning 7, Bohlen-Pierce tuning sixts 13tet
   {"sT7name ", "BP 13tet"},
-  {"hT7color", "55aa00  "},
+  {"hT7color", "#55aa00 "},
   {"fT7off  ", "0.0     "},
   {"fT7oct  ", "1901.955"}, // 1200*log2(3)
   {"fT7fifth", "1024.130"}, // 1200*log2(3)/13*7
@@ -705,7 +705,7 @@ const ConfigParam default_config[] = {
 
   // tuning 8, JI 7-limit
   {"sT8name ", "7limitJI"},
-  {"hT8color", "00aa55  "},
+  {"hT8color", "#00aa55 "},
   {"fT8off  ", "0.0     "},
   {"fT8oct  ", "1200.0  "},
   {"fT8fifth", "696.7741"},
