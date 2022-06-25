@@ -595,6 +595,12 @@ class Instrument {
                             set_note_offsets(ji7limit, 17);
                             update_leds();
                         } return;
+                        case (31): { // set 43tet tuning
+                            set_notegen1(6.97674418604651f);
+                        } return;
+                        case (33): { // set 50tet tuning
+                            set_notegen1(6.96f);
+                        } return;
                         // row 6: 35 37 39 41 43 45 30 32
 #ifdef USE_MIDI_OUT
                         case (35): {
@@ -1440,7 +1446,9 @@ void update_leds(void) {
     // base color depending on tuning system
     if (dis.notegen1 < 6.94)       {r = 1; g = 0; b = 1;}
     else if (dis.notegen1 < 6.957) {r = 0; g = 0; b = 2;}
-    else if (dis.notegen1 < 6.984) {r = 0; g = 1; b = 1;}
+    else if (dis.notegen1 < 6.961) {r = 1; g = 1; b = 2;}
+    else if (dis.notegen1 < 6.968) {r = 0; g = 1; b = 1;}
+    else if (dis.notegen1 < 6.977) {r = 1; g = 2; b = 0;}
     else if (dis.notegen1 < 7.010) {r = 0; g = 2; b = 0;}
     else if (dis.notegen1 < 7.03)  {r = 1; g = 1; b = 0;}
     else                           {r = 2; g = 0; b = 0;}
