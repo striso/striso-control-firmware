@@ -1,5 +1,6 @@
 #include "ch.h"
 #include "codec.h"
+#include "config.h"
 #include "hal.h"
 
 #include "aux_jack.h"
@@ -64,6 +65,20 @@ void aux_jack_init(void) {
     serial_midi_init();
     config.jack2_mode = JACK2_MODE_MIDI;
 #endif
+  }
+}
+
+void aux_jack_switch_mode(jack2_mode_t mode) {
+  // TODO: implement
+  switch (mode) {
+  case (JACK2_MODE_DISABLED): {
+  } break;
+  case (JACK2_MODE_MIDI): {
+  } break;
+  case (JACK2_MODE_PEDAL): {
+  } break;
+  case (JACK2_MODE_LINEIN): {
+  } break;
   }
 }
 

@@ -155,8 +155,172 @@ const ConfigParam default_config[] = {
   {"iGmotion", "127     "}, // motion message interval, 0=disable, 127=internal only
 
   // preset 1
-  {"sP1name ", "preset1 "},
-  {"hP1color", "#eeeeee "},
+  {"sP1name ", "default "},
+  {"hP1color", "#380000 "},
+  {"iP1Mpgm ", "0       "}, // MIDI program change [0-127]
+  {"iP1Mint ", "1       "}, // MIDI message interval in ms [1-127]
+  {"iP1Mmint", "127     "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
+  {"sP1Mmode", "mpe     "}, // MIDI mode [mpe/normal/mono]
+  {"sP1jack2", "midi    "}, // jack2 mode [midi/pedal/linein]
+  {"iP1tunin", "0       "}, // load tuning [0-8]
+  {"iP1Mpres", "121     "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
+  {"iP1Mx   ", "122     "}, // MIDI CC for key X movement. Special values 127 = Disable, 122 = Pitch Bend
+  {"iP1My   ", "74      "}, // MIDI CC for key Y movement. Special values 127 = Disable
+  {"iP1Mvelo", "127     "}, // MIDI continuous velocity. Special values 127 = Disable, else send continuous velocity on CC73 and continuous release velocity on CC72
+  {"iP1voice", "6       "}, // Voice count/MPE channel count [1-15]
+  {"iP1MChan", "1       "}, // MIDI channel offset [0-15]
+  {"iP1MPEpb", "48      "}, // MPE pitch bend range [12/24/48/96]
+  {"fP1thres", "0.0     "}, // Key sensitivity threshold [0-1]
+  {"fP1bendS", "0.25    "}, // Pitch bend range in semitones [-4.0-4.0]
+  {"fP1presS", "1.0     "}, // Key pressure factor [0-4]
+  {"fP1veloS", "1.0     "}, // Key velocity factor [0-4]
+
+  // preset 2
+  {"sP2name ", "preset2 "},
+  {"hP2color", "#342000 "},
+  {"iP2Mpgm ", "1       "}, // MIDI program change [0-127]
+  {"iP2Mint ", "        "}, // MIDI message interval in ms [1-127]
+  {"iP2Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
+  {"sP2Mmode", "        "}, // MIDI mode [mpe/normal/mono]
+  {"sP2jack2", "        "}, // jack2 mode [midi/pedal/linein]
+  {"iP2tunin", "        "}, // load tuning [0-8]
+  {"iP2Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
+  {"iP2Mx   ", "        "}, // MIDI CC for key X movement. Special values 127 = Disable, 122 = Pitch Bend
+  {"iP2My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable
+  {"iP2Mvelo", "        "}, // MIDI continuous velocity. Special values 127 = Disable, else send continuous velocity on CC73 and continuous release velocity on CC72
+  {"iP2voice", "        "}, // Voice count/MPE channel count [1-15]
+  {"iP2MChan", "        "}, // MIDI channel offset [0-15]
+  {"iP2MPEpb", "        "}, // MPE pitch bend range [12/24/48/96]
+  {"fP2thres", "        "}, // Key sensitivity threshold [0-1]
+  {"fP2bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
+  {"fP2presS", "        "}, // Key pressure factor [0-4]
+  {"fP2veloS", "        "}, // Key velocity factor [0-4]
+
+  // preset 3
+  {"sP3name ", "preset3 "},
+  {"hP3color", "#383800 "},
+  {"iP3Mpgm ", "2       "}, // MIDI program change [0-127]
+  {"iP3Mint ", "        "}, // MIDI message interval in ms [1-127]
+  {"iP3Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
+  {"sP3Mmode", "        "}, // MIDI mode [mpe/normal/mono]
+  {"sP3jack2", "        "}, // jack2 mode [midi/pedal/linein]
+  {"iP3tunin", "        "}, // load tuning [0-8]
+  {"iP3Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
+  {"iP3Mx   ", "        "}, // MIDI CC for key X movement. Special values 127 = Disable, 122 = Pitch Bend
+  {"iP3My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable
+  {"iP3Mvelo", "        "}, // MIDI continuous velocity. Special values 127 = Disable, else send continuous velocity on CC73 and continuous release velocity on CC72
+  {"iP3voice", "        "}, // Voice count/MPE channel count [1-15]
+  {"iP3MChan", "        "}, // MIDI channel offset [0-15]
+  {"iP3MPEpb", "        "}, // MPE pitch bend range [12/24/48/96]
+  {"fP3thres", "        "}, // Key sensitivity threshold [0-1]
+  {"fP3bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
+  {"fP3presS", "        "}, // Key pressure factor [0-4]
+  {"fP3veloS", "        "}, // Key velocity factor [0-4]
+
+  // preset 4
+  {"sP4name ", "preset4 "},
+  {"hP4color", "#0e6000 "},
+  {"iP4Mpgm ", "3       "}, // MIDI program change [0-127]
+  {"iP4Mint ", "        "}, // MIDI message interval in ms [1-127]
+  {"iP4Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
+  {"sP4Mmode", "        "}, // MIDI mode [mpe/normal/mono]
+  {"sP4jack2", "        "}, // jack2 mode [midi/pedal/linein]
+  {"iP4tunin", "        "}, // load tuning [0-8]
+  {"iP4Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
+  {"iP4Mx   ", "        "}, // MIDI CC for key X movement. Special values 127 = Disable, 122 = Pitch Bend
+  {"iP4My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable
+  {"iP4Mvelo", "        "}, // MIDI continuous velocity. Special values 127 = Disable, else send continuous velocity on CC73 and continuous release velocity on CC72
+  {"iP4voice", "        "}, // Voice count/MPE channel count [1-15]
+  {"iP4MChan", "        "}, // MIDI channel offset [0-15]
+  {"iP4MPEpb", "        "}, // MPE pitch bend range [12/24/48/96]
+  {"fP4thres", "        "}, // Key sensitivity threshold [0-1]
+  {"fP4bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
+  {"fP4presS", "        "}, // Key pressure factor [0-4]
+  {"fP4veloS", "        "}, // Key velocity factor [0-4]
+
+  // preset 5
+  {"sP5name ", "preset5 "},
+  {"hP5color", "#003838 "},
+  {"iP5Mpgm ", "4       "}, // MIDI program change [0-127]
+  {"iP5Mint ", "        "}, // MIDI message interval in ms [1-127]
+  {"iP5Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
+  {"sP5Mmode", "        "}, // MIDI mode [mpe/normal/mono]
+  {"sP5jack2", "        "}, // jack2 mode [midi/pedal/linein]
+  {"iP5tunin", "        "}, // load tuning [0-8]
+  {"iP5Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
+  {"iP5Mx   ", "        "}, // MIDI CC for key X movement. Special values 127 = Disable, 122 = Pitch Bend
+  {"iP5My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable
+  {"iP5Mvelo", "        "}, // MIDI continuous velocity. Special values 127 = Disable, else send continuous velocity on CC73 and continuous release velocity on CC72
+  {"iP5voice", "        "}, // Voice count/MPE channel count [1-15]
+  {"iP5MChan", "        "}, // MIDI channel offset [0-15]
+  {"iP5MPEpb", "        "}, // MPE pitch bend range [12/24/48/96]
+  {"fP5thres", "        "}, // Key sensitivity threshold [0-1]
+  {"fP5bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
+  {"fP5presS", "        "}, // Key pressure factor [0-4]
+  {"fP5veloS", "        "}, // Key velocity factor [0-4]
+
+  // preset 6
+  {"sP6name ", "preset6 "},
+  {"hP6color", "#000ea8 "},
+  {"iP6Mpgm ", "5       "}, // MIDI program change [0-127]
+  {"iP6Mint ", "        "}, // MIDI message interval in ms [1-127]
+  {"iP6Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
+  {"sP6Mmode", "        "}, // MIDI mode [mpe/normal/mono]
+  {"sP6jack2", "        "}, // jack2 mode [midi/pedal/linein]
+  {"iP6tunin", "        "}, // load tuning [0-8]
+  {"iP6Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
+  {"iP6Mx   ", "        "}, // MIDI CC for key X movement. Special values 127 = Disable, 122 = Pitch Bend
+  {"iP6My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable
+  {"iP6Mvelo", "        "}, // MIDI continuous velocity. Special values 127 = Disable, else send continuous velocity on CC73 and continuous release velocity on CC72
+  {"iP6voice", "        "}, // Voice count/MPE channel count [1-15]
+  {"iP6MChan", "        "}, // MIDI channel offset [0-15]
+  {"iP6MPEpb", "        "}, // MPE pitch bend range [12/24/48/96]
+  {"fP6thres", "        "}, // Key sensitivity threshold [0-1]
+  {"fP6bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
+  {"fP6presS", "        "}, // Key pressure factor [0-4]
+  {"fP6veloS", "        "}, // Key velocity factor [0-4]
+
+  // preset 7
+  {"sP7name ", "preset7 "},
+  {"hP7color", "#300064 "},
+  {"iP7Mpgm ", "6       "}, // MIDI program change [0-127]
+  {"iP7Mint ", "        "}, // MIDI message interval in ms [1-127]
+  {"iP7Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
+  {"sP7Mmode", "        "}, // MIDI mode [mpe/normal/mono]
+  {"sP7jack2", "        "}, // jack2 mode [midi/pedal/linein]
+  {"iP7tunin", "        "}, // load tuning [0-8]
+  {"iP7Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
+  {"iP7Mx   ", "        "}, // MIDI CC for key X movement. Special values 127 = Disable, 122 = Pitch Bend
+  {"iP7My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable
+  {"iP7Mvelo", "        "}, // MIDI continuous velocity. Special values 127 = Disable, else send continuous velocity on CC73 and continuous release velocity on CC72
+  {"iP7voice", "        "}, // Voice count/MPE channel count [1-15]
+  {"iP7MChan", "        "}, // MIDI channel offset [0-15]
+  {"iP7MPEpb", "        "}, // MPE pitch bend range [12/24/48/96]
+  {"fP7thres", "        "}, // Key sensitivity threshold [0-1]
+  {"fP7bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
+  {"fP7presS", "        "}, // Key pressure factor [0-4]
+  {"fP7veloS", "        "}, // Key velocity factor [0-4]
+
+  // preset 8
+  {"sP8name ", "preset8 "},
+  {"hP8color", "#2a2a2a "},
+  {"iP8Mpgm ", "7       "}, // MIDI program change [0-127]
+  {"iP8Mint ", "        "}, // MIDI message interval in ms [1-127]
+  {"iP8Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
+  {"sP8Mmode", "        "}, // MIDI mode [mpe/normal/mono]
+  {"sP8jack2", "        "}, // jack2 mode [midi/pedal/linein]
+  {"iP8tunin", "        "}, // load tuning [0-8]
+  {"iP8Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
+  {"iP8Mx   ", "        "}, // MIDI CC for key X movement. Special values 127 = Disable, 122 = Pitch Bend
+  {"iP8My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable
+  {"iP8Mvelo", "        "}, // MIDI continuous velocity. Special values 127 = Disable, else send continuous velocity on CC73 and continuous release velocity on CC72
+  {"iP8voice", "        "}, // Voice count/MPE channel count [1-15]
+  {"iP8MChan", "        "}, // MIDI channel offset [0-15]
+  {"iP8MPEpb", "        "}, // MPE pitch bend range [12/24/48/96]
+  {"fP8thres", "        "}, // Key sensitivity threshold [0-1]
+  {"fP8bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
+  {"fP8presS", "        "}, // Key pressure factor [0-4]
+  {"fP8veloS", "        "}, // Key velocity factor [0-4]
 
   // tuning 0, 12tet
   // don't use, hard coded as default

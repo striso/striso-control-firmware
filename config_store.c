@@ -52,7 +52,12 @@ float atof8(const char* str) {
     value += weight * (str[i] - '0');
     weight *= 0.1;
   }
-  return neg ? -value : value;
+
+  if (i) {
+    return neg ? -value : value;
+  } else {
+    return CONFIG_UNDEFINED;
+  }
 }
 
 int atoi8(const char* str) {
@@ -73,7 +78,11 @@ int atoi8(const char* str) {
     ++i;
   }
 
-  return neg ? -value : value;
+  if (i) {
+    return neg ? -value : value;
+  } else {
+    return CONFIG_UNDEFINED;
+  }
 }
 
 int atox8(const char* str) {
@@ -106,7 +115,11 @@ int atox8(const char* str) {
     }
   }
 
-  return value;
+  if (i) {
+    return value;
+  } else {
+    return CONFIG_UNDEFINED;
+  }
 }
 
 inline

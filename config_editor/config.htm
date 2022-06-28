@@ -10,6 +10,8 @@
   <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgAgMAAAAOFJJnAAAADFBMVEVMaXH///8AAADbnVoBLV0NAAAAAXRSTlMAQObYZgAAAJNJREFUCNdFz8ENhSAQBNBNLMwqNhwphX7wYAnYBE1w52LQ+TPyjZxewsxu1hYA3eNh68QgWnkA5J2A4c7b5WkCDtgu8Nn2IjMM1ES0Angk+C4PH5jsUVAyCPxwV3iC9XsTOPDMf7RcamBT6JFNQSP9A8O4AnFrBydqIKqn+qLrHOG5okycOpArVoL18YD5YcvE8QPr7Mbs26tpJgAAAABJRU5ErkJggg=="/>
   <script src="https://www.striso.org/config.js"></script>
   <script type="application/javascript">
+if (!structuredClone) {alert("Parts of this app may not work well. Please use a newer browser version for this app to work well.")}
+
 let infoMsg = ""
 var configuration = {}
 var undoStack = []
@@ -32,12 +34,31 @@ const UF2_FAMILYID = 0xa21e1295 // Striso STM32H7 familyID
 
 const doc = {
   iGoct: {text:"Default octave", help:"[-2..2]", check:function(x) {return clamp(x, -2, 2);}},
-  sGjack2: {text:"Pedal/MIDI jack mode", options:["midi", "pedal", "linein"]},
-  iGmotion: {text:"Default motion sensor state", help:"0=disable, 127=internal only, else motion message interval x10ms, ", check:function(x) {return clamp(x, 0, 127);}},
+  sGjack2: {text:"Pedal/MIDI jack mode", help:"[midi/pedal/linein] - pedal is not implemented yet!", options:["midi", "pedal", "linein"]},
+  iGmotion: {text:"Default motion sensor state", help:"0=disable, 127=internal only, else motion message interval x10ms", check:function(x) {return clamp(x, 0, 127);}},
   hTxcolor: {text:"LED color", help:"hexadecimal rgb representation"},
   fTxoff: {text:"Tuning offset", help:"offset in cents"},
   fTxoct: {text:"Octave interval", help:"octave interval in cents"},
   fTxfifth: {text:"Fifth interval", help:"fifth interval in cents"},
+  sPxname:  {text:"Preset name"},
+  hPxcolor: {text:"LED color", help:"hexadecimal rgb representation"},
+  iPxMpgm:  {text:"Send MIDI program change", help:"[0-127]", check:function(x) {return clamp(x, 0, 127);}},
+  iPxMint:  {text:"MIDI message interval", help:"in ms [1-127]", check:function(x) {return clamp(x, 1, 127);}},
+  iPxMmint: {text:"MIDI motion sensor message interval", help:" 0 = disable, 127 only internal, else x10ms [0-127]", check:function(x) {return clamp(x, 0, 127);}},
+  sPxMmode: {text:"MIDI mode", help:"[mpe/normal/mono]", options:["", "mpe", "normal", "mono"]},
+  sPxjack2: {text:"Pedal/MIDI jack mode", help:"[midi/pedal/linein] - not implemented yet!", options:["", "midi", "pedal", "linein"]},
+  iPxtunin: {text:"Load tuning", help:"[0-8]", check:function(x) {return clamp(x, 0, 8);}},
+  iPxMpres: {text:"MIDI CC for key pressure", help:"Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure", check:function(x) {return clamp(x, 0, 127);}},
+  iPxMx:    {text:"MIDI CC for key X movement", help:"Special values 127 = Disable, 122 = Pitch Bend", check:function(x) {return clamp(x, 0, 127);}},
+  iPxMy:    {text:"MIDI CC for key Y movement", help:"Special values 127 = Disable", check:function(x) {return clamp(x, 0, 127);}},
+  iPxMvelo: {text:"MIDI continuous velocity", help:"Special values 127 = Disable, else send continuous velocity on CC73 and continuous release velocity on CC72", check:function(x) {return clamp(x, 0, 127);}},
+  iPxvoice: {text:"Voice count/MPE channel count", help:"[1-15]", check:function(x) {return clamp(x, 1, 15);}},
+  iPxMChan: {text:"MIDI channel offset", help:"[0-15]", check:function(x) {return clamp(x, 0, 15);}},
+  iPxMPEpb: {text:"MPE pitch bend range", help:"[12/24/48/96]", check:function(x) {return clamp(x, 1, 127);}},
+  fPxthres: {text:"Key sensitivity threshold", help:"[0.0-1.0]", check:function(x) {return clamp(x, 0, 1);}},
+  fPxbendS: {text:"Pitch bend range", help:"in semitones [-4.0-4.0]", check:function(x) {return clamp(x, -10, 10);}},
+  fPxpresS: {text:"Key pressure factor", help:"[0.0-4.0]", check:function(x) {return clamp(x, 0, 10);}},
+  fPxveloS: {text:"Key velocity factor", help:"[0.0-4.0]", check:function(x) {return clamp(x, 0, 10);}},
 }
 
 function getDoc(key) {
@@ -50,6 +71,15 @@ function getDoc(key) {
   } else {
     return {};
   }
+}
+
+function getColor(value) {
+  let r = parseInt(value.substring(1,3), 16);
+  let g = parseInt(value.substring(3,5), 16);
+  let b = parseInt(value.substring(5,7), 16);
+  var m = Math.max(r,g,b);
+  if (m > 0) m = 255 / m;
+  return "rgb(" + Math.round(r*m) + "," + Math.round(g*m) + "," + Math.round(b*m) + ")";
 }
 
 function err(msg) {
@@ -88,72 +118,134 @@ function writeStr(buf, off, a) {
   }
 }
 
+function setValue(key, value) {
+  var d = getDoc(key);
+  if (key[1] === "P" && String(value).trim() === "") {
+    // Allow empty settings for presets
+    value = "";
+  } else if (key[0] === "h") {
+    value = String(value).trim();
+    if (value[0] === "#") value = value.substring(1);
+    if (value.length === 3) value = value[0] + value[0] + value[1] + value[1] + value[2] + value[2];
+    value = "#" + (value.match(/[0-9a-fA-F]*/) + "000000").substring(0,6);
+  } else {
+    if (key[0] === "i" || key[0] === "f") {
+      value = parseFloat(value);
+      if (isNaN(value)) value = 0;
+      if (!isFinite(value)) value = 99999999;
+      if (Math.abs(value < 1e-6)) value = 0;
+      if (key[0] === "i") value = Math.round(value);
+    }
+    if ("check" in d) {
+      value = d.check(value);
+    }
+    if ("options" in d) {
+      value = value.trim().toLowerCase();
+      if (!d.options.includes(value)) {
+        value = d.options[0];
+      }
+    }
+    value = String(value);
+    if (key[0] === "f" && !value.includes(".")) value += ".0";
+  }
+  value = value.substring(0, 8).padEnd(8, ' ');
+  configuration[key]["current"] = value;
+  return value;
+}
+
 function updateValue(evt) {
   if (evt.type) {
     saveUndoStep();
   }
-  let key = evt.target.parentElement.parentElement.childNodes[0].innerHTML;
+  let key = evt.target.parentElement.parentElement.children[0].innerHTML;
   var value = evt.target.value;
-  var d = getDoc(key);
-  if ("check" in d) {
-    value = String(d.check(value));
-  }
-  value = value.substring(0, 8).padEnd(8, ' ');
-  configuration[key]["current"] = value;
+  value = setValue(key, value);
   evt.target.value = value.trim();
   evt.target.classList.add("config-changed");
+  if (key[0] === "h") {
+    value = getColor(value);
+    evt.target.parentElement.parentElement.children[0].style.backgroundColor = value;
+    document.getElementById('led' + key.substring(1,3)).style.color = value;
+  }
 }
 
 function resetValue(evt) {
   if (evt.type) {
   saveUndoStep();
   }
-  let key = evt.target.parentElement.childNodes[0].innerHTML;
+  let key = evt.target.parentElement.children[0].innerHTML;
   configuration[key]["current"] = undefined;
-  let input = evt.target.parentElement.childNodes[1].childNodes[0];
+  let input = evt.target.parentElement.children[1].children[0];
   input.value = evt.target.innerHTML;
   input.classList.remove("config-changed");
+  if (key[0] === "h") {
+    var value = getColor(input.value);
+    evt.target.parentElement.children[0].style.backgroundColor = value;
+    document.getElementById('led' + key.substring(1,3)).style.color = value;
+  }
 }
 
 function resetAll() {
   saveUndoStep();
   let cfgtable = document.getElementById("config");
   for (let row of cfgtable.children) {
-    resetValue({target:row.childNodes[2]});
+    resetValue({target:row.children[2]});
   }
 }
 
 function pasteCell(evt) {
-  let paste = evt.clipboardData.getData('text');
+  paste = evt.clipboardData.getData('text');
   var input = evt.target;
-  let lines = paste.split("\n");
-  var cell = 0;
-  if (lines[0].startsWith("Key\tValue\tDefault")) {
-    cell = 1;
-    lines = lines.slice(1);
+  lines = paste.split("\n");
+  if (paste.endsWith("\n")) {
+    lines = lines.slice(0,-1);
   }
-  if (lines.length > 1) {
+  if (paste.search("\t") >= 0) {
+    // Table pasted, use name based paste
     saveUndoStep();
     if (evt.preventDefault) {evt.preventDefault();}
     for (let line of lines) {
-      let value = line.split("\t")[cell].substring(0,8).trim();
-      if (value !== input.value && value !== "") {
+      var value = line.split("\t");
+      let key = value[0].padEnd(8, ' ');
+      value = value[1];
+      var filter = document.querySelector('input[name="radioMain"]:checked').value;
+      if (key[1] === filter) {
+        var cur;
+        if (filter === "T") {
+          cur = document.querySelector('input[name="radioT"]:checked').value;
+        } else if (filter === "P") {
+          cur = document.querySelector('input[name="radioP"]:checked').value;
+        }
+        key = key.substring(0,2) + cur + key.substring(3);
+        if (key in configuration) {
+          setValue(key, value);
+        }
+      }
+    }
+    showConfig();
+  } else if (lines.length > 1) {
+    // Single column pasted, use cell based paste
+    saveUndoStep();
+    if (evt.preventDefault) {evt.preventDefault();}
+    for (let line of lines) {
+      let value = line.substring(0,8).trim();
+      if (value !== input.value) {
         input.value = value;
         updateValue({target:input});
       }
       if (input.parentElement.parentElement.nextElementSibling === null) {
         return;
       }
-      input = input.parentElement.parentElement.nextElementSibling.childNodes[1].childNodes[0];
+      input = input.parentElement.parentElement.nextElementSibling.children[1].children[0];
     }
   }
 }
 
 function copyTable() {
   let cfgtable = document.getElementById("config");
-  let values = [];
+  let values = ["Key\tValue"];
   for (let row of cfgtable.children) {
-    values.push(row.childNodes[1].childNodes[0].value);
+    values.push(row.children[0].innerText + "\t" + row.children[1].children[0].value);
   }
   navigator.clipboard.writeText(values.join("\n"));
 }
@@ -169,7 +261,6 @@ function saveUndoStep() {
 
 function undo() {
   if (undoStack.length > 0) {
-    console.log(undoStack)
     redoStack.push(configuration);
     configuration = undoStack.pop();
     showConfig();
@@ -187,7 +278,7 @@ function redo() {
 }
 
 function showConfig() {
-  filter = document.querySelector('input[name="radioMain"]:checked').value;
+  var filter = document.querySelector('input[name="radioMain"]:checked').value;
   showOnlyById(filter);
   if (filter === "T") {
     filter += document.querySelector('input[name="radioT"]:checked').value;
@@ -197,6 +288,7 @@ function showConfig() {
   let cfgtable = document.getElementById("config");
   cfgtable.innerHTML = "";
   for (let key in configuration) {
+    var newRow = undefined;
     if (key.substring(1).startsWith(filter)) {
       var d = getDoc(key);
       var newRow = cfgtable.insertRow(cfgtable.rows.length);
@@ -237,6 +329,17 @@ function showConfig() {
       newRow.children[1].children[0].onchange = updateValue;
       newRow.children[1].children[0].onpaste = pasteCell;
       newRow.children[2].onclick = resetValue;
+    }
+    if (key[0] === "h") {
+      var value = configuration[key]['current'];
+      if (value === undefined) {
+        value = configuration[key]['default'];
+      }
+      value = getColor(value);
+      document.getElementById('led' + key.substring(1,3)).style.color = value;
+      if (newRow) {
+        newRow.children[0].style.backgroundColor = value;
+      }
     }
   }
 }
@@ -295,7 +398,7 @@ function parseUserConfig(buf) {
 
 function checkUndoWanted() {
   if (document.activeElement.classList[0] === "config-value") {
-    let key = document.activeElement.parentElement.parentElement.childNodes[0].innerHTML;
+    let key = document.activeElement.parentElement.parentElement.children[0].innerHTML;
     return (configuration[key]["current"] || configuration[key]["default"]).trim() === document.activeElement.value;
   }
   return true;
@@ -332,7 +435,8 @@ function loadConfig() {
   document.getElementById("default").onclick = resetAll;
   document.onkeydown = keybindings;
   document.onpaste = function(evt) {
-    pasteCell({target: document.getElementById('config').children[0].children[1].children[0], clipboardData: evt.clipboardData});
+    if (evt.target.tagName !== "INPUT")
+      pasteCell({target: document.getElementById('config').children[0].children[1].children[0], clipboardData: evt.clipboardData});
   };
   document.oncopy = function(evt) {
     if (evt.target.tagName !== "INPUT" && window.getSelection().toString() === "") {
@@ -516,6 +620,7 @@ footer a {
   padding: 10px 20px;
   border: 2px solid #444;
   border-radius: 4px;
+  text-align: center;
 }
 
 .radio-toolbar label:hover {
@@ -529,6 +634,10 @@ footer a {
 
 .radio-toolbar input[type="radio"]:focus + label {
   border: 2px dashed #444;
+}
+
+.tight label {
+  padding: 0px 20px;
 }
 
 /*! normalize.css v3.0.2 | MIT License | git.io/normalize */
@@ -871,49 +980,56 @@ body {
       <div id="G">
       </div>
       <div id="P">
-        <div class="radio-toolbar">
+        <div class="radio-toolbar tight">
           <input type="radio" id="radioP1" name="radioP" value="1" checked onchange="showConfig()">
-          <label for="radioP1">1</label>
+          <label for="radioP1"><div id="ledP1">&#11044;</div>1</label>
           <input type="radio" id="radioP2" name="radioP" value="2" onchange="showConfig()">
-          <label for="radioP2">2</label>
+          <label for="radioP2"><div id="ledP2">&#11044;</div>2</label>
           <input type="radio" id="radioP3" name="radioP" value="3" onchange="showConfig()">
-          <label for="radioP3">3</label>
+          <label for="radioP3"><div id="ledP3">&#11044;</div>3</label>
           <input type="radio" id="radioP4" name="radioP" value="4" onchange="showConfig()">
-          <label for="radioP4">4</label>
+          <label for="radioP4"><div id="ledP4">&#11044;</div>4</label>
           <input type="radio" id="radioP5" name="radioP" value="5" onchange="showConfig()">
-          <label for="radioP5">5</label>
+          <label for="radioP5"><div id="ledP5">&#11044;</div>5</label>
           <input type="radio" id="radioP6" name="radioP" value="6" onchange="showConfig()">
-          <label for="radioP6">6</label>
+          <label for="radioP6"><div id="ledP6">&#11044;</div>6</label>
+          <input type="radio" id="radioP7" name="radioP" value="7" onchange="showConfig()">
+          <label for="radioP7"><div id="ledP7">&#11044;</div>7</label>
+          <input type="radio" id="radioP8" name="radioP" value="8" onchange="showConfig()">
+          <label for="radioP8"><div id="ledP8">&#11044;</div>8</label>
         </div>
-        Presets, not yet implemented.
+        <p>Presets can be used to quickly switch between different sets of settings. If a value is empty the setting is not changed when activating the preset.</p>
+        <p>Copy and Paste can be used to copy between presets, but also to the forum or a spreadsheet.</p>
       </div>
       <div id="T">
-        <div class="radio-toolbar">
+        <div class="radio-toolbar tight">
           <input type="radio" id="radioT1" name="radioT" value="1" checked onchange="showConfig()">
-          <label for="radioT1">1</label>
+          <label for="radioT1"><div id="ledT1">&#11044;</div>1</label>
           <input type="radio" id="radioT2" name="radioT" value="2" onchange="showConfig()">
-          <label for="radioT2">2</label>
+          <label for="radioT2"><div id="ledT2">&#11044;</div>2</label>
           <input type="radio" id="radioT3" name="radioT" value="3" onchange="showConfig()">
-          <label for="radioT3">3</label>
+          <label for="radioT3"><div id="ledT3">&#11044;</div>3</label>
           <input type="radio" id="radioT4" name="radioT" value="4" onchange="showConfig()">
-          <label for="radioT4">4</label>
+          <label for="radioT4"><div id="ledT4">&#11044;</div>4</label>
           <input type="radio" id="radioT5" name="radioT" value="5" onchange="showConfig()">
-          <label for="radioT5">5</label>
+          <label for="radioT5"><div id="ledT5">&#11044;</div>5</label>
           <input type="radio" id="radioT6" name="radioT" value="6" onchange="showConfig()">
-          <label for="radioT6">6</label>
+          <label for="radioT6"><div id="ledT6">&#11044;</div>6</label>
           <input type="radio" id="radioT7" name="radioT" value="7" onchange="showConfig()">
-          <label for="radioT7">7</label>
+          <label for="radioT7"><div id="ledT7">&#11044;</div>7</label>
           <input type="radio" id="radioT8" name="radioT" value="8" onchange="showConfig()">
-          <label for="radioT8">8</label>
+          <label for="radioT8"><div id="ledT8">&#11044;</div>8</label>
         </div>
         <p>Tunings in the Striso are defined by the size of the octave and fifth intervals, which define the pitch of all notes in a regular way.</p>
         <p>The tuning offset can be used to change the reference, to change the A from 440Hz to <input value="443" style="width:4ch" oninput="x=this.value; document.getElementById('tuninghz').innerHTML=x; document.getElementById('tuningcent').innerHTML=(1200*Math.log2(x/440)).toFixed(2);">Hz use 1200*log2(<span id="tuninghz">443</span>/440) = <span id="tuningcent">11.76</span> cent.</p>
         <p>For irregular tunings an offset per note can be given.</p>
         <p>All values are given in cents.</p>
         <p>The default tuning is fixed to the standard western tuning: 12tet with A=440Hz, which has an octave of 1200 and a fifth of 700 cent.</p>
+        <p>Copy and Paste can be used to copy between tunings, but also to the forum or a spreadsheet.</p>
       </div>
       <div id="C">
-        The keys of the Striso board are calibrated, however if keys feel more or less sensitive than the rest it's possible to set an additional factor (<span class="mono">fac</span>) or offset (<span class="mono">off</span>).
+        <p>The keys of the Striso board are calibrated, however if keys feel more or less sensitive than the rest it's possible to set an additional factor (<span class="mono">fac</span>).</p>
+        <p>When certain keys are randomly triggering a threshold/offset (<span class="mono">off</span>) can be added (between 0.0 and 0.1 should be enough).</p>
       </div>
     </div>
     <table>
@@ -933,7 +1049,7 @@ body {
       To reset a value click on the default. To reset all values in the table click on the Default header.
     </p>
     <p>
-      This editor is still work in progress, please share your experiences on the <a href="http://forum.striso.org">forum</a> or send an email to info@striso.org.
+      This editor is still work in progress, please share your experiences on the <a href="http://forum.striso.org">forum</a> or send an email to piers@striso.org.
     </p>
     <pre><code id="currconfig"></code></pre>
 

@@ -28,6 +28,7 @@ extern "C" {
     #include "led.h"
 }
 
+#include "aux_jack.h"
 #include "config.h"
 #include "config_store.h"
 #include "striso.h"
@@ -410,6 +411,13 @@ class Instrument {
         }
 
         void load_tuning(int n) {
+            if (n == 0) {
+                // tuning 0 hard coded to 12tet
+                notegen0 = 12.0f;
+                set_notegen1(7.0f);
+                reset_note_offsets();
+                return;
+            }
             CC_ALIGN(8) char key[] = "fT0fifth";
             key[2] = '0' + n;
             notegen1 = getConfigFloat(key) / 100;
@@ -1044,6 +1052,145 @@ int synth_message(int size, int* msg) {
     return 0;
 }
 
+void load_preset(int n) {
+    int i;
+    float f;
+    const char* s;
+    CC_ALIGN(8) char key[] = "hP0color";
+    key[2] = '0' + n;
+    int led = getConfigHex(key);
+    led_rgb(led);
+
+    key[0] = 'i';
+    strset(key, 3, "Mpgm ");
+    i = getConfigInt(key);
+    if (i >= 0 && i <= 127) {
+        MidiSend2(MIDI_PROGRAM_CHANGE, i);
+    }
+
+    strset(key, 3, "Mint ");
+    i = getConfigInt(key);
+    if (i >= 1 && i <= 127) {
+        config.message_interval = i;
+    }
+
+    strset(key, 3, "Mmint");
+    i = getConfigInt(key);
+    if (i >= 0 && i <= 127) {
+        config.send_motion_interval = i;
+    }
+
+    key[0] = 's';
+    strset(key, 3, "Mmode");
+    s = getConfigSetting(key);
+    if (cmp8(s, "mpe     ")) {
+        set_midi_mode(MIDI_MODE_MPE);
+    } else if (cmp8(s, "normal  ")) {
+        set_midi_mode(MIDI_MODE_POLY);
+    } else if (cmp8(s, "mono    ")) {
+        set_midi_mode(MIDI_MODE_MONO);
+    }
+
+    //strset(key, 3, "jack2");
+    //s = getConfigSetting(key);
+    //if (cmp8(s, "pedal   ")) {
+    //    aux_jack_switch_mode(JACK2_MODE_PEDAL);
+    //} else if (cmp8(s, "linein  ")) {
+    //    aux_jack_switch_mode(JACK2_MODE_LINEIN);
+    //} else if (cmp8(s, "midi    ")) {
+    //    aux_jack_switch_mode(JACK2_MODE_MIDI);
+    //}
+
+    key[0] = 'i';
+    strset(key, 3, "tunin");
+    i = getConfigInt(key);
+    if (i >= 0 && i <= 8) {
+        dis.load_tuning(i);
+        config.message_interval = i;
+    }
+
+    strset(key, 3, "Mpres");
+    i = getConfigInt(key);
+    if (i >= 0 && i <= 127) {
+        if (config.midi_mode == MIDI_MODE_POLY) {
+            config.midi_pres = i;
+        } else {
+            config.mpe_pres = i;
+        }
+    }
+
+    strset(key, 3, "Mx   ");
+    i = getConfigInt(key);
+    if (i >= 0 && i <= 127) {
+        if (config.midi_mode == MIDI_MODE_POLY) {
+            config.midi_x = i;
+        } else {
+            config.mpe_x = i;
+        }
+    }
+
+    strset(key, 3, "My   ");
+    i = getConfigInt(key);
+    if (i >= 0 && i <= 127) {
+        if (config.midi_mode == MIDI_MODE_POLY) {
+            config.midi_y = i;
+        } else {
+            config.mpe_y = i;
+        }
+    }
+
+    strset(key, 3, "Mvelo");
+    i = getConfigInt(key);
+    if (i >= 0 && i <= 127) {
+        config.mpe_contvelo = i;
+    }
+
+    strset(key, 3, "MChan");
+    i = getConfigInt(key);
+    if (i >= 0 && i <= 127) {
+        dis.midi_channel_offset = i;
+    }
+
+    strset(key, 3, "MPEpb");
+    i = getConfigInt(key);
+    if (i >= 1 && i <= 127) {
+        dis.midi_bend_range = i;
+    }
+
+    strset(key, 3, "voice");
+    i = getConfigInt(key);
+    if (i >= 1 && i <= MAX_VOICECOUNT) {
+        dis.voicecount = i;
+    }
+
+    key[0] = 'f';
+    strset(key, 3, "offse");
+    f = getConfigFloat(key);
+    if (f >= 0.0f && f <= 1.0f) {
+        config.zero_offset = f;
+    }
+
+    strset(key, 3, "bendS");
+    f = getConfigFloat(key);
+    if (f >= 0.0f && f <= 4.0f) {
+        dis.bend_sensitivity = f * 2;
+    }
+
+    strset(key, 3, "presS");
+    f = getConfigFloat(key);
+    if (f >= 0.0f && f <= 4.0f) {
+        dis.pres_sensitivity = f;
+    }
+
+    strset(key, 3, "veloS");
+    f = getConfigFloat(key);
+    if (f >= 0.0f && f <= 4.0f) {
+        dis.velo_sensitivity = f;
+    }
+
+    led_rgb(led);
+}
+
 #ifdef OLD_CONFIG_LAYOUT
 bool config_but(int but, bool init, int angle) {
     if (!init) return 0;
@@ -1152,11 +1299,7 @@ bool config_but(int but, bool init, int angle) {
         // Load config preset
         // row 5: 34 36 38 23 25 27 29 31 33
         case (34): { // set 12tet tuning
-            // first tuning hard coded to 12tet
-            dis.notegen0 = 12.0f;
-            dis.set_notegen1(7.0f);
-            dis.reset_note_offsets();
-            // load_tuning(0);
+            dis.load_tuning(0);
         } return 0;
         case (36): {
             dis.load_tuning(1);
@@ -1183,40 +1326,30 @@ bool config_but(int but, bool init, int angle) {
             dis.load_tuning(8);
         } return 0;
         // row 6: 35 37 39 41 43 45 30 32
-#ifdef USE_MIDI_OUT
         case (35): {
-            MidiSend2(MIDI_PROGRAM_CHANGE, 0);
-            ws2812_write_led(0, 4, 0, 0);
+            load_preset(1);
         } return 0;
         case (37): {
-            MidiSend2(MIDI_PROGRAM_CHANGE, 1);
-            ws2812_write_led(0, 4, 1, 0);
+            load_preset(2);
         } return 0;
         case (39): {
-            MidiSend2(MIDI_PROGRAM_CHANGE, 2);
-            ws2812_write_led(0, 4, 4, 0);
+            load_preset(3);
         } return 0;
         case (41): {
-            MidiSend2(MIDI_PROGRAM_CHANGE, 3);
-            ws2812_write_led(0, 1, 8, 0);
+            load_preset(4);
         } return 0;
         case (43): {
-            MidiSend2(MIDI_PROGRAM_CHANGE, 4);
-            ws2812_write_led(0, 0, 4, 4);
+            load_preset(5);
         } return 0;
         case (45): {
-            MidiSend2(MIDI_PROGRAM_CHANGE, 5);
-            ws2812_write_led(0, 0, 1, 12);
+            load_preset(6);
         } return 0;
         case (30): {
-            MidiSend2(MIDI_PROGRAM_CHANGE, 6);
-            ws2812_write_led(0, 2, 0, 6);
+            load_preset(7);
         } return 0;
         case (32): {
-            MidiSend2(MIDI_PROGRAM_CHANGE, 7);
-            ws2812_write_led(0, 3, 3, 3);
+            load_preset(8);
         } return 0;
-#endif
         // row 7: 51 53 55 40 42 44 46 48 50
         case (51): {
             MidiSend3(MIDI_CONTROL_CHANGE,
@@ -1293,6 +1426,7 @@ bool config_but(int but, bool init, int angle) {
             chThdSleepMilliseconds(500);
             NVIC_SystemReset();
         } return 0;
+        default: return 0;
     }
 }
 #else // !OLD_CONFIG_LAYOUT
@@ -1397,16 +1531,11 @@ bool config_but(int but, bool init, int angle) {
     // row 5: 34 36 38 23 25 27 29 31 33
     case (34): // set 12tet tuning, knob: tuning offset
         if (init) {
-            // first tuning hard coded to 12tet
-            // load_tuning(0);
-            dis.notegen0 = 12.0f;
-            dis.set_notegen1(7.0f);
-            dis.reset_note_offsets();
+            dis.load_tuning(0);
             led_updown_dial(dis.note_offset * 16 + 8);
         } else {
             float offset = (1.0f / 16.0f) * (angle - 8);
             dis.note_offset = (int)(dis.note_offset - offset + 1000.5f) - 1000 + offset;
-            // dis.note_offset = (1.0f / 16.0f) * (angle - 8);
             return 1;
         } return 0;
     case (36): // load tuning 1, knob: tuning offset
@@ -1482,48 +1611,38 @@ bool config_but(int but, bool init, int angle) {
             return 1;
         } return 0;
         // row 6: 35 37 39 41 43 45 30 32
-#ifdef USE_MIDI_OUT
     case (35):
         if (init) {
-            MidiSend2(MIDI_PROGRAM_CHANGE, 0);
-            ws2812_write_led(0, 4, 0, 0);
+            load_preset(1);
         } return 0;
     case (37):
         if (init) {
-            MidiSend2(MIDI_PROGRAM_CHANGE, 1);
-            ws2812_write_led(0, 4, 1, 0);
+            load_preset(2);
         } return 0;
     case (39):
         if (init) {
-            MidiSend2(MIDI_PROGRAM_CHANGE, 2);
-            ws2812_write_led(0, 4, 4, 0);
+            load_preset(3);
         } return 0;
     case (41):
         if (init) {
-            MidiSend2(MIDI_PROGRAM_CHANGE, 3);
-            ws2812_write_led(0, 1, 8, 0);
+            load_preset(4);
         } return 0;
     case (43):
         if (init) {
-            MidiSend2(MIDI_PROGRAM_CHANGE, 4);
-            ws2812_write_led(0, 0, 4, 4);
+            load_preset(5);
         } return 0;
     case (45):
         if (init) {
-            MidiSend2(MIDI_PROGRAM_CHANGE, 5);
-            ws2812_write_led(0, 0, 1, 12);
+            load_preset(6);
         } return 0;
     case (30):
         if (init) {
-            MidiSend2(MIDI_PROGRAM_CHANGE, 6);
-            ws2812_write_led(0, 2, 0, 6);
+            load_preset(7);
         } return 0;
     case (32):
         if (init) {
-            MidiSend2(MIDI_PROGRAM_CHANGE, 7);
-            ws2812_write_led(0, 3, 3, 3);
+            load_preset(8);
         } return 0;
-#endif
     // row 7: 51 53 55 40 42 44 46 48 50
     case (51): // knob: Volume (CC7)
         if (init) {
@@ -1576,6 +1695,7 @@ bool config_but(int but, bool init, int angle) {
             chThdSleepMilliseconds(500);
             NVIC_SystemReset();
         } return 0;
+    default: return 0;
     }
     return 0;
 }

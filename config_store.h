@@ -3,6 +3,8 @@
 
 #include "ch.h"
 
+#define CONFIG_UNDEFINED 100000000
+
 typedef struct {
     char key[8];
     char value[8];
