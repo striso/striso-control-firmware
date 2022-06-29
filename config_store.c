@@ -39,18 +39,20 @@ float atof8(const char* str) {
   }
 
   float value = 0;
-  while (i < 8 && str[i] != '.') {
-    if (str[i] < '0' || str[i] > '9')
-      return neg ? -value : value;
+  while (i < 8 && str[i] >= '0' && str[i] <= '9' && str[i] != '.') {
     value *= 10;
     value += str[i] - '0';
     ++i;
   }
 
-  float weight = 0.1;
-  while (i < 8 && str[i] >= '0' && str[i] <= '9') {
-    value += weight * (str[i] - '0');
-    weight *= 0.1;
+  if (i < 8 && str[i] == '.') {
+    ++i;
+    float weight = 0.1;
+    while (i < 8 && str[i] >= '0' && str[i] <= '9') {
+      value += weight * (str[i] - '0');
+      weight *= 0.1;
+      ++i;
+    }
   }
 
   if (i) {

@@ -1204,17 +1204,24 @@ void ButtonReadStart(void) {
     }
 
     CC_ALIGN(8) char key[8] = "fCoffC_";
+    float f;
     for (int n = 0; n < 61; n++) {
       key[2] = 'f';
       key[3] = 'a';
       key[4] = 'c';
       put_button_name(n, &key[5]);
       int but = button_number_map[n];
-      buttons[but].c_force *= (int32_t)(getConfigFloat(key) + 0.5f);
+      f = getConfigFloat(key);
+      if (f != 1.0f && f >= 0.0f && f <= 10.0f) {
+        buttons[but].c_force = (int32_t)(buttons[but].c_force * f + 0.5f);
+      }
       key[2] = 'o';
       key[3] = 'f';
       key[4] = 'f';
-      buttons[but].zero_offset = getConfigFloat(key) * INTERNAL_ONE;
+      f = getConfigFloat(key);
+      if (f > 0.0f && f <= 1.0f) {
+        buttons[but].zero_offset = f * INTERNAL_ONE;
+      }
     }
   } else {
     led_rgb(0xff0000);
