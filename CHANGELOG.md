@@ -1,13 +1,16 @@
 # Changelog
 
-## Next release
+## v2.1.5 - 2022-07-01
 
 This release adds a long planned feature: Persistent configuration and a configuration editor.
 
 The editor can be opened on a computer. Connect the USB cable with the settings (square) button pressed, now it should attach as a flash drive. Open the file CONFIG.HTM, which should open a web browser with the configuration editor.
 
+Saving the configuration doesn't work with the Safari browser, please use another browser for now.
+
 ## Added
 - Persistent configuration and configuration editor
+- MIDI note modes, to have each key send a unique note number (accessible through the configuration editor)
 
 ### Changed
 - Don't send motion sensor data over MIDI by default, this behaviour can be changed in the config editor
