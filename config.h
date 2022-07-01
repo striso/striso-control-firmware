@@ -42,6 +42,8 @@
 #define PLAYBACK_BUFFER_SIZE	(CHANNEL_BUFFER_SIZE*2)
 #define CODEC_ENABLE_INPUT    TRUE
 
+#define OLD_CONFIG_LAYOUT
+
 #else
 #define USE_BAS
 #define USE_UART
