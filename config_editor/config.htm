@@ -8,9 +8,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#db9d5a">
   <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgAgMAAAAOFJJnAAAADFBMVEVMaXH///8AAADbnVoBLV0NAAAAAXRSTlMAQObYZgAAAJNJREFUCNdFz8ENhSAQBNBNLMwqNhwphX7wYAnYBE1w52LQ+TPyjZxewsxu1hYA3eNh68QgWnkA5J2A4c7b5WkCDtgu8Nn2IjMM1ES0Angk+C4PH5jsUVAyCPxwV3iC9XsTOPDMf7RcamBT6JFNQSP9A8O4AnFrBydqIKqn+qLrHOG5okycOpArVoL18YD5YcvE8QPr7Mbs26tpJgAAAABJRU5ErkJggg=="/>
-  <script src="https://www.striso.org/config.js"></script>
   <script type="application/javascript">
-if (!structuredClone) {alert("Parts of this app may not work well. Please use a newer browser version for this app to work well.")}
+if (typeof structuredClone !== "function") {
+  structuredClone = function(x) {return JSON.parse(JSON.stringify(x));}
+}
+
+if (typeof "".includes !== "function") {
+  alert("Parts of this app may not work well. Please use a newer browser version for this app to work well.");
+}
+
+if (typeof window.GestureEvent === 'function') { // detect Safari
+  alert("Save configuration doesn't seem to work on Safari, please use another browser for now.");
+}
 
 let infoMsg = ""
 var configuration = {}
@@ -570,11 +579,19 @@ function dragOverHandler(ev) {
   ev.preventDefault();
   ev.dataTransfer.dropEffect = 'copy';
 }
+
+window.addEventListener('load', function() {
+  var element = document.createElement("script");
+  element.src = "https://www.striso.org/config.js";
+  document.body.appendChild(element);
+});
   </script>
   <style>
 .mono, #config input, #config select {
   font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
   font-size: 0.9rem;
+  background: #fff;
+  height: 2.4em;
 }
 
 .page-header {
@@ -589,7 +606,7 @@ function dragOverHandler(ev) {
   border-width: 1px;
 }
 .config-changed {
-  background: #fc8;
+  background: #fc8 !important;
 }
 
 #configdata {
