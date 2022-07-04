@@ -618,7 +618,7 @@ const ConfigParam default_config[] = {
   {"hT4color", "#aa0000 "},
   {"fT4off  ", "0.0     "},
   {"fT4oct  ", "1200.0  "},
-  {"fT4fifth", "720     "}, // 1200/5*3
+  {"fT4fifth", "720.0   "}, // 1200/5*3
   {"fT4F_1  ", "0.0     "},
   {"fT4Gb1  ", "0.0     "},
   {"fT4F#1  ", "0.0     "},

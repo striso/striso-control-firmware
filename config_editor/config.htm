@@ -297,6 +297,28 @@ function showConfig() {
   }
   let cfgtable = document.getElementById("config");
   cfgtable.innerHTML = "";
+  if (filter === "T0") {
+    // show values of fixed standard tuning
+    var T0cfg = {sT1name: "12tet", hT1color: "#00aa00", fT1off: "0.0", fT1oct: "1200.0", fT1fifth: "700.0"};
+    for (let key in T0cfg) {
+      var d = getDoc(key);
+      var newRow = cfgtable.insertRow(cfgtable.rows.length);
+      newRow.innerHTML = "<td class='mono'>" + key + "</td>"
+          + "<td class='mono'><input class='config-value' type='text' value='" + T0cfg[key] + "' readonly></td>"
+          + "<td class='mono'>" + T0cfg[key] + "</td>"
+          + "<td></td>";
+      if ("text" in d) {
+        var help = d.text;
+        if ('help' in d) {
+          help += ", " + d.help;
+        }
+        newRow.children[3].innerHTML = help;
+      }
+      if (key[0] === "h") {
+        newRow.children[0].style.backgroundColor = getColor(T0cfg[key]);
+      }
+    }
+  }
   for (let key in configuration) {
     var newRow = undefined;
     if (key.substring(1).startsWith(filter)) {
@@ -339,6 +361,7 @@ function showConfig() {
       newRow.children[1].children[0].onchange = updateValue;
       newRow.children[1].children[0].onpaste = pasteCell;
       newRow.children[2].onclick = resetValue;
+      newRow.children[2].classList.add("clk");
     }
     if (key[0] === "h") {
       var value = configuration[key]['current'];
@@ -456,7 +479,7 @@ function loadConfig() {
   }
 }
 
-function getUF2() {
+function getUF2(evt) {
   let cfg2 = {};
   cfg2['MConfig '] = 'v1.0    ';
   var count = 1;
@@ -505,6 +528,7 @@ function getUF2() {
   }
 
   download(uf2, 'CONFIG.UF2');
+  evt.preventDefault();
 }
 
 function download(buf, name) {
@@ -629,7 +653,7 @@ footer a {
 .radio-toolbar input[type="radio"] {
   appearance: none;
   -webkit-appearance: none;
-  position: fixed;
+  position: absolute;
 }
 
 .radio-toolbar label {
@@ -651,11 +675,16 @@ footer a {
 }
 
 .radio-toolbar input[type="radio"]:focus + label {
-  border: 2px dashed #444;
+  border: 2px solid #444;
 }
 
 .tight label {
   padding: 0px 20px;
+}
+
+.clk:hover {
+  background-color: #fed;
+  cursor: default;
 }
 
 /*! normalize.css v3.0.2 | MIT License | git.io/normalize */
@@ -676,6 +705,10 @@ h1 {
 
 input {
   line-height: normal;
+}
+
+input:read-only {
+  background-color: #ddd !important;
 }
 
 table {
@@ -719,6 +752,7 @@ body {
 
 .btn:hover, .btn:focus {
   background-color: #ac6c29;
+  cursor: default;
 }
 
 .btn+.btn {
@@ -1021,6 +1055,8 @@ body {
       </div>
       <div id="T">
         <div class="radio-toolbar tight">
+          <input type="radio" id="radioT0" name="radioT" value="0" checked onchange="showConfig()">
+          <label for="radioT0"><div id="ledT0" style="color:#0f0">&#11044;</div>0</label>
           <input type="radio" id="radioT1" name="radioT" value="1" checked onchange="showConfig()">
           <label for="radioT1"><div id="ledT1">&#11044;</div>1</label>
           <input type="radio" id="radioT2" name="radioT" value="2" onchange="showConfig()">
@@ -1039,10 +1075,10 @@ body {
           <label for="radioT8"><div id="ledT8">&#11044;</div>8</label>
         </div>
         <p>Tunings in the Striso are defined by the size of the octave and fifth intervals, which define the pitch of all notes in a regular way.</p>
+        <p>The default tuning is fixed to the standard western tuning: 12tet with A=440Hz.</p>
         <p>The tuning offset can be used to change the reference, to change the A from 440Hz to <input value="443" style="width:4ch" oninput="x=this.value; document.getElementById('tuninghz').innerHTML=x; document.getElementById('tuningcent').innerHTML=(1200*Math.log2(x/440)).toFixed(2);">Hz use 1200*log2(<span id="tuninghz">443</span>/440) = <span id="tuningcent">11.76</span> cent.</p>
         <p>For irregular tunings an offset per note can be given.</p>
         <p>All values are given in cents.</p>
-        <p>The default tuning is fixed to the standard western tuning: 12tet with A=440Hz, which has an octave of 1200 and a fifth of 700 cent.</p>
         <p>Copy and Paste can be used to copy between tunings, but also to the forum or a spreadsheet.</p>
       </div>
       <div id="C">
@@ -1051,7 +1087,7 @@ body {
       </div>
     </div>
     <table>
-      <thead><tr><th>Key</th><th>Value</th><th id="default">Default</th><th><div id="undo" class="btn">Undo</div><div id="redo" class="btn">Redo</div><div id="copy" class="btn">Copy</div><div id="paste" class="btn">Paste</div></th></tr></thead>
+      <thead><tr><th>Key</th><th>Value</th><th id="default" class="clk">Default</th><th><div id="undo" class="btn">Undo</div><div id="redo" class="btn">Redo</div><div id="copy" class="btn">Copy</div><div id="paste" class="btn">Paste</div></th></tr></thead>
       <tbody id="config"></tbody>
     </table>
 
@@ -1072,7 +1108,7 @@ body {
     <pre><code id="currconfig"></code></pre>
 
   <footer>
-    <span>&copy; 2021 <a href="https://www.striso.org" target="_blank" rel="noopener">Striso</a></span>
+    <span>&copy; 2022 <a href="https://www.striso.org" target="_blank" rel="noopener">Striso</a></span>
   </footer>
 
   </section>
