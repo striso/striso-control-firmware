@@ -1,5 +1,13 @@
 # Changelog
 
+## Next version
+
+### Added
+- Retrigger delay, no note on message will be sent within 50ms after a note off message.
+
+### Changed
+- Config editor tweaks
+
 ## v2.1.5 - 2022-07-01
 
 This release adds a long planned feature: Persistent configuration and a configuration editor.
@@ -8,7 +16,7 @@ The editor can be opened on a computer. Connect the USB cable with the settings 
 
 Saving the configuration doesn't work with the Safari browser, please use another browser for now.
 
-## Added
+### Added
 - Persistent configuration and configuration editor
 - MIDI note modes, to have each key send a unique note number (accessible through the configuration editor)
 
