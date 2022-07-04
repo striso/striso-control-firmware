@@ -330,9 +330,9 @@ class Instrument {
 
         void set_altmode(int a) {
             if (a) {
-                altmode = 1;
+                altmode |= 1;
             } else {
-                altmode = 0;
+                altmode &= 2;
             }
         }
 
@@ -416,6 +416,7 @@ class Instrument {
                 notegen0 = 12.0f;
                 set_notegen1(7.0f);
                 reset_note_offsets();
+                led_rgb(tuning_color);
                 return;
             }
             CC_ALIGN(8) char key[] = "fT0fifth";
@@ -435,7 +436,7 @@ class Instrument {
             key[0] = 'h';
             strset(key, 3, "color");
             tuning_color = getConfigHex(key);
-            update_leds();
+            led_rgb(tuning_color);
         }
 
         /* Rotate the layout 180 degrees */
@@ -454,12 +455,11 @@ class Instrument {
             buttons[but].message(msg);
 
             // handle alternative functions of note buttons
-            if ((altmode && buttons[but].state == STATE_OFF)
+            if ((altmode == 1 && buttons[but].state == STATE_OFF)
                 || (buttons[but].state == STATE_ALT)) {
                 if (pow2(buttons[but].but_x) + pow2(buttons[but].but_y) > 0.25f
                     && buttons[but].vpres > -0.01f) {
                     // handle knob mode
-                    // TODO: handle cases with two buttons in alt mode
                     int angle = (int)(atan2f(buttons[but].but_x, buttons[but].but_y)*8/3.1416 + 8.5f) % 16;
                     if (angle != old_angle) {
                         if (config_but(but, false, angle)) {
@@ -471,12 +471,13 @@ class Instrument {
                 // only handle on new press
                 if (buttons[but].state == STATE_OFF && buttons[but].pres > 0.05) {
                     buttons[but].state = STATE_ALT;
+                    altmode |= 2;
                     config_but(but, true, 0);
-                    return;
                 } else if (buttons[but].pres == 0.0) {
                     buttons[but].state = STATE_OFF;
+                    altmode &= 1;
                     old_angle = -100;
-                    return;
+                    if (!altmode) update_leds();
                 }
                 return;
             }
@@ -1015,7 +1016,7 @@ int synth_message(int size, int* msg) {
         else if (msg[0]) {
             aux_button_map |= 1<<id;
             if (aux_button_map == ((1<<IDC_OCT_UP) | (1<<IDC_OCT_DOWN))) {
-                if (dis.altmode) {
+                if (dis.altmode & 1) {
                     // transpose reset
                     dis.set_note_offset(dis.tuning_note_offset);
                 } else {
@@ -1026,7 +1027,7 @@ int synth_message(int size, int* msg) {
             } else {
                 note_offset_old = dis.start_note_offset;
                 float dif = dis.notegen0;
-                if (dis.altmode) dif = 1.0f;
+                if (dis.altmode & 1) dif = 1.0f;
                 if (id == IDC_OCT_UP) {
                     dis.change_note_offset(dif);
                 }
@@ -1872,55 +1873,16 @@ void synth_tick(void) {
 }
 
 void update_leds(void) {
-    uint8_t r = 0, g = 2, b = 0;
+    // if buttons in alt mode don't update leds
+    if (dis.altmode & 2) return;
 
+    uint8_t r, g, b;
     r = dis.tuning_color >> 16 & 0xff;
     g = dis.tuning_color >>  8 & 0xff;
     b = dis.tuning_color >>  0 & 0xff;
 
     int m = 64 + 16 * (dis.altmode + (dis.portamento & 1));
     led_rgb3(r * m / 64, g * m / 64, b * m / 64);
-
-#ifdef USE_WS2812
-    ws2812_write_led(0, m*r, m*g, m*b);
-
-    if (dis.altmode) {
-        // color based on offset within octave
-        int WheelPos = ((dis.start_note_offset + 2) * 8
-            + (int)(dis.note_offset * 8 + 48 * 8 + .5))
-            % (12 * 8);
-        switch(WheelPos >> 5) {
-            case 0:
-                r = 31 - WheelPos % 32;   //Red down
-                g = WheelPos % 32;      // Green up
-                b = 0;                  //blue off
-                break;
-            case 1:
-                g = 31 - WheelPos % 32;  //green down
-                b = WheelPos % 32;      //blue up
-                r = 0;                  //red off
-                break;
-            case 2:
-                b = 31 - WheelPos % 32;  //blue down
-                r = WheelPos % 32;      //red up
-                g = 0;                  //green off
-                break;
-        }
-        ws2812_write_led(1, r/4, g/4, b/4);
-        ws2812_write_led(2, r/4, g/4, b/4);
-    } else {
-        int oct = (int)((dis.start_note_offset + 4) / 12) - 5;
-        if (oct > 0) {
-            oct = oct * oct;
-            ws2812_write_led(1, oct * r, oct * g, oct * b);
-            ws2812_write_led(2, 0, 0, 0);
-        } else {
-            oct = oct * oct;
-            ws2812_write_led(1, 0, 0, 0);
-            ws2812_write_led(2, oct * r, oct * g, oct * b);
-        }
-    }
-#endif
 
     int note_offset = (int)(dis.start_note_offset + 0.5f) - 62;
     if      (note_offset <= -24) led_updown(0xff00);
