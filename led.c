@@ -70,17 +70,16 @@ void led_rgb3(int r, int g, int b) {
   pwmEnableChannel(&PWMD4, 1, gamma8(b));
 }
 
-inline void led_updown_state(ioline_t line, uint32_t state) {
-  if (state) {
+inline int led_updown_state(ioline_t line, uint32_t state) {
+  if (state == 0xf) {
     palSetLine(line);
-    if (state != 0xf) {
-      led_dimmed = line;
-      pwmEnablePeriodicNotification(&PWMD3);
-      pwmEnableChannelNotification(&PWMD3, 0);
-    }
-  } else {
+  } else if (state == 0x0) {
     palClearLine(line);
+  } else {
+    led_dimmed = line;
+    return true;
   }
+  return false;
 }
 
 /**
@@ -91,12 +90,34 @@ inline void led_updown_state(ioline_t line, uint32_t state) {
  * Only one led can be dimmed at the same time.
  */
 void led_updown(uint32_t state) {
-  pwmDisableChannelNotification(&PWMD3, 0);
-  pwmDisablePeriodicNotification(&PWMD3);
-  led_updown_state(LINE_LED_UP2,   state       & 0xf);
-  led_updown_state(LINE_LED_UP,    state >>  4 & 0xf);
-  led_updown_state(LINE_LED_DOWN,  state >>  8 & 0xf);
-  led_updown_state(LINE_LED_DOWN2, state >> 12 & 0xf);
+
+  // combine all led calls in one SysLock zone to not have previous dimmed led
+  // turn on or off accidentally
+  // checks from pwmEnableChannelNotification/pwmEnablePeriodicNotification
+  osalDbgCheck((&PWMD3 != NULL) && (0 < PWMD3.channels));
+
+  osalSysLock();
+
+  osalDbgAssert(PWMD3.state == PWM_READY, "not ready");
+  osalDbgAssert(PWMD3.state == PWM_READY, "not ready");
+  osalDbgAssert(PWMD3.config->callback != NULL, "undefined periodic callback");
+  osalDbgAssert((PWMD3.enabled & ((pwmchnmsk_t)1U << (pwmchnmsk_t)0)) != 0U,
+                "channel not enabled");
+  osalDbgAssert(PWMD3.config->channels[0].callback != NULL,
+                "undefined channel callback");
+
+  if (led_updown_state(LINE_LED_UP2,   state       & 0xf) |
+      led_updown_state(LINE_LED_UP,    state >>  4 & 0xf) |
+      led_updown_state(LINE_LED_DOWN,  state >>  8 & 0xf) |
+      led_updown_state(LINE_LED_DOWN2, state >> 12 & 0xf))
+  {
+    pwmEnablePeriodicNotificationI(&PWMD3);
+    pwmEnableChannelNotificationI(&PWMD3, 0);
+  } else {
+    pwmDisableChannelNotificationI(&PWMD3, 0);
+    pwmDisablePeriodicNotificationI(&PWMD3);
+  }
+  osalSysUnlock();
 }
 
 void led_updown_dial(int angle) {
