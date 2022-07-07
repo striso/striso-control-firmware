@@ -53,7 +53,7 @@
 #define MIN_MEASURES 4 // minimum notes to measure, must be >= 2
 #define MULTISAMPLE 4  // multisampling of pressure, also hardcoded in some places
 
-#define RETRIGGER_DELAY 50
+#define RETRIGGER_DELAY TIME_MS2I(50) // minimum time before a note can be triggered again after a note off
 #define INTEGRATED_PRES_TRESHOLD (INTERNAL_ONE/8)
 #define SENDFACT    config.message_interval
 
@@ -636,7 +636,7 @@ void update_button(button_t* but) {
   msg[0] = but->src_id;
 
   if (but->status == JUSTOFF) {
-    if (--but->timer > 0)
+    if (chVTGetSystemTime() < (uint32_t)but->timer)
       return;
     but->status = OFF;
   }
@@ -697,7 +697,7 @@ void update_button(button_t* but) {
     else if (but->status == ON && but->pres < (config.zero_offset / 2 + but->zero_offset + MSGFACT)) {
       but->status = JUSTOFF;
       buttons_pressed[but->src_id]--;
-      but->timer = RETRIGGER_DELAY;
+      but->timer = chVTGetSystemTime() + RETRIGGER_DELAY;
 
       msg[1] = but_id;
       msg[2] = 0;
@@ -756,7 +756,7 @@ void update_button(button_t* but) {
       }
       buttons_pressed[but->src_id]--;
       but->status = JUSTOFF;
-      but->timer = RETRIGGER_DELAY;
+      but->timer = chVTGetSystemTime() + RETRIGGER_DELAY;
     } else {
       but->status = OFF;
     }
