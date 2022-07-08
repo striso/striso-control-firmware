@@ -53,7 +53,6 @@
 #define MIN_MEASURES 4 // minimum notes to measure, must be >= 2
 #define MULTISAMPLE 4  // multisampling of pressure, also hardcoded in some places
 
-#define RETRIGGER_DELAY TIME_MS2I(50) // minimum time before a note can be triggered again after a note off
 #define INTEGRATED_PRES_TRESHOLD (INTERNAL_ONE/8)
 #define SENDFACT    config.message_interval
 
@@ -164,7 +163,6 @@ enum button_status {
   OFF = 0,
   STARTING = 1,
   ON = 2,
-  JUSTOFF = 3,
 };
 
 typedef struct struct_button button_t;
@@ -635,12 +633,6 @@ void update_button(button_t* but) {
   int msg[8];
   msg[0] = but->src_id;
 
-  if (but->status == JUSTOFF) {
-    if (chVTGetSystemTime() < (uint32_t)but->timer)
-      return;
-    but->status = OFF;
-  }
-
   int key_detect2 = KEY_DETECT2 * (col_pressed[but->src_id][but_id % 17] - (but->status != OFF) >= 1);
 
   if (but->on > KEY_DETECT + key_detect2 + but->key_detect3) {
@@ -695,9 +687,9 @@ void update_button(button_t* but) {
     }
     // note off if .pres is too low even though .on is high enough
     else if (but->status == ON && but->pres < (config.zero_offset / 2 + but->zero_offset + MSGFACT)) {
-      but->status = JUSTOFF;
+      but->status = STARTING;
       buttons_pressed[but->src_id]--;
-      but->timer = chVTGetSystemTime() + RETRIGGER_DELAY;
+      but->timer = INTEGRATED_PRES_TRESHOLD;
 
       msg[1] = but_id;
       msg[2] = 0;
@@ -755,11 +747,8 @@ void update_button(button_t* but) {
         chThdSleep(1);
       }
       buttons_pressed[but->src_id]--;
-      but->status = JUSTOFF;
-      but->timer = chVTGetSystemTime() + RETRIGGER_DELAY;
-    } else {
-      but->status = OFF;
     }
+    but->status = OFF;
     but->p = 0;
     col_pressed[but->src_id][but_id % 17]--;
     // reset filter
