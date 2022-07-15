@@ -69,6 +69,7 @@ const doc = {
   fPxbendS: {text:"Pitch bend range", help:"in semitones [-4.0-4.0]", check:function(x) {return clamp(x, -10, 10);}},
   fPxpresS: {text:"Key pressure factor", help:"[0.0-4.0]", check:function(x) {return clamp(x, 0, 10);}},
   fPxveloS: {text:"Key velocity factor", help:"[0.0-4.0]", check:function(x) {return clamp(x, 0, 10);}},
+  fPxveloS: {text:"Volume", help:"[0.0-127.0]", check:function(x) {return clamp(x, 0, 255);}},
 }
 
 function getDoc(key) {

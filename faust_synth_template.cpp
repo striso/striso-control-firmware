@@ -9,6 +9,7 @@ extern "C" {
 #define min(x,y) (x<y?x:y)
 
 #define MAX_VAL (1<<23)
+#define VOLUME_FILTER 0.99f
 
 class dsp {
 	protected:
@@ -47,7 +48,7 @@ static void synthThread(void *arg) {  // THE SYNTH THREAD
 
 	int32_t tmp;
 	int count = CHANNEL_BUFFER_SIZE;
-	float power = 0.0;
+	float volume_filtered = 0.0f;
 
 	//codec_pwrCtl(1);    // POWER ON
 	//codec_muteCtl(0);   // MUTE OFF
@@ -77,9 +78,11 @@ static void synthThread(void *arg) {  // THE SYNTH THREAD
 
 		dsp.compute(count, NULL, output);
 
+		volume_filtered = VOLUME_FILTER * volume_filtered + (1 - VOLUME_FILTER) * volume;
+
 		// convert float to int with scale, clamp and round
 		for (int n = 0; n < CHANNEL_BUFFER_SIZE; n++) {
-			tmp = (int32_t)(output0[n] * volume * MAX_VAL);
+			tmp = (int32_t)(output0[n] * volume_filtered * MAX_VAL);
 			// enable LED on clip
 			if (tmp <= -MAX_VAL) {
 				tmp = -(MAX_VAL-1);

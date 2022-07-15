@@ -213,4 +213,4 @@ envelop = abs : max ~ -(20.0/SR);
 
 process = hgroup("strisy",
         sum(n, voicecount, vgroup("v%n", (note,pres,vpres,but_x,but_y)) : voice) // : vgroup("v%n", vmeter))
-        : HPF(K_f0(80),1.31) );// : fi.dcblocker;: stereo:bodyFilter;
+        * 1.37 : HPF(K_f0(80),1.31) );// : fi.dcblocker;: stereo:bodyFilter;

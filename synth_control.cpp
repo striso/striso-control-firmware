@@ -47,7 +47,11 @@ extern "C" {
 #define VOL_TICK_FACT (0.998) // 0.5**(1/(SAMPLINGFREQ / CHANNEL_BUFFER_SIZE)/0.1)
 #define CLEAR_TIMER TIME_MS2I(500) // interval to clear dead notes
 
-#define VOLUME_FACTOR 0.005f;
+float volume_linear = 90.0f; // volume in range 0-127
+void set_volume(float vol) {
+    volume_linear = vol;
+    volume = volume_linear * volume_linear * (1.0f / 16129.0f);
+}
 
 void MidiSend1(uint8_t b0) {
     midi_usb_MidiSend1(1, b0);
@@ -319,7 +323,7 @@ class Instrument {
                 portamento_buttons[n] = -1;
             }
             synth_interface = si;
-            volume = 73.0 * VOLUME_FACTOR;
+            set_volume(volume_linear);
         }
 
         void set_portamento(int p) {
@@ -1248,6 +1252,12 @@ void load_preset(int n) {
         dis.velo_sensitivity = f;
     }
 
+    strset(key, 3, "volum");
+    f = getConfigFloat(key);
+    if (f >= 0.0f && f < 255.0f) {
+        set_volume(f);
+    }
+
     led_rgb(led);
 }
 
@@ -1414,55 +1424,55 @@ float config_but(int but, int type, float adjust) {
         case (51): {
             MidiSend3(MIDI_CONTROL_CHANGE,
                                 MIDI_C_MAIN_VOLUME, 7);
-            volume = 7.0 * VOLUME_FACTOR;
+            set_volume(7);
             ws2812_write_led(0, 1, 1, 1);
         } return 0;
         case (53): {
             MidiSend3(MIDI_CONTROL_CHANGE,
                                 MIDI_C_MAIN_VOLUME, 15);
-            volume = 15.0 * VOLUME_FACTOR;
+            set_volume(15);
             ws2812_write_led(0, 2, 2, 2);
         } return 0;
         case (55): {
             MidiSend3(MIDI_CONTROL_CHANGE,
                                 MIDI_C_MAIN_VOLUME, 31);
-            volume = 31.0 * VOLUME_FACTOR;
+            set_volume(31);
             ws2812_write_led(0, 3, 3, 3);
         } return 0;
         case (40): {
             MidiSend3(MIDI_CONTROL_CHANGE,
                                 MIDI_C_MAIN_VOLUME, 47);
-            volume = 47.0 * VOLUME_FACTOR;
+            set_volume(47);
             ws2812_write_led(0, 4, 4, 4);
         } return 0;
         case (42): {
             MidiSend3(MIDI_CONTROL_CHANGE,
                                 MIDI_C_MAIN_VOLUME, 63);
-            volume = 63.0 * VOLUME_FACTOR;
+            set_volume(63);
             ws2812_write_led(0, 6, 6, 6);
         } return 0;
         case (44): {
             MidiSend3(MIDI_CONTROL_CHANGE,
                                 MIDI_C_MAIN_VOLUME, 79);
-            volume = 79.0 * VOLUME_FACTOR;
+            set_volume(79);
             ws2812_write_led(0, 8, 8, 8);
         } return 0;
         case (46): {
             MidiSend3(MIDI_CONTROL_CHANGE,
                                 MIDI_C_MAIN_VOLUME, 95);
-            volume = 95.0 * VOLUME_FACTOR;
+            set_volume(95);
             ws2812_write_led(0, 10, 10, 10);
         } return 0;
         case (48): {
             MidiSend3(MIDI_CONTROL_CHANGE,
                                 MIDI_C_MAIN_VOLUME, 111);
-            volume = 111.0 * VOLUME_FACTOR;
+            set_volume(111);
             ws2812_write_led(0, 14, 14, 14);
         } return 0;
         case (50): {
             MidiSend3(MIDI_CONTROL_CHANGE,
                                 MIDI_C_MAIN_VOLUME, 127);
-            volume = 127.0 * VOLUME_FACTOR;
+            set_volume(127);
             ws2812_write_led(0, 18, 18, 18);
         } return 0;
 
@@ -1499,7 +1509,6 @@ float config_but(int but, int type, float adjust) {
  * returns part of adjust that's not used and hence needs to be saved for next call
  */
 float config_but(int but, int type, float adjust) {
-    static float volume_linear = 10;
     switch (but) {
     // row 1:  0  2  4
     case (0): // MPE MIDI mode, knob: number of MPE channels
@@ -1724,14 +1733,15 @@ float config_but(int but, int type, float adjust) {
     case (51): { // knob: Volume (CC7)
         float rem = 0;
         if (type > 0) {
-            volume_linear = clamp_rem(volume_linear + adjust, 0, 15, &rem);
-            float vol = (15*volume_linear+volume_linear*volume_linear) * (127.9f/450.0f); // nonlinear conversion to range 0-127
-            volume = vol * VOLUME_FACTOR;
-            MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_MAIN_VOLUME, vol);
+            float vol = clamp_rem(volume_linear + adjust * 8.0f, 0, 127.0f, &rem);
+            if ((int)(volume_linear + 0.5f) != (int)(vol + 0.5f)) {
+                MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_MAIN_VOLUME, vol + 0.5f);
+            }
+            set_volume(vol);
         }
-        led_rgb3(volume_linear*16, volume_linear*16, volume_linear*16);
-        led_updown_dial(volume_linear);
-        return rem;
+        led_rgb3(volume_linear*2, volume_linear*2, volume_linear*2);
+        led_updown_dial((int)volume_linear/8);
+        return rem * (1.0f/8.0f);
         }
     // row 8:       56 58 60 62 47 49
     case (56): { // knob: MPE pitchbend range
@@ -1823,6 +1833,7 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
                 dis.set_notegen1(6.80 + (float)data2 * (0.20/64) + (float)lsb_cc1 * (0.20/8192));
             } break;
             case  1|MIDI_C_LSB: lsb_cc1 = data2; break;
+            case  7: set_volume(data2); break;
             case 16: config.send_motion_interval = data2; break;
             // case 16|MIDI_C_LSB: config.send_motion_14bit = data2; break;
             case 17: config.message_interval = data2 >= 1 ? data2 : 1; break;

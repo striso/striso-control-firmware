@@ -30,6 +30,7 @@ extern "C" {
 #define min(x,y) (x<y?x:y)
 
 #define MAX_VAL (1<<23)
+#define VOLUME_FILTER 0.99f
 
 class dsp {
 	protected:
@@ -246,8 +247,9 @@ class mydsp : public dsp {
 	float 	fRec80[3];
 	float 	fRec77[2];
 	float 	fRec78[2];
-	float 	fRec0[3];
 	float 	fConst59;
+	float 	fRec0[3];
+	float 	fConst60;
 	int fSampleRate;
 
   public:
@@ -344,7 +346,8 @@ class mydsp : public dsp {
 		fConst56 = (fConst47 / (fConst1 * fConst54));
 		fConst57 = (fConst47 / (fConst1 * fConst51));
 		fConst58 = powf(0.5f,(10.0f / fConst0));
-		fConst59 = (0 - (2.0f / fConst7));
+		fConst59 = (1.3700000000000001f * fConst44);
+		fConst60 = (0 - (2.0f / fConst7));
 	}
 	virtual void instanceResetUserInterface() {
 		fslider0 = 0.0f;
@@ -813,8 +816,8 @@ class mydsp : public dsp {
 			float 	fTemp108 = (fRec78[1] + ((fTemp104 * fTemp106) / fTemp105));
 			fRec78[0] = ((2.0f * fTemp108) - fRec78[1]);
 			float 	fRec79 = fTemp108;
-			fRec0[0] = ((fConst44 * ((((((fTemp103 * (((fRec79 * faustpower<2>((1.0f - (0.5f * fTemp102)))) + (fSlow106 * ((fRec76 * fTemp94) * fTemp96))) + (6.0f * ((fSlow31 * ((fSlow24 * (fRec72[0] - fRec72[2])) / fSlow28)) + (0.125f * ((fSlow22 * ((fSlow15 * (fRec71[0] - fRec71[2])) / fSlow19)) + (fSlow13 * ((fSlow1 * (fRec69[0] - fRec69[2])) / fSlow5)))))))) + (fTemp85 * (((fRec66 * faustpower<2>((1.0f - (0.5f * fTemp84)))) + (fSlow92 * ((fRec63 * fTemp76) * fTemp78))) + (6.0f * ((fSlow31 * ((fSlow24 * (fRec59[0] - fRec59[2])) / fSlow28)) + (0.125f * ((fSlow22 * ((fSlow15 * (fRec58[0] - fRec58[2])) / fSlow19)) + (fSlow13 * ((fSlow1 * (fRec56[0] - fRec56[2])) / fSlow5))))))))) + (fTemp67 * (((fRec53 * faustpower<2>((1.0f - (0.5f * fTemp66)))) + (fSlow78 * ((fRec50 * fTemp58) * fTemp60))) + (6.0f * ((fSlow31 * ((fSlow24 * (fRec46[0] - fRec46[2])) / fSlow28)) + (0.125f * ((fSlow22 * ((fSlow15 * (fRec45[0] - fRec45[2])) / fSlow19)) + (fSlow13 * ((fSlow1 * (fRec43[0] - fRec43[2])) / fSlow5))))))))) + (fTemp49 * (((fRec40 * faustpower<2>((1.0f - (0.5f * fTemp48)))) + (fSlow64 * ((fRec37 * fTemp40) * fTemp42))) + (6.0f * ((fSlow31 * ((fSlow24 * (fRec33[0] - fRec33[2])) / fSlow28)) + (0.125f * ((fSlow22 * ((fSlow15 * (fRec32[0] - fRec32[2])) / fSlow19)) + (fSlow13 * ((fSlow1 * (fRec30[0] - fRec30[2])) / fSlow5))))))))) + (fTemp31 * (((fRec27 * faustpower<2>((1.0f - (0.5f * fTemp30)))) + (fSlow50 * ((fRec24 * fTemp22) * fTemp24))) + (6.0f * ((fSlow31 * ((fSlow24 * (fRec20[0] - fRec20[2])) / fSlow28)) + (0.125f * ((fSlow22 * ((fSlow15 * (fRec19[0] - fRec19[2])) / fSlow19)) + (fSlow13 * ((fSlow1 * (fRec17[0] - fRec17[2])) / fSlow5))))))))) + (fTemp12 * (((fRec11 * faustpower<2>((1.0f - (0.5f * fTemp11)))) + (fSlow35 * ((fRec8 * fTemp3) * fTemp5))) + (6.0f * ((fSlow31 * ((fSlow24 * (fRec4[0] - fRec4[2])) / fSlow28)) + (0.125f * ((fSlow22 * ((fSlow15 * (fRec3[0] - fRec3[2])) / fSlow19)) + (fSlow13 * ((fSlow1 * (fRec1[0] - fRec1[2])) / fSlow5)))))))))) - (fConst8 * ((fConst6 * fRec0[2]) + (fConst4 * fRec0[1]))));
-			output0[i] = (FAUSTFLOAT)((fConst59 * fRec0[1]) + (fConst8 * (fRec0[0] + fRec0[2])));
+			fRec0[0] = ((fConst59 * ((((((fTemp103 * (((fRec79 * faustpower<2>((1.0f - (0.5f * fTemp102)))) + (fSlow106 * ((fRec76 * fTemp94) * fTemp96))) + (6.0f * ((fSlow31 * ((fSlow24 * (fRec72[0] - fRec72[2])) / fSlow28)) + (0.125f * ((fSlow22 * ((fSlow15 * (fRec71[0] - fRec71[2])) / fSlow19)) + (fSlow13 * ((fSlow1 * (fRec69[0] - fRec69[2])) / fSlow5)))))))) + (fTemp85 * (((fRec66 * faustpower<2>((1.0f - (0.5f * fTemp84)))) + (fSlow92 * ((fRec63 * fTemp76) * fTemp78))) + (6.0f * ((fSlow31 * ((fSlow24 * (fRec59[0] - fRec59[2])) / fSlow28)) + (0.125f * ((fSlow22 * ((fSlow15 * (fRec58[0] - fRec58[2])) / fSlow19)) + (fSlow13 * ((fSlow1 * (fRec56[0] - fRec56[2])) / fSlow5))))))))) + (fTemp67 * (((fRec53 * faustpower<2>((1.0f - (0.5f * fTemp66)))) + (fSlow78 * ((fRec50 * fTemp58) * fTemp60))) + (6.0f * ((fSlow31 * ((fSlow24 * (fRec46[0] - fRec46[2])) / fSlow28)) + (0.125f * ((fSlow22 * ((fSlow15 * (fRec45[0] - fRec45[2])) / fSlow19)) + (fSlow13 * ((fSlow1 * (fRec43[0] - fRec43[2])) / fSlow5))))))))) + (fTemp49 * (((fRec40 * faustpower<2>((1.0f - (0.5f * fTemp48)))) + (fSlow64 * ((fRec37 * fTemp40) * fTemp42))) + (6.0f * ((fSlow31 * ((fSlow24 * (fRec33[0] - fRec33[2])) / fSlow28)) + (0.125f * ((fSlow22 * ((fSlow15 * (fRec32[0] - fRec32[2])) / fSlow19)) + (fSlow13 * ((fSlow1 * (fRec30[0] - fRec30[2])) / fSlow5))))))))) + (fTemp31 * (((fRec27 * faustpower<2>((1.0f - (0.5f * fTemp30)))) + (fSlow50 * ((fRec24 * fTemp22) * fTemp24))) + (6.0f * ((fSlow31 * ((fSlow24 * (fRec20[0] - fRec20[2])) / fSlow28)) + (0.125f * ((fSlow22 * ((fSlow15 * (fRec19[0] - fRec19[2])) / fSlow19)) + (fSlow13 * ((fSlow1 * (fRec17[0] - fRec17[2])) / fSlow5))))))))) + (fTemp12 * (((fRec11 * faustpower<2>((1.0f - (0.5f * fTemp11)))) + (fSlow35 * ((fRec8 * fTemp3) * fTemp5))) + (6.0f * ((fSlow31 * ((fSlow24 * (fRec4[0] - fRec4[2])) / fSlow28)) + (0.125f * ((fSlow22 * ((fSlow15 * (fRec3[0] - fRec3[2])) / fSlow19)) + (fSlow13 * ((fSlow1 * (fRec1[0] - fRec1[2])) / fSlow5)))))))))) - (fConst8 * ((fConst6 * fRec0[2]) + (fConst4 * fRec0[1]))));
+			output0[i] = (FAUSTFLOAT)((fConst60 * fRec0[1]) + (fConst8 * (fRec0[0] + fRec0[2])));
 			// post processing
 			fRec0[2] = fRec0[1]; fRec0[1] = fRec0[0];
 			fRec78[1] = fRec78[0];
@@ -909,7 +912,7 @@ static void synthThread(void *arg) {  // THE SYNTH THREAD
 
 	int32_t tmp;
 	int count = CHANNEL_BUFFER_SIZE;
-	float power = 0.0;
+	float volume_filtered = 0.0f;
 
 	//codec_pwrCtl(1);    // POWER ON
 	//codec_muteCtl(0);   // MUTE OFF
@@ -939,9 +942,11 @@ static void synthThread(void *arg) {  // THE SYNTH THREAD
 
 		dsp.compute(count, NULL, output);
 
+		volume_filtered = VOLUME_FILTER * volume_filtered + (1 - VOLUME_FILTER) * volume;
+
 		// convert float to int with scale, clamp and round
 		for (int n = 0; n < CHANNEL_BUFFER_SIZE; n++) {
-			tmp = (int32_t)(output0[n] * volume * MAX_VAL);
+			tmp = (int32_t)(output0[n] * volume_filtered * MAX_VAL);
 			// enable LED on clip
 			if (tmp <= -MAX_VAL) {
 				tmp = -(MAX_VAL-1);

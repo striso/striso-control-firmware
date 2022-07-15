@@ -58,6 +58,7 @@ sP0jack2   midi/pedal/linein
 sP0pedal   pedal/midi jack mode: midi/sustain/breath/fifth/linein
            OR pedal mode
 sP0audio   stereo/balanced/mono
+sP0MIDI    send MIDI on load: MPE, Volume, Program change, CC's
 
 iCfifth0
 fCfifth0

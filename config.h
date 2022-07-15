@@ -185,6 +185,7 @@ const ConfigParam default_config[] = {
   {"fP1bendS", "0.25    "}, // Pitch bend range in semitones [-4.0-4.0]
   {"fP1presS", "1.0     "}, // Key pressure factor [0-4]
   {"fP1veloS", "1.0     "}, // Key velocity factor [0-4]
+  {"fP1volum", "90.0    "}, // Volume [0-127]
 
   // preset 2
   {"sP2name ", "preset2 "},
@@ -207,6 +208,7 @@ const ConfigParam default_config[] = {
   {"fP2bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
   {"fP2presS", "        "}, // Key pressure factor [0-4]
   {"fP2veloS", "        "}, // Key velocity factor [0-4]
+  {"fP2volum", "        "}, // Volume [0-127]
 
   // preset 3
   {"sP3name ", "preset3 "},
@@ -229,6 +231,7 @@ const ConfigParam default_config[] = {
   {"fP3bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
   {"fP3presS", "        "}, // Key pressure factor [0-4]
   {"fP3veloS", "        "}, // Key velocity factor [0-4]
+  {"fP3volum", "        "}, // Volume [0-127]
 
   // preset 4
   {"sP4name ", "preset4 "},
@@ -251,6 +254,7 @@ const ConfigParam default_config[] = {
   {"fP4bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
   {"fP4presS", "        "}, // Key pressure factor [0-4]
   {"fP4veloS", "        "}, // Key velocity factor [0-4]
+  {"fP4volum", "        "}, // Volume [0-127]
 
   // preset 5
   {"sP5name ", "preset5 "},
@@ -273,6 +277,7 @@ const ConfigParam default_config[] = {
   {"fP5bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
   {"fP5presS", "        "}, // Key pressure factor [0-4]
   {"fP5veloS", "        "}, // Key velocity factor [0-4]
+  {"fP5volum", "        "}, // Volume [0-127]
 
   // preset 6
   {"sP6name ", "preset6 "},
@@ -295,6 +300,7 @@ const ConfigParam default_config[] = {
   {"fP6bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
   {"fP6presS", "        "}, // Key pressure factor [0-4]
   {"fP6veloS", "        "}, // Key velocity factor [0-4]
+  {"fP6volum", "        "}, // Volume [0-127]
 
   // preset 7
   {"sP7name ", "preset7 "},
@@ -317,6 +323,7 @@ const ConfigParam default_config[] = {
   {"fP7bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
   {"fP7presS", "        "}, // Key pressure factor [0-4]
   {"fP7veloS", "        "}, // Key velocity factor [0-4]
+  {"fP7volum", "        "}, // Volume [0-127]
 
   // preset 8
   {"sP8name ", "preset8 "},
@@ -339,6 +346,7 @@ const ConfigParam default_config[] = {
   {"fP8bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
   {"fP8presS", "        "}, // Key pressure factor [0-4]
   {"fP8veloS", "        "}, // Key velocity factor [0-4]
+  {"fP8volum", "        "}, // Volume [0-127]
 
   // tuning 0, 12tet
   // don't use, hard coded as default

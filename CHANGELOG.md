@@ -4,6 +4,7 @@
 
 ### Added
 - Retrigger delay, no note on message will be sent within 50ms after a note off message.
+- Volume parameter in presets, and listen to MIDI CC7 - Volume
 
 ### Changed
 - Config editor tweaks
