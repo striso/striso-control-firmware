@@ -148,14 +148,14 @@ Panic
 Send config
 Reset
 
-row 1: 3x MIDI modes
+row 1: 3x MIDI modes: MPE - Poly - Mono
 row 2: 6x curves: press - velo - y - pitchbend
 row 3: 9x press offset - press factor - velo factor - y factor - pitchbend range
 row 4: 8x motion sensor
 row 5: 9x tunings
 row 6: 8x presets
-row 7: 9x Volume + Synth/CC
-row 8: 6x
+row 7: 9x Sound: volume - tuning offset - tuning fifth? - tuning octave? - decay - release - synth/CC
+row 8: 6x MIDI: MPE pitchbend range, message rate, program change
 row 9: 3x System
 
 

@@ -87,7 +87,7 @@ int atoi8(const char* str) {
   }
 }
 
-int atox8(const char* str) {
+unsigned int atox8(const char* str) {
   int i = 0;
 
   int value = 0;
@@ -117,11 +117,7 @@ int atox8(const char* str) {
     }
   }
 
-  if (i) {
-    return value;
-  } else {
-    return CONFIG_UNDEFINED;
-  }
+  return value;
 }
 
 inline
@@ -155,6 +151,6 @@ int getConfigInt(const char* name) {
   return atoi8(getConfigSetting(name));
 }
 
-int getConfigHex(const char* name) {
+unsigned int getConfigHex(const char* name) {
   return atox8(getConfigSetting(name));
 }

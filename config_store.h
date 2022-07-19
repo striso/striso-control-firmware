@@ -16,7 +16,7 @@ extern const ConfigParam default_config[];
 const char* getConfigSetting(const char* name);
 float getConfigFloat(const char* name);
 int getConfigInt(const char* name);
-int getConfigHex(const char* name);
+unsigned int getConfigHex(const char* name);
 void strset(char* key, unsigned int start, const char* str);
 bool cmp8(const char* a, const char* b);
 

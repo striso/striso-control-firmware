@@ -165,7 +165,7 @@ const ConfigParam default_config[] = {
   {"iGmotion", "127     "}, // motion message interval, 0=disable, 127=internal only
 
   // preset 1
-  {"sP1name ", "default "},
+  {"sP1name ", "preset1 "},
   {"hP1color", "#380000 "},
   {"iP1Mpgm ", "0       "}, // MIDI program change [0-127]
   {"iP1Mint ", "1       "}, // MIDI message interval in ms [1-127]

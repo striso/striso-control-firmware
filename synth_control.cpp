@@ -435,19 +435,28 @@ class Instrument {
                 led_rgb(tuning_color);
                 return;
             }
+            float f;
             CC_ALIGN(8) char key[] = "fT0fifth";
             key[2] = '0' + n;
-            notegen1 = getConfigFloat(key) / 100;
+            f = getConfigFloat(key);
+            if (f == CONFIG_UNDEFINED) f = 700.0f;
+            notegen1 = f / 100;
             strset(key, 3, "oct  ");
-            notegen0 = getConfigFloat(key) / 100;
+            f = getConfigFloat(key);
+            if (f == CONFIG_UNDEFINED) f = 1200.0f;
+            notegen0 = f / 100;
             strset(key, 3, "off  ");
-            tuning_note_offset = 62.0f + getConfigFloat(key) / 100;
+            f = getConfigFloat(key);
+            if (f == CONFIG_UNDEFINED) f = 0.0f;
+            tuning_note_offset = 62.0f + f / 100;
             // TODO: note_offset = getConfigFloat(key) / 100;
             start_note_offset = tuning_note_offset;
             for (int n = 0; n < 61; n++) {
                 put_button_name(n, &key[3]);
                 int but = button_number_map[n];
-                buttons[but].tuning_note_offset = getConfigFloat(key) / 100;
+                f = getConfigFloat(key);
+                if (f == CONFIG_UNDEFINED) f = 0.0f;
+                buttons[but].tuning_note_offset = f / 100;
             }
             key[0] = 'h';
             strset(key, 3, "color");
@@ -519,7 +528,7 @@ class Instrument {
                             }
                         }
                     }
-                } else if (a < pow2(0.4f)) {
+                } else if (a < pow2(0.2f)) {
                     old_angle = -1000.0f;
                     nudged = false;
                 }
@@ -1063,6 +1072,7 @@ int synth_message(int size, int* msg) {
                 if (dis.altmode & 1) {
                     // transpose reset
                     dis.set_note_offset(dis.tuning_note_offset);
+                    dis.note_offset = 0.0f;
                 } else {
                     // cancel last transpose and enable free transpose
                     dis.set_note_offset(note_offset_old);
@@ -1112,7 +1122,7 @@ void load_preset(int n) {
     const char* s;
     CC_ALIGN(8) char key[] = "hP0color";
     key[2] = '0' + n;
-    int led = getConfigHex(key);
+    uint32_t led = getConfigHex(key);
     led_rgb(led);
 
     key[0] = 'i';
@@ -1236,19 +1246,19 @@ void load_preset(int n) {
 
     strset(key, 3, "bendS");
     f = getConfigFloat(key);
-    if (f >= 0.0f && f <= 4.0f) {
+    if (f >= -10.0f && f <= 10.0f) {
         dis.bend_sensitivity = f * 2;
     }
 
     strset(key, 3, "presS");
     f = getConfigFloat(key);
-    if (f >= 0.0f && f <= 4.0f) {
+    if (f >= 0.0f && f <= 10.0f) {
         dis.pres_sensitivity = f;
     }
 
     strset(key, 3, "veloS");
     f = getConfigFloat(key);
-    if (f >= 0.0f && f <= 4.0f) {
+    if (f >= 0.0f && f <= 10.0f) {
         dis.velo_sensitivity = f;
     }
 
@@ -1602,27 +1612,6 @@ float config_but(int but, int type, float adjust) {
         }
     // case (8): // knob: y flip & offset
     // row 4: 18 20 22 24 26 28 13 15
-    // case (15): // knob: MIDI motion message interval
-    //     if (type == 0) {
-    //         led_updown_dial(config.send_motion_interval);
-    //     } else {
-    //         if (angle == 0) {
-    //             config.send_motion_interval = 0;
-    //             *(dis.synth_interface->acc_abs) = 1.0f;
-    //             *(dis.synth_interface->acc_x) = 0.0f;
-    //             *(dis.synth_interface->acc_y) = 0.0f;
-    //             *(dis.synth_interface->acc_z) = 0.0f;
-    //             *(dis.synth_interface->rot_x) = 0.0f;
-    //             *(dis.synth_interface->rot_y) = 0.0f;
-    //             *(dis.synth_interface->rot_z) = 0.0f;
-    //         } else if (angle == 15) {
-    //             config.send_motion_interval = 127;
-    //         } else {
-    //             config.send_motion_interval = angle;
-    //         }
-    //         config.message_interval = 1;
-    //         return 1;
-    //     } return 0;
     // row 5: 34 36 38 23 25 27 29 31 33
     case (34): // set 12tet tuning, knob: tuning offset
         if (type == 0) {
@@ -1765,6 +1754,27 @@ float config_but(int but, int type, float adjust) {
         led_updown_dial(config.message_interval);
         return adjust - a;
         }
+    // case (60): // knob: MIDI motion message interval
+    //     if (type == 0) {
+    //         led_updown_dial(config.send_motion_interval);
+    //     } else {
+    //         if (angle == 0) {
+    //             config.send_motion_interval = 0;
+    //             *(dis.synth_interface->acc_abs) = 1.0f;
+    //             *(dis.synth_interface->acc_x) = 0.0f;
+    //             *(dis.synth_interface->acc_y) = 0.0f;
+    //             *(dis.synth_interface->acc_z) = 0.0f;
+    //             *(dis.synth_interface->rot_x) = 0.0f;
+    //             *(dis.synth_interface->rot_y) = 0.0f;
+    //             *(dis.synth_interface->rot_z) = 0.0f;
+    //         } else if (angle == 15) {
+    //             config.send_motion_interval = 127;
+    //         } else {
+    //             config.send_motion_interval = angle;
+    //         }
+    //         config.message_interval = 1;
+    //         return 1;
+    //     } return 0;
     // row 9:                   63 65 67
     case (63): // panic/request config
         if (type == 0) {
