@@ -1592,7 +1592,7 @@ float config_but(int but, int type, float adjust) {
         int dial = config.zero_offset / ((1 << 24) / 256);
         led_updown_dial(dial);
         led_rgb3(dial * 10, dial * 5, 0);
-        return adjust - a;
+        return 0; // TODO: sticky ends
         }
     case (19): { // knob: pres sensitivity
         float rem = 0;
@@ -1766,11 +1766,12 @@ float config_but(int but, int type, float adjust) {
         return adjust - a;
         }
     case (58): { // knob: MIDI message interval
-        int a = adjust;
+        int a = (int)adjust;
         if (type > 0) {
-            config.message_interval = clamp(config.message_interval + adjust, 1, 15);
+            config.message_interval = clamp(config.message_interval - adjust, 1, 15);
         }
-        led_updown_dial(config.message_interval);
+        led_rgb3(164-8*config.message_interval, 164-8*config.message_interval, 0);
+        led_updown_dial(16 - config.message_interval);
         return adjust - a;
         }
     // case (60): // knob: MIDI motion message interval
