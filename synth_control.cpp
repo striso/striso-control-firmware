@@ -300,6 +300,7 @@ class Instrument {
         int midi_channel_offset = 1;
         float midi_bend_range = 48.0;
         float bend_sensitivity = 1.0f;
+        float y_sensitivity = 1.0f;
         float pres_sensitivity = 1.0f;
         float velo_sensitivity = 1.0f;
 
@@ -629,11 +630,12 @@ class Instrument {
                                 buttons[0].last_bend = bend;
                             }
                         }
+                        y = y * y_sensitivity;
                         d = (buttons[0].last_tilt > (64 + y * 64)) * 0.5 - 0.25;
                         int tilt = 64 + y * 64 + 0.5 + d;
                         tilt = clamp(tilt, 0, 127);
                         if (tilt != buttons[0].last_tilt) {
-                            if (config.midi_y < 120) {
+                            if (config.midi_y < 120 && y_sensitivity != 0.0f) {
                                 MidiSend3(MIDI_CONTROL_CHANGE | midi_channel_offset,
                                                 config.midi_y, tilt);
                             }
@@ -897,23 +899,26 @@ class Instrument {
             float pb = bend_sensitivity * pow3(buttons[but].but_x);
             float presf = buttons[but].pres * pres_sensitivity;
             float velof = buttons[but].vpres * velo_sensitivity;
+            float y = clamp(buttons[but].but_y * y_sensitivity, -1.0f, 1.0f);
 #ifdef USE_INTERNAL_SYNTH
             int voice = buttons[but].voice;
             *(synth_interface->note[voice])  = buttons[but].note + pb;
             *(synth_interface->pres[voice])  = presf;
             *(synth_interface->vpres[voice]) = velof;
             *(synth_interface->but_x[voice]) = buttons[but].but_x;
-            *(synth_interface->but_y[voice]) = buttons[but].but_y;
+            *(synth_interface->but_y[voice]) = y;
 #endif
 
 #ifdef USE_MIDI_OUT
             float d; // calculate direction for hysteresis
+            // TODO: fix hysteresis!
+            // TODO: last_... values per midi channel instead of per button
             d = (buttons[but].last_pres > (presf)) * 0.5 - 0.25;
             int pres = presf * 127 + 0.5 + d;
             pres = clamp(pres, 0, 127);
 
-            d = (buttons[but].last_tilt > (64 + buttons[but].but_y * 64)) * 0.5 - 0.25;
-            int tilt = 64 + buttons[but].but_y * 64 + 0.5 + d;
+            d = (buttons[but].last_tilt > (64 + y * 64)) * 0.5 - 0.25;
+            int tilt = 64 + y * 64 + 0.5 + d;
             tilt = clamp(tilt, 0, 127);
 
             pb = (pb
@@ -1260,6 +1265,12 @@ void load_preset(int n) {
     f = getConfigFloat(key);
     if (f >= 0.0f && f <= 10.0f) {
         dis.velo_sensitivity = f;
+    }
+
+    strset(key, 3, "tiltS");
+    f = getConfigFloat(key);
+    if (f >= -10.0f && f <= 10.0f) {
+        dis.y_sensitivity = f;
     }
 
     strset(key, 3, "volum");
@@ -1610,7 +1621,15 @@ float config_but(int but, int type, float adjust) {
         led_rgb3(dis.bend_sensitivity * 64.0f, 0, 0);
         return rem * 4;
         }
-    // case (8): // knob: y flip & offset
+    case (8): { // knob: y sensitivity (TODO: flip?)
+        float rem = 0;
+        if (type > 0) {
+            dis.y_sensitivity = clamp_rem(dis.y_sensitivity + adjust * (1.0f/8.0f), 0, 3.0f, &rem);
+        }
+        led_updown_dial(dis.y_sensitivity * 8 + 0.5f);
+        led_rgb3(dis.y_sensitivity * 64.0f, dis.y_sensitivity * 64.0f, 0);
+        return rem * 8;
+        }
     // row 4: 18 20 22 24 26 28 13 15
     // row 5: 34 36 38 23 25 27 29 31 33
     case (34): // set 12tet tuning, knob: tuning offset
