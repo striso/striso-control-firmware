@@ -63,7 +63,7 @@ const doc = {
   iPxMy:    {text:"MIDI CC for key Y movement", help:"Special values 127 = Disable", check:function(x) {return clamp(x, 0, 127);}},
   iPxMvelo: {text:"MIDI continuous velocity", help:"Special values 127 = Disable, else send continuous velocity on CC73 and continuous release velocity on CC72", check:function(x) {return clamp(x, 0, 127);}},
   iPxvoice: {text:"Voice count/MPE channel count", help:"[1-15]", check:function(x) {return clamp(x, 1, 15);}},
-  iPxMChan: {text:"MIDI channel offset", help:"[0-15]", check:function(x) {return clamp(x, 0, 15);}},
+  iPxMChan: {text:"MIDI channel", help:"[1-16] (MPE: first voice channel, normally 2)", check:function(x) {return clamp(x, 1, 16);}},
   iPxMPEpb: {text:"MPE pitch bend range", help:"[12/24/48/96]", check:function(x) {return clamp(x, 1, 127);}},
   fPxthres: {text:"Key sensitivity threshold", help:"[0.0-1.0]", check:function(x) {return clamp(x, 0, 1);}},
   fPxbendS: {text:"Pitch bend range", help:"in semitones [-4.0-4.0]", check:function(x) {return clamp(x, -10, 10);}},
@@ -1102,7 +1102,7 @@ body {
       The first letter of a key defines the expected type, i=integer, f=float, h=hexadecimal color code, s=string.
     </p>
     <p>
-      To reset a value click on the default. To reset all values in the table click on the Default header.
+      To reset a value click on its default value. To reset all values in the table click on the Default header.
     </p>
     <p>
       This editor is still work in progress, please share your experiences on the <a href="http://forum.striso.org">forum</a> or send an email to piers@striso.org.

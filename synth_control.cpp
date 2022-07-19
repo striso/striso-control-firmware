@@ -1221,8 +1221,8 @@ void load_preset(int n) {
 
     strset(key, 3, "MChan");
     i = getConfigInt(key);
-    if (i >= 0 && i <= 127) {
-        dis.midi_channel_offset = i;
+    if (i >= 1 && i <= 16) {
+        dis.midi_channel_offset = i - 1;
     }
 
     strset(key, 3, "MPEpb");
@@ -1536,25 +1536,25 @@ float config_but(int but, int type, float adjust) {
     case (2): // Normal MIDI mode
         if (type == 0) {
             if (config.midi_mode != MIDI_MODE_POLY) set_midi_mode(MIDI_MODE_POLY);
-            led_updown_dial(dis.midi_channel_offset);
+            led_updown_dial(dis.midi_channel_offset + 1);
         } else {
             int a = (int)adjust;
             if (type == 2) a = a / 2;
             dis.midi_channel_offset = clamp(dis.midi_channel_offset + a, 0, 15);
             if (type == 2) a = a * 2;
-            led_updown_dial(dis.midi_channel_offset);
+            led_updown_dial(dis.midi_channel_offset + 1);
             return adjust - a;
         } return 0;
     case (4): // Mono (glissando) MIDI mode
         if (type == 0) {
             if (config.midi_mode != MIDI_MODE_MONO) set_midi_mode(MIDI_MODE_MONO);
-            led_updown_dial(dis.midi_channel_offset);
+            led_updown_dial(dis.midi_channel_offset + 1);
         } else {
             int a = (int)adjust;
             if (type == 2) a = a / 2;
             dis.midi_channel_offset = clamp(dis.midi_channel_offset + a, 0, 15);
             if (type == 2) a = a * 2;
-            led_updown_dial(dis.midi_channel_offset);
+            led_updown_dial(dis.midi_channel_offset + 1);
             return adjust - a;
         } return 0;
     // row 2:  1  3  5  7  9 11

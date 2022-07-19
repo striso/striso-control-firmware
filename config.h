@@ -179,7 +179,7 @@ const ConfigParam default_config[] = {
   {"iP1My   ", "74      "}, // MIDI CC for key Y movement. Special values 127 = Disable
   {"iP1Mvelo", "127     "}, // MIDI continuous velocity. Special values 127 = Disable, else send continuous velocity on CC73 and continuous release velocity on CC72
   {"iP1voice", "6       "}, // Voice count/MPE channel count [1-15]
-  {"iP1MChan", "1       "}, // MIDI channel offset [0-15]
+  {"iP1MChan", "2       "}, // MIDI channel [1-16]
   {"iP1MPEpb", "48      "}, // MPE pitch bend range [12/24/48/96]
   {"fP1thres", "0.0     "}, // Key sensitivity threshold [0-1]
   {"fP1bendS", "0.25    "}, // Pitch bend range in semitones [-4.0-4.0]
@@ -202,7 +202,7 @@ const ConfigParam default_config[] = {
   {"iP2My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable
   {"iP2Mvelo", "        "}, // MIDI continuous velocity. Special values 127 = Disable, else send continuous velocity on CC73 and continuous release velocity on CC72
   {"iP2voice", "        "}, // Voice count/MPE channel count [1-15]
-  {"iP2MChan", "        "}, // MIDI channel offset [0-15]
+  {"iP2MChan", "        "}, // MIDI channel [1-16]
   {"iP2MPEpb", "        "}, // MPE pitch bend range [12/24/48/96]
   {"fP2thres", "        "}, // Key sensitivity threshold [0-1]
   {"fP2bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
@@ -225,7 +225,7 @@ const ConfigParam default_config[] = {
   {"iP3My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable
   {"iP3Mvelo", "        "}, // MIDI continuous velocity. Special values 127 = Disable, else send continuous velocity on CC73 and continuous release velocity on CC72
   {"iP3voice", "        "}, // Voice count/MPE channel count [1-15]
-  {"iP3MChan", "        "}, // MIDI channel offset [0-15]
+  {"iP3MChan", "        "}, // MIDI channel [1-16]
   {"iP3MPEpb", "        "}, // MPE pitch bend range [12/24/48/96]
   {"fP3thres", "        "}, // Key sensitivity threshold [0-1]
   {"fP3bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
@@ -248,7 +248,7 @@ const ConfigParam default_config[] = {
   {"iP4My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable
   {"iP4Mvelo", "        "}, // MIDI continuous velocity. Special values 127 = Disable, else send continuous velocity on CC73 and continuous release velocity on CC72
   {"iP4voice", "        "}, // Voice count/MPE channel count [1-15]
-  {"iP4MChan", "        "}, // MIDI channel offset [0-15]
+  {"iP4MChan", "        "}, // MIDI channel [1-16]
   {"iP4MPEpb", "        "}, // MPE pitch bend range [12/24/48/96]
   {"fP4thres", "        "}, // Key sensitivity threshold [0-1]
   {"fP4bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
@@ -271,7 +271,7 @@ const ConfigParam default_config[] = {
   {"iP5My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable
   {"iP5Mvelo", "        "}, // MIDI continuous velocity. Special values 127 = Disable, else send continuous velocity on CC73 and continuous release velocity on CC72
   {"iP5voice", "        "}, // Voice count/MPE channel count [1-15]
-  {"iP5MChan", "        "}, // MIDI channel offset [0-15]
+  {"iP5MChan", "        "}, // MIDI channel [1-16]
   {"iP5MPEpb", "        "}, // MPE pitch bend range [12/24/48/96]
   {"fP5thres", "        "}, // Key sensitivity threshold [0-1]
   {"fP5bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
@@ -294,7 +294,7 @@ const ConfigParam default_config[] = {
   {"iP6My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable
   {"iP6Mvelo", "        "}, // MIDI continuous velocity. Special values 127 = Disable, else send continuous velocity on CC73 and continuous release velocity on CC72
   {"iP6voice", "        "}, // Voice count/MPE channel count [1-15]
-  {"iP6MChan", "        "}, // MIDI channel offset [0-15]
+  {"iP6MChan", "        "}, // MIDI channel [1-16]
   {"iP6MPEpb", "        "}, // MPE pitch bend range [12/24/48/96]
   {"fP6thres", "        "}, // Key sensitivity threshold [0-1]
   {"fP6bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
@@ -317,7 +317,7 @@ const ConfigParam default_config[] = {
   {"iP7My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable
   {"iP7Mvelo", "        "}, // MIDI continuous velocity. Special values 127 = Disable, else send continuous velocity on CC73 and continuous release velocity on CC72
   {"iP7voice", "        "}, // Voice count/MPE channel count [1-15]
-  {"iP7MChan", "        "}, // MIDI channel offset [0-15]
+  {"iP7MChan", "        "}, // MIDI channel [1-16]
   {"iP7MPEpb", "        "}, // MPE pitch bend range [12/24/48/96]
   {"fP7thres", "        "}, // Key sensitivity threshold [0-1]
   {"fP7bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
@@ -340,7 +340,7 @@ const ConfigParam default_config[] = {
   {"iP8My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable
   {"iP8Mvelo", "        "}, // MIDI continuous velocity. Special values 127 = Disable, else send continuous velocity on CC73 and continuous release velocity on CC72
   {"iP8voice", "        "}, // Voice count/MPE channel count [1-15]
-  {"iP8MChan", "        "}, // MIDI channel offset [0-15]
+  {"iP8MChan", "        "}, // MIDI channel [1-16]
   {"iP8MPEpb", "        "}, // MPE pitch bend range [12/24/48/96]
   {"fP8thres", "        "}, // Key sensitivity threshold [0-1]
   {"fP8bendS", "        "}, // Pitch bend range in semitones [-4.0-4.0]
