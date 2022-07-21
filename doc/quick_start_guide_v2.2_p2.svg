@@ -7,8 +7,8 @@
    viewBox="0 0 297 210"
    version="1.1"
    id="svg5"
-   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
-   sodipodi:docname="quick_start_guide_2.2_p2.svg"
+   inkscape:version="1.1.2 (1:1.1+202202050852+0a00cf5339)"
+   sodipodi:docname="quick_start_guide_v2.2_p2.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -27,12 +27,12 @@
      showguides="true"
      inkscape:guide-bbox="true"
      inkscape:zoom="1"
-     inkscape:cx="793.5"
-     inkscape:cy="329.5"
-     inkscape:window-width="1920"
-     inkscape:window-height="1003"
-     inkscape:window-x="0"
-     inkscape:window-y="0"
+     inkscape:cx="611"
+     inkscape:cy="399"
+     inkscape:window-width="1976"
+     inkscape:window-height="1125"
+     inkscape:window-x="72"
+     inkscape:window-y="-10"
      inkscape:window-maximized="1"
      inkscape:current-layer="layer1"
      inkscape:snap-global="false">
@@ -188,32 +188,32 @@
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14.0904px;line-height:1.25;font-family:Gentium;-inkscape-font-specification:'Gentium, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;shape-inside:url(#rect193079);fill:#000000;fill-opacity:1;stroke:none"><tspan
          x="56.693359"
          y="69.218641"
-         id="tspan364366"><tspan
+         id="tspan109238"><tspan
    style="font-weight:bold;font-family:'Gentium Basic';-inkscape-font-specification:'Gentium Basic, Bold'"
-   id="tspan364364">Settings:</tspan> When the settings button is pressed the Striso board keys can be </tspan><tspan
+   id="tspan109236">Settings:</tspan> When the settings button is pressed the Striso board keys can be </tspan><tspan
          x="56.693359"
          y="86.953505"
-         id="tspan364368">used to adjust settings like volume or MIDI mode.
+         id="tspan109240">used to adjust settings like volume or MIDI mode.
 </tspan><tspan
          x="56.693359"
          y="104.5665"
-         id="tspan364370">Some keys function as switches, to switch between different MIDI modes, </tspan><tspan
+         id="tspan109242">Some keys function as switches, to switch between different MIDI modes, </tspan><tspan
          x="56.693359"
          y="122.1795"
-         id="tspan364372">tunings, or presets. These act immediately when pressed, with the indicator </tspan><tspan
+         id="tspan109244">tunings, or presets. These act immediately when pressed, with the indicator </tspan><tspan
          x="56.693359"
          y="139.7925"
-         id="tspan364374">led lighting up in the corresponding color.
+         id="tspan109246">led lighting up in the corresponding color.
 </tspan><tspan
          x="56.693359"
          y="157.4055"
-         id="tspan364376">Other keys change parameters like volume or sensitivity. When such a key is </tspan><tspan
+         id="tspan109248">Other keys change parameters like volume or sensitivity. When such a key is </tspan><tspan
          x="56.693359"
          y="175.01851"
-         id="tspan364378">pressed the current value is shown by the up/down leds as indicated in the </tspan><tspan
+         id="tspan109250">pressed the current value is shown by the up/down leds as indicated in the </tspan><tspan
          x="56.693359"
          y="192.63151"
-         id="tspan364380">picture below:</tspan></text>
+         id="tspan109252">picture below:</tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0.2749485,0,0,0.2749485,-0.2276257,74.230822)"
@@ -221,104 +221,104 @@
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14.1138px;line-height:1.25;font-family:Gentium;-inkscape-font-specification:'Gentium, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;shape-inside:url(#rect193079-6);fill:#000000;fill-opacity:1;stroke:none"><tspan
          x="56.693359"
          y="69.239442"
-         id="tspan364382">The value of a setting can be changed by nudging the key up or down. Larger </tspan><tspan
+         id="tspan109254">The value of a setting can be changed by nudging the key up or down. Larger </tspan><tspan
          x="56.693359"
          y="86.881693"
-         id="tspan364384">changes can be made by making a circular motion clockwise (up) or </tspan><tspan
+         id="tspan109256">changes can be made by making a circular motion clockwise (up) or </tspan><tspan
          x="56.693359"
          y="104.52394"
-         id="tspan364386">anticlockwise (down) with the key.
+         id="tspan109258">anticlockwise (down) with the key.
 </tspan><tspan
          x="56.693359"
          y="122.16619"
-         id="tspan364388">Note: settings changed on the board itself are not saved and will be reset </tspan><tspan
+         id="tspan109260">Note: settings changed on the board itself are not saved and will be reset </tspan><tspan
          x="56.693359"
          y="139.80844"
-         id="tspan364390">when the Striso board is powered up again.  </tspan></text>
+         id="tspan109262">when the Striso board is powered up again.  </tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.2747849,0,0,0.2747849,-0.1022127,102.02468)"
+       transform="matrix(0.2747849,0,0,0.2747849,-0.1022127,101.49551)"
        id="text193077-8"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14.1222px;line-height:1.25;font-family:Gentium;-inkscape-font-specification:'Gentium, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;shape-inside:url(#rect193079-4);fill:#000000;fill-opacity:1;stroke:none"><tspan
          x="56.693359"
          y="69.246909"
-         id="tspan364394"><tspan
+         id="tspan109266"><tspan
    style="font-weight:bold;font-family:'Gentium Basic';-inkscape-font-specification:'Gentium Basic, Bold'"
-   id="tspan364392">Presets:</tspan> There is room for 8 presets, which can be used to quickly switch </tspan><tspan
+   id="tspan109264">Presets:</tspan> There is room for 8 presets, which can be used to quickly switch </tspan><tspan
          x="56.693359"
          y="87.021796"
-         id="tspan364396">between sets of settings. Presets are configured in the configuration editor </tspan><tspan
+         id="tspan109268">between sets of settings. Presets are configured in the configuration editor </tspan><tspan
          x="56.693359"
          y="104.67454"
-         id="tspan364398">that can be opened on a computer. Connect the Striso board to a computer </tspan><tspan
+         id="tspan109270">that can be opened on a computer. Connect the Striso board to a computer </tspan><tspan
          x="56.693359"
          y="122.32729"
-         id="tspan364400">with the USB cable while the settings button is pressed down. If successful </tspan><tspan
+         id="tspan109272">with the USB cable while the settings button is pressed down. If successful </tspan><tspan
          x="56.693359"
          y="139.98004"
-         id="tspan364402">the indicator led will blink red and the Striso will show up as a USB drive on </tspan><tspan
+         id="tspan109274">the indicator led will blink red and the Striso will show up as a USB drive on </tspan><tspan
          x="56.693359"
          y="157.63279"
-         id="tspan364404">the computer. Opening the file CONFIG.HTM will open the configuration </tspan><tspan
+         id="tspan109276">the computer. Opening the file CONFIG.HTM will open the configuration </tspan><tspan
          x="56.693359"
          y="175.28554"
-         id="tspan364406">editor in your browser.</tspan></text>
+         id="tspan109278">editor in your browser.</tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.27764218,0,0,0.27764218,-0.26042443,138.87898)"
+       transform="matrix(0.27764218,0,0,0.27764218,-0.26042443,138.34981)"
        id="text193077-7"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13.9769px;line-height:1.25;font-family:Gentium;-inkscape-font-specification:'Gentium, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;shape-inside:url(#rect193079-7);fill:#000000;fill-opacity:1;stroke:none"><tspan
          x="56.693359"
          y="69.117749"
-         id="tspan364410"><tspan
+         id="tspan109282"><tspan
    style="font-weight:bold;font-family:'Gentium Basic';-inkscape-font-specification:'Gentium Basic, Bold'"
-   id="tspan364408">Tuning and tuning systems:</tspan> The Striso board can be tuned to match other </tspan><tspan
+   id="tspan109280">Tuning and tuning systems:</tspan> The Striso board can be tuned to match other </tspan><tspan
          x="56.693359"
          y="86.709759"
-         id="tspan364412">instruments that are not tuned to A440 by nudging or circling the 12TET key. </tspan><tspan
+         id="tspan109284">instruments that are not tuned to A440 by nudging or circling the 12TET key. </tspan><tspan
          x="56.693359"
          y="104.18088"
-         id="tspan364414">Besides the common western 12 tone tuning several other tuning systems are </tspan><tspan
+         id="tspan109286">Besides the common western 12 tone tuning several other tuning systems are </tspan><tspan
          x="56.693359"
          y="121.652"
-         id="tspan364416">implemented in the Striso board, like the 31 tone equal temperament with its </tspan><tspan
+         id="tspan109288">implemented in the Striso board, like the 31 tone equal temperament with its </tspan><tspan
          x="56.693359"
          y="139.12313"
-         id="tspan364418">pure thirds, or Just Intonation where every interval to the C is pure. The </tspan><tspan
+         id="tspan109290">pure thirds, or Just Intonation where every interval to the C is pure. The </tspan><tspan
          x="56.693359"
          y="156.59425"
-         id="tspan364420">tuning systems can be customized in the configuration editor (see Presets).</tspan></text>
+         id="tspan109292">tuning systems can be customized in the configuration editor (see Presets).</tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.27540499,0,0,0.27540499,143.29674,114.32573)"
+       transform="matrix(0.27540499,0,0,0.27540499,143.29674,115.38407)"
        id="text193077-2"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14.0904px;line-height:1.25;font-family:Gentium;-inkscape-font-specification:'Gentium, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;shape-inside:url(#rect193079-42);fill:#000000;fill-opacity:1;stroke:none"><tspan
          x="56.693359"
          y="69.218641"
-         id="tspan364424"><tspan
+         id="tspan109296"><tspan
    style="font-weight:bold;font-family:'Gentium Basic';-inkscape-font-specification:'Gentium Basic, Bold'"
-   id="tspan364422">Transposing:</tspan> The octave up and down buttons can also be used to transpose </tspan><tspan
+   id="tspan109294">Transposing:</tspan> The octave up and down buttons can also be used to transpose </tspan><tspan
          x="56.693359"
          y="86.953505"
-         id="tspan364426">other intervals than octaves. When used together with the settings button </tspan><tspan
+         id="tspan109298">other intervals than octaves. When used together with the settings button </tspan><tspan
          x="56.693359"
          y="104.5665"
-         id="tspan364428">they transpose one semitone up or down. A more versatile free transpose can </tspan><tspan
+         id="tspan109300">they transpose one semitone up or down. A more versatile free transpose can </tspan><tspan
          x="56.693359"
          y="122.1795"
-         id="tspan364430">be done by holding down both the up and down button while playing a note, </tspan><tspan
+         id="tspan109302">be done by holding down both the up and down button while playing a note, </tspan><tspan
          x="56.693359"
          y="139.7925"
-         id="tspan364432">then press the key where this note should be transferred to and release the </tspan><tspan
+         id="tspan109304">then press the key where this note should be transferred to and release the </tspan><tspan
          x="56.693359"
          y="157.4055"
-         id="tspan364434">first key. All other buttons will be transposed with the same interval. Any </tspan><tspan
+         id="tspan109306">first key. All other buttons will be transposed with the same interval. Any </tspan><tspan
          x="56.693359"
          y="175.01851"
-         id="tspan364436">transpose can be reset by pressing the settings button simultaneously with </tspan><tspan
+         id="tspan109308">transpose can be reset by pressing the settings button simultaneously with </tspan><tspan
          x="56.693359"
          y="192.63151"
-         id="tspan364438">the octave up and down buttons. </tspan></text>
+         id="tspan109310">the octave up and down buttons. </tspan></text>
     <g
        id="g362256"
        transform="matrix(0.63269767,0,0,0.63269767,-17.731744,38.961942)">
@@ -778,9 +778,9 @@
          id="text13533"
          y="0.87749988"
          x="317.01071"
-         style="font-size:3.88056px;line-height:6.61458px;font-family:Andika;-inkscape-font-specification:Andika;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;display:inline;fill:#000000;stroke:#000000;stroke-width:0.2;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;enable-background:new"
+         style="font-size:3.88056px;line-height:6.61458px;font-family:Andika;-inkscape-font-specification:Andika;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;display:inline;fill:#000000;stroke:none;stroke-width:0.2;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;enable-background:new"
          xml:space="preserve"><tspan
-           style="font-weight:bold;font-size:3.88056px;text-align:center;text-anchor:middle;stroke:#000000;stroke-width:0.2;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+           style="font-weight:bold;font-size:3.88056px;text-align:center;text-anchor:middle;stroke:none;stroke-width:0.2;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
            y="0.87749988"
            x="317.01071"
            id="tspan13531"
@@ -897,7 +897,7 @@
            id="tspan13706"
            x="316.96255"
            y="77.824402"
-           style="font-size:3.88056px;text-align:center;text-anchor:middle;stroke:#000000;stroke-width:0.2;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1">12TET</tspan></text>
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:3.88056px;font-family:Andika;-inkscape-font-specification:'Andika Bold';text-align:center;text-anchor:middle;stroke:none;stroke-width:0.2;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1">12TET</tspan></text>
       <text
          id="text13712"
          y="71.403687"
@@ -1804,12 +1804,12 @@
            d="m 93.500001,41.045282 a 2,2 0 0 1 -2,2 2,2 0 0 1 -2,-2 2,2 0 0 1 2,-2 2,2 0 0 1 2,2 z"
            id="path13802"
            inkscape:connector-curvature="0"
-           style="fill:#9a22ff;fill-opacity:1;stroke:#000000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+           style="fill:#b45cff;fill-opacity:1;stroke:#000000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
         <path
            d="m 102,57.108865 a 2,2 0 0 1 -2,2 2,2 0 0 1 -2,-2 2,2 0 0 1 2,-2 2,2 0 0 1 2,2 z"
            id="path13804"
            inkscape:connector-curvature="0"
-           style="fill:#9a22ff;fill-opacity:1;stroke:#000000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+           style="fill:#b45cff;fill-opacity:1;stroke:#000000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
         <path
            d="m 110.5,34.619848 a 2,2 0 0 1 -2,2 2,2 0 0 1 -2,-2 2,2 0 0 1 2,-2 2,2 0 0 1 2,2 z"
            id="path13806"
@@ -1849,7 +1849,7 @@
            d="m 153,153.49033 a 2,2 0 0 1 -2,2 2,2 0 0 1 -2,-2 2,2 0 0 1 2,-2 2,2 0 0 1 2,2 z"
            id="path13822"
            inkscape:connector-curvature="0"
-           style="fill:#9a22ff;fill-opacity:1;stroke:#000000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+           style="fill:#b45cff;fill-opacity:1;stroke:#000000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
         <path
            d="m 170,147.0649 a 2,2 0 0 1 -2,2 2,2 0 0 1 -2,-2 2,2 0 0 1 2,-2 2,2 0 0 1 2,2 z"
            id="path13824"
@@ -2014,16 +2014,16 @@
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14.0904px;line-height:1.25;font-family:Gentium;-inkscape-font-specification:'Gentium, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;shape-inside:url(#rect193079-2);fill:#000000;fill-opacity:1;stroke:none"><tspan
          x="56.693359"
          y="69.218641"
-         id="tspan364442"><tspan
+         id="tspan109314"><tspan
    style="font-weight:bold;font-family:'Gentium Basic';-inkscape-font-specification:'Gentium Basic, Bold'"
-   id="tspan364440">Reset:</tspan> Press down the settings button and bottom right key to reset the </tspan><tspan
+   id="tspan109312">Reset:</tspan> Press down the settings button and bottom right key to reset the </tspan><tspan
          x="56.693359"
          y="86.953505"
-         id="tspan364444">Striso board and all settings at any time. </tspan></text>
+         id="tspan109316">Striso board and all settings at any time. </tspan></text>
     <g
        id="g149303"
        style="enable-background:new"
-       transform="matrix(0.64171538,0,0,0.64171538,60.621706,-9.9273193)">
+       transform="matrix(0.64171538,0,0,0.64171538,60.621706,-7.8106525)">
       <text
          id="text124232"
          y="841.24713"
@@ -2231,7 +2231,7 @@
          cy="330.4725"
          r="1" />
       <circle
-         style="fill:#ffaaaa;fill-opacity:1;stroke:#d40000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         style="fill:#ffb9b9;fill-opacity:1;stroke:#d40000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          id="circle177677"
          cx="-13.393473"
          cy="354.61642"
@@ -2327,7 +2327,7 @@
          cy="354.61642"
          r="1" />
       <circle
-         style="fill:#ffaaaa;fill-opacity:1;stroke:#d40000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         style="fill:#ffb9b9;fill-opacity:1;stroke:#d40000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          id="circle177719"
          cx="1.7728285"
          cy="350.7507"
@@ -2399,7 +2399,7 @@
            y="360.61966"
            id="tspan177747">4</tspan></text>
       <circle
-         style="fill:#ffaaaa;fill-opacity:1;stroke:#d40000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         style="fill:#ffb9b9;fill-opacity:1;stroke:#d40000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          id="circle177753"
          cx="16.93914"
          cy="334.33823"
@@ -2495,7 +2495,7 @@
          cy="334.33823"
          r="1" />
       <circle
-         style="fill:#ffaaaa;fill-opacity:1;stroke:#d40000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         style="fill:#ffb9b9;fill-opacity:1;stroke:#d40000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          id="circle177795"
          cx="32.105446"
          cy="330.4725"
@@ -2591,7 +2591,7 @@
          cy="330.4725"
          r="1" />
       <circle
-         style="fill:#ffaaaa;fill-opacity:1;stroke:#d40000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         style="fill:#ffb9b9;fill-opacity:1;stroke:#d40000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          id="circle177837"
          cx="47.271744"
          cy="354.61642"
@@ -2687,7 +2687,7 @@
          cy="354.61642"
          r="1" />
       <circle
-         style="fill:#ffaaaa;fill-opacity:1;stroke:#d40000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         style="fill:#ffb9b9;fill-opacity:1;stroke:#d40000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          id="circle177879"
          cx="62.438042"
          cy="350.7507"
@@ -2759,7 +2759,7 @@
            y="360.61966"
            id="tspan177907">12</tspan></text>
       <circle
-         style="fill:#ffaaaa;fill-opacity:1;stroke:#d40000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         style="fill:#ffb9b9;fill-opacity:1;stroke:#d40000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          id="circle177913"
          cx="77.604347"
          cy="334.33823"
@@ -2855,7 +2855,7 @@
          cy="334.33823"
          r="1" />
       <circle
-         style="fill:#ffaaaa;fill-opacity:1;stroke:#d40000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         style="fill:#ffb9b9;fill-opacity:1;stroke:#d40000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          id="circle177955"
          cx="92.770653"
          cy="330.4725"

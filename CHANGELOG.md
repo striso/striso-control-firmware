@@ -2,7 +2,7 @@
 
 ## v2.2.0 - 2022-07-21
 
-With release the way settings work has drastrically changed to allow more flexible settings and give better feedback.
+With this release the way settings work has drastically changed to allow more flexible settings and give better feedback.
 More settings are added and the existing ones have more precise control.
 
 The new system uses one button per setting, and uses the up/down leds to show the current value.
