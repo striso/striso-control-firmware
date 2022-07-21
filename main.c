@@ -112,7 +112,7 @@ static void unpack(uint8_t *in, int *out, int n) {
 /*
  * Message send thread
  */
-static THD_WORKING_AREA(waThreadSend, 256);
+static THD_WORKING_AREA(waThreadSend, 512);
 static void ThreadSend(void *arg) {
 
   (void)arg;
