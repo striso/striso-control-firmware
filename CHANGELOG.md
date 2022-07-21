@@ -1,6 +1,6 @@
 # Changelog
 
-## Next version
+## v2.2.0 - 2022-07-21
 
 With release the way settings work has drastrically changed to allow more flexible settings and give better feedback.
 More settings are added and the existing ones have more precise control.
