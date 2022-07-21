@@ -167,7 +167,7 @@ const ConfigParam default_config[] = {
   // preset 1
   {"sP1name ", "preset1 "},
   {"hP1color", "#380000 "},
-  {"iP1Mpgm ", "0       "}, // MIDI program change [0-127]
+  {"iP1Mpgm ", "        "}, // MIDI program change [0-127]
   {"iP1Mint ", "1       "}, // MIDI message interval in ms [1-127]
   {"iP1Mmint", "127     "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
   {"sP1Mmode", "mpe     "}, // MIDI mode [mpe/normal/mono]

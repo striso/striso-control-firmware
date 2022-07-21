@@ -2,12 +2,26 @@
 
 ## Next version
 
+With release the way settings work has drastrically changed to allow more flexible settings and give better feedback.
+More settings are added and the existing ones have more precise control.
+
+The new system uses one button per setting, and uses the up/down leds to show the current value.
+The value of a setting can be changed by nudging the key up or down.
+Larger changes can be made by making a circular motion clockwise (up) or anticlockwise (down) with the key.
+
+See the updated quick start guide for more information and an updated settings overview.
+
 ### Added
-- Retrigger delay, no note on message will be sent within 50ms after a note off message.
+- On board settings for MPE voice count, midi channel, tuning offset, MPE pitch bend range
 - Volume parameter in presets, and listen to MIDI CC7 - Volume
+- Send MPE and pitch bend range RPN messages on start, mode change, and send cfg key
 
 ### Changed
-- Config editor tweaks
+- New settings system and layout
+- Configuration editor tweaks
+- Response to MIDI CC 126 Mono mode and 127 Poly mode changed
+- MIDI Mono mode on channel 2 by default to be more compatible with MPE
+- Send MIDI Program Change on all used channels for more compatibility with non MPE synths
 
 ## v2.1.5 - 2022-07-01
 

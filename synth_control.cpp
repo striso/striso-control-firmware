@@ -283,9 +283,9 @@ class Instrument {
         float notegen0 = 12.00;
         float notegen1 = 7.00;
         int tuning_color = 0x00aa00;
+        int cur_tuning = 0;
         float note_offset = 0;
         float start_note_offset = 62;
-        float tuning_note_offset = 62;
         float min_note_offset = 32;
         float max_note_offset = 92;
         int altmode = 0;
@@ -389,6 +389,8 @@ class Instrument {
         }
 
         void set_notegen1(float g) {
+            // unset cur_tuning so the tuning will be reset on tuning switch
+            cur_tuning = -1;
             // keep generator within syntonic continuum range
             notegen1 = clamp(g, 6.85714285714286f, 7.2f);
 
@@ -428,12 +430,15 @@ class Instrument {
         }
 
         void load_tuning(int n) {
+            if (cur_tuning == n) return;
             if (n == 0) {
                 // tuning 0 hard coded to 12tet
                 notegen0 = 12.0f;
                 set_notegen1(7.0f);
                 reset_note_offsets();
+                note_offset = 0.0f;
                 led_rgb(tuning_color);
+                cur_tuning = n;
                 return;
             }
             float f;
@@ -449,9 +454,7 @@ class Instrument {
             strset(key, 3, "off  ");
             f = getConfigFloat(key);
             if (f == CONFIG_UNDEFINED) f = 0.0f;
-            tuning_note_offset = 62.0f + f / 100;
-            // TODO: note_offset = getConfigFloat(key) / 100;
-            start_note_offset = tuning_note_offset;
+            note_offset = f / 100;
             for (int n = 0; n < 61; n++) {
                 put_button_name(n, &key[3]);
                 int but = button_number_map[n];
@@ -463,6 +466,7 @@ class Instrument {
             strset(key, 3, "color");
             tuning_color = getConfigHex(key);
             led_rgb(tuning_color);
+            cur_tuning = n;
         }
 
         /* Rotate the layout 180 degrees */
@@ -1076,8 +1080,7 @@ int synth_message(int size, int* msg) {
             if (aux_button_map == ((1<<IDC_OCT_UP) | (1<<IDC_OCT_DOWN))) {
                 if (dis.altmode & 1) {
                     // transpose reset
-                    dis.set_note_offset(dis.tuning_note_offset);
-                    dis.note_offset = 0.0f;
+                    dis.set_note_offset(62);
                 } else {
                     // cancel last transpose and enable free transpose
                     dis.set_note_offset(note_offset_old);
@@ -1125,18 +1128,13 @@ void load_preset(int n) {
     int i;
     float f;
     const char* s;
+    bool sendcfg = false;
     CC_ALIGN(8) char key[] = "hP0color";
     key[2] = '0' + n;
     uint32_t led = getConfigHex(key);
     led_rgb(led);
 
     key[0] = 'i';
-    strset(key, 3, "Mpgm ");
-    i = getConfigInt(key);
-    if (i >= 0 && i <= 127) {
-        MidiSend2(MIDI_PROGRAM_CHANGE, i);
-    }
-
     strset(key, 3, "Mint ");
     i = getConfigInt(key);
     if (i >= 1 && i <= 127) {
@@ -1154,10 +1152,13 @@ void load_preset(int n) {
     s = getConfigSetting(key);
     if (cmp8(s, "mpe     ")) {
         set_midi_mode(MIDI_MODE_MPE);
+        sendcfg = true;
     } else if (cmp8(s, "normal  ")) {
         set_midi_mode(MIDI_MODE_POLY);
+        sendcfg = true;
     } else if (cmp8(s, "mono    ")) {
         set_midi_mode(MIDI_MODE_MONO);
+        sendcfg = true;
     }
 
     strset(key, 3, "Mnote");
@@ -1228,18 +1229,21 @@ void load_preset(int n) {
     i = getConfigInt(key);
     if (i >= 1 && i <= 16) {
         dis.midi_channel_offset = i - 1;
+        sendcfg = true;
     }
 
     strset(key, 3, "MPEpb");
     i = getConfigInt(key);
     if (i >= 1 && i <= 127) {
         dis.midi_bend_range = i;
+        sendcfg = true;
     }
 
     strset(key, 3, "voice");
     i = getConfigInt(key);
-    if (i >= 1 && i <= MAX_VOICECOUNT) {
+    if (i >= 1 && i <= MAX_VOICECOUNT && config.midi_mode == MIDI_MODE_MPE) {
         dis.voicecount = i;
+        sendcfg = true;
     }
 
     key[0] = 'f';
@@ -1277,6 +1281,22 @@ void load_preset(int n) {
     f = getConfigFloat(key);
     if (f >= 0.0f && f < 255.0f) {
         set_volume(f);
+    }
+
+    if (sendcfg) {
+        midi_config();
+    }
+
+    key[0] = 'i';
+    strset(key, 3, "Mpgm ");
+    i = getConfigInt(key);
+    if (i >= 0 && i <= 127) {
+        if (config.midi_mode != MIDI_MODE_POLY && dis.midi_channel_offset == 1) {
+            MidiSend2(MIDI_PROGRAM_CHANGE, i);
+        }
+        for (int n = 0; n < dis.voicecount; n++) {
+            MidiSend2(MIDI_PROGRAM_CHANGE | (dis.midi_channel_offset + n), i);
+        }
     }
 
     led_rgb(led);
@@ -1536,36 +1556,48 @@ float config_but(int but, int type, float adjust) {
         if (type == 0) {
             if (config.midi_mode != MIDI_MODE_MPE) set_midi_mode(MIDI_MODE_MPE);
             led_updown_dial(dis.voicecount);
+            midi_config();
         } else {
             int a = (int)adjust;
             if (type == 2) a = a / 2;
-            dis.voicecount = clamp(dis.voicecount + a, 1, 15);
+            if (a != 0) {
+                dis.voicecount = clamp(dis.voicecount + a, 1, 15);
+                led_updown_dial(dis.voicecount);
+                midi_config();
+            }
             if (type == 2) a = a * 2;
-            led_updown_dial(dis.voicecount);
             return adjust - a;
         } return 0;
     case (2): // Normal MIDI mode
         if (type == 0) {
             if (config.midi_mode != MIDI_MODE_POLY) set_midi_mode(MIDI_MODE_POLY);
             led_updown_dial(dis.midi_channel_offset + 1);
+            midi_config();
         } else {
             int a = (int)adjust;
             if (type == 2) a = a / 2;
-            dis.midi_channel_offset = clamp(dis.midi_channel_offset + a, 0, 15);
+            if (a != 0) {
+                dis.midi_channel_offset = clamp(dis.midi_channel_offset + a, 0, 15);
+                led_updown_dial(dis.midi_channel_offset + 1);
+                midi_config();
+            }
             if (type == 2) a = a * 2;
-            led_updown_dial(dis.midi_channel_offset + 1);
             return adjust - a;
         } return 0;
     case (4): // Mono (glissando) MIDI mode
         if (type == 0) {
             if (config.midi_mode != MIDI_MODE_MONO) set_midi_mode(MIDI_MODE_MONO);
             led_updown_dial(dis.midi_channel_offset + 1);
+            midi_config();
         } else {
             int a = (int)adjust;
             if (type == 2) a = a / 2;
-            dis.midi_channel_offset = clamp(dis.midi_channel_offset + a, 0, 15);
+            if (a != 0) {
+                dis.midi_channel_offset = clamp(dis.midi_channel_offset + a, 0, 15);
+                led_updown_dial(dis.midi_channel_offset + 1);
+                midi_config();
+            }
             if (type == 2) a = a * 2;
-            led_updown_dial(dis.midi_channel_offset + 1);
             return adjust - a;
         } return 0;
     // row 2:  1  3  5  7  9 11
@@ -1627,7 +1659,7 @@ float config_but(int but, int type, float adjust) {
             dis.y_sensitivity = clamp_rem(dis.y_sensitivity + adjust * (1.0f/8.0f), 0, 3.0f, &rem);
         }
         led_updown_dial(dis.y_sensitivity * 8 + 0.5f);
-        led_rgb3(dis.y_sensitivity * 64.0f, dis.y_sensitivity * 64.0f, 0);
+        led_rgb3(dis.y_sensitivity * 32.0f, 0, dis.y_sensitivity * 64.0f);
         return rem * 8;
         }
     // row 4: 18 20 22 24 26 28 13 15
@@ -1638,7 +1670,7 @@ float config_but(int but, int type, float adjust) {
         } else {
             dis.note_offset += adjust * (1.0f/16.0f/2.0f);
         }
-        led_updown_dial(dis.note_offset * 16 + 8);
+        led_updown_dial(dis.note_offset * 16 + 0.5f);
         return 0;
     case (36): // load tuning 1, knob: tuning offset
         if (type == 0) {
@@ -1646,7 +1678,7 @@ float config_but(int but, int type, float adjust) {
         } else {
             dis.note_offset += adjust * (1.0f/16.0f/2.0f);
         }
-        led_updown_dial(dis.note_offset * 16 + 8);
+        led_updown_dial(dis.note_offset * 16 + 0.5f);
         return 0;
     case (38): // load tuning 2, knob: tuning offset
         if (type == 0) {
@@ -1654,7 +1686,7 @@ float config_but(int but, int type, float adjust) {
         } else {
             dis.note_offset += adjust * (1.0f/16.0f/2.0f);
         }
-        led_updown_dial(dis.note_offset * 16 + 8);
+        led_updown_dial(dis.note_offset * 16 + 0.5f);
         return 0;
     case (23): // load tuning 3, knob: tuning offset
         if (type == 0) {
@@ -1662,7 +1694,7 @@ float config_but(int but, int type, float adjust) {
         } else {
             dis.note_offset += adjust * (1.0f/16.0f/2.0f);
         }
-        led_updown_dial(dis.note_offset * 16 + 8);
+        led_updown_dial(dis.note_offset * 16 + 0.5f);
         return 0;
     case (25): // load tuning 4, knob: tuning offset
         if (type == 0) {
@@ -1670,7 +1702,7 @@ float config_but(int but, int type, float adjust) {
         } else {
             dis.note_offset += adjust * (1.0f/16.0f/2.0f);
         }
-        led_updown_dial(dis.note_offset * 16 + 8);
+        led_updown_dial(dis.note_offset * 16 + 0.5f);
         return 0;
     case (27): // load tuning 5, knob: tuning offset
         if (type == 0) {
@@ -1678,7 +1710,7 @@ float config_but(int but, int type, float adjust) {
         } else {
             dis.note_offset += adjust * (1.0f/16.0f/2.0f);
         }
-        led_updown_dial(dis.note_offset * 16 + 8);
+        led_updown_dial(dis.note_offset * 16 + 0.5f);
         return 0;
     case (29): // load tuning 6, knob: tuning offset
         if (type == 0) {
@@ -1686,7 +1718,7 @@ float config_but(int but, int type, float adjust) {
         } else {
             dis.note_offset += adjust * (1.0f/16.0f/2.0f);
         }
-        led_updown_dial(dis.note_offset * 16 + 8);
+        led_updown_dial(dis.note_offset * 16 + 0.5f);
         return 0;
     case (31): // load tuning 7, knob: tuning offset
         if (type == 0) {
@@ -1694,7 +1726,7 @@ float config_but(int but, int type, float adjust) {
         } else {
             dis.note_offset += adjust * (1.0f/16.0f/2.0f);
         }
-        led_updown_dial(dis.note_offset * 16 + 8);
+        led_updown_dial(dis.note_offset * 16 + 0.5f);
         return 0;
     case (33): // load tuning 8, knob: tuning offset
         if (type == 0) {
@@ -1702,7 +1734,7 @@ float config_but(int but, int type, float adjust) {
         } else {
             dis.note_offset += adjust * (1.0f/16.0f/2.0f);
         }
-        led_updown_dial(dis.note_offset * 16 + 8);
+        led_updown_dial(dis.note_offset * 16 + 0.5f);
         return 0;
         // row 6: 35 37 39 41 43 45 30 32
     case (35):
@@ -1757,9 +1789,12 @@ float config_but(int but, int type, float adjust) {
         int cur = log2i(dis.midi_bend_range / 12);
         if (type > 0) {
             if (type == 2) a = a / 4;
-            cur = clamp(cur + a, 0, 3);
+            if (a != 0) {
+                cur = clamp(cur + a, 0, 3);
+                dis.midi_bend_range = 12 << cur;
+                midi_config();
+            }
             if (type == 2) a = a * 4;
-            dis.midi_bend_range = 12 << cur;
         }
         led_rgb3(10 + 50*cur, 0, 0);
         led_updown_dial(2 + 2 * cur);
@@ -1768,16 +1803,16 @@ float config_but(int but, int type, float adjust) {
     case (58): { // knob: MIDI message interval
         int a = (int)adjust;
         if (type > 0) {
-            config.message_interval = clamp(config.message_interval - adjust, 1, 15);
+            config.message_interval = clamp(config.message_interval - a, 1, 15);
         }
         led_rgb3(164-8*config.message_interval, 164-8*config.message_interval, 0);
         led_updown_dial(16 - config.message_interval);
         return adjust - a;
         }
-    // case (60): // knob: MIDI motion message interval
-    //     if (type == 0) {
-    //         led_updown_dial(config.send_motion_interval);
-    //     } else {
+    // case (60): { // knob: MIDI motion message interval
+    //     int a = (int)adjust;
+    //     if (type > 0) {
+    //         config.send_motion_interval = clamp(config.send_motion_interval - adjust, 0, 15);
     //         if (angle == 0) {
     //             config.send_motion_interval = 0;
     //             *(dis.synth_interface->acc_abs) = 1.0f;
@@ -1792,23 +1827,25 @@ float config_but(int but, int type, float adjust) {
     //         } else {
     //             config.send_motion_interval = angle;
     //         }
-    //         config.message_interval = 1;
-    //         return 1;
-    //     } return 0;
+    //     }
+    //     led_rgb3(164-8*config.send_motion_interval, 164-8*config.send_motion_interval, 0);
+    //     led_updown_dial(16 - config.send_motion_interval);
+    //     return adjust - a;
+    //     }
     // row 9:                   63 65 67
-    case (63): // panic/request config
+    case (63): // panic/all notes off
         if (type == 0) {
 #ifdef USE_MIDI_OUT
-            MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_ALL_NOTES_OFF, 0);
-            ws2812_write_led(0, 16, 0, 0);
+            for (int n = 0; n < (config.midi_mode == MIDI_MODE_POLY ? 1 : dis.voicecount); n++) {
+                MidiSend3(MIDI_CONTROL_CHANGE | (dis.midi_channel_offset + n), MIDI_C_ALL_NOTES_OFF, 0);
+            }
+            led_rgb(0x342000);
 #endif
         } return 0;
-    case (65): // send config
+    case (65): // send MPE/pitch bend range config
         if (type == 0) {
-#ifdef USE_MIDI_OUT
-            // TODO: send config
-            ws2812_write_led(0, 16, 0, 0);
-#endif
+            midi_config();
+            led_rgb(0x300064);
         } return 0;
     case (67): // system reset
         if (type == 0) {
@@ -1903,16 +1940,22 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
             case 75: { // pitch bend sensitivity, TODO: different CC?
                 dis.bend_sensitivity = (float)data2 * 0.05;
             } break;
-            case 126: {
-                if (data2 == 0) {
-                    set_midi_mode(MIDI_MODE_MPE);
-                } else if (data2 <= 16) {
+            case MIDI_C_MONO: { // MPE/multitimbral/mono mode.
+                // Set base channel based on channel the message is received
+                if (data2 == 1) { // monophonic on one channel
                     set_midi_mode(MIDI_MODE_MONO);
-                    dis.midi_channel_offset = data2 - 1;
+                    dis.midi_channel_offset = channel;
+                } else { // MPE like without master channel
+                    set_midi_mode(MIDI_MODE_MPE);
+                    dis.midi_channel_offset = channel;
+                    if (data2 > 0) {
+                        dis.voicecount = min(data2, 16 - channel);
+                    }
                 }
             } break;
-            case 127: {
+            case MIDI_C_POLY: { // Polyphonic mode on the channel the message is received
                 set_midi_mode(MIDI_MODE_POLY);
+                dis.midi_channel_offset = channel;
             } break;
             default: break;
         }
@@ -1940,7 +1983,7 @@ void set_midi_mode(midi_mode_t mode) {
         } break;
         case MIDI_MODE_MONO: {
             config.midi_mode = mode;
-            dis.midi_channel_offset = 0;
+            dis.midi_channel_offset = 1;
             dis.voicecount = 1;
             dis.portamento = 2; // 2 keeps led from brightening
             ws2812_write_led(0, 0, 1, 18);
@@ -1950,8 +1993,36 @@ void set_midi_mode(midi_mode_t mode) {
 
 void midi_config(void) {
 #ifdef USE_MIDI_OUT
-    // Send a midi message to show we're connected
-    MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_ALL_NOTES_OFF, 0);
+    if (config.midi_mode == MIDI_MODE_MPE) {
+        if (dis.midi_channel_offset == 1) {
+            // valid MPE should be on channel 1 (or 16 which is not implemented)
+            MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_RPN_MSB, 0);
+            MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_RPN_LSB, 6); // mpe set voicecount
+            MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_DATA_ENTRY, dis.voicecount);
+            MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_RPN_MSB, 0x7f); // reset RPN
+            MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_RPN_LSB, 0x7f);
+        }
+        for (int n = 0; n < dis.voicecount; n++) {
+            // send bend range on all channels to be more compatible
+            MidiSend3(MIDI_CONTROL_CHANGE | (dis.midi_channel_offset + n), MIDI_C_RPN_MSB, 0);
+            MidiSend3(MIDI_CONTROL_CHANGE | (dis.midi_channel_offset + n), MIDI_C_RPN_LSB, 0); // bend range
+            MidiSend3(MIDI_CONTROL_CHANGE | (dis.midi_channel_offset + n), MIDI_C_DATA_ENTRY, dis.midi_bend_range);
+            MidiSend3(MIDI_CONTROL_CHANGE | (dis.midi_channel_offset + n), MIDI_C_RPN_MSB, 0x7f); // reset RPN
+            MidiSend3(MIDI_CONTROL_CHANGE | (dis.midi_channel_offset + n), MIDI_C_RPN_LSB, 0x7f);
+        }
+    } else if (config.midi_mode == MIDI_MODE_MONO) {
+        MidiSend3(MIDI_CONTROL_CHANGE | dis.midi_channel_offset, MIDI_C_RPN_MSB, 0);
+        MidiSend3(MIDI_CONTROL_CHANGE | dis.midi_channel_offset, MIDI_C_RPN_LSB, 0); // bend range
+        MidiSend3(MIDI_CONTROL_CHANGE | dis.midi_channel_offset, MIDI_C_DATA_ENTRY, dis.midi_bend_range);
+        MidiSend3(MIDI_CONTROL_CHANGE | dis.midi_channel_offset, MIDI_C_RPN_MSB, 0x7f); // reset RPN
+        MidiSend3(MIDI_CONTROL_CHANGE | dis.midi_channel_offset, MIDI_C_RPN_LSB, 0x7f);
+    } else if (config.midi_mode == MIDI_MODE_POLY) {
+        MidiSend3(MIDI_CONTROL_CHANGE | dis.midi_channel_offset, MIDI_C_RPN_MSB, 0);
+        MidiSend3(MIDI_CONTROL_CHANGE | dis.midi_channel_offset, MIDI_C_RPN_LSB, 0); // bend range
+        MidiSend3(MIDI_CONTROL_CHANGE | dis.midi_channel_offset, MIDI_C_DATA_ENTRY, 2); // in poly mode pitch bend range is 2 semitones
+        MidiSend3(MIDI_CONTROL_CHANGE | dis.midi_channel_offset, MIDI_C_RPN_MSB, 0x7f); // reset RPN
+        MidiSend3(MIDI_CONTROL_CHANGE | dis.midi_channel_offset, MIDI_C_RPN_LSB, 0x7f);
+    }
 #endif
 }
 

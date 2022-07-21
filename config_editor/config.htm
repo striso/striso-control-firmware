@@ -42,12 +42,12 @@ const UF2_MAGIC_END = 0x0AB16F30 // Ditto
 const UF2_FAMILYID = 0xa21e1295 // Striso STM32H7 familyID
 
 const doc = {
-  iGoct: {text:"Default octave", help:"[-2..2]", check:function(x) {return clamp(x, -2, 2);}},
-  sGjack2: {text:"Pedal/MIDI jack mode", help:"[midi/pedal/linein] - pedal is not implemented yet!", options:["midi", "pedal", "linein"]},
+  iGoct:    {text:"Default octave", help:"[-2..2]", check:function(x) {return clamp(x, -2, 2);}},
+  sGjack2:  {text:"Pedal/MIDI jack mode", help:"[midi/pedal/linein] - pedal is not implemented yet!", options:["midi", "pedal", "linein"]},
   iGmotion: {text:"Default motion sensor state", help:"0=disable, 127=internal only, else motion message interval x10ms", check:function(x) {return clamp(x, 0, 127);}},
   hTxcolor: {text:"LED color", help:"hexadecimal rgb representation"},
-  fTxoff: {text:"Tuning offset", help:"offset in cents"},
-  fTxoct: {text:"Octave interval", help:"octave interval in cents"},
+  fTxoff:   {text:"Tuning offset", help:"offset in cents"},
+  fTxoct:   {text:"Octave interval", help:"octave interval in cents"},
   fTxfifth: {text:"Fifth interval", help:"fifth interval in cents"},
   sPxname:  {text:"Preset name"},
   hPxcolor: {text:"LED color", help:"hexadecimal rgb representation"},
@@ -69,7 +69,7 @@ const doc = {
   fPxbendS: {text:"Pitch bend range", help:"in semitones [-4.0-4.0]", check:function(x) {return clamp(x, -10, 10);}},
   fPxpresS: {text:"Key pressure factor", help:"[0.0-4.0]", check:function(x) {return clamp(x, 0, 10);}},
   fPxveloS: {text:"Key velocity factor", help:"[0.0-4.0]", check:function(x) {return clamp(x, 0, 10);}},
-  fPxtiltS: {text:"Key velocity factor", help:"[0.0-4.0]", check:function(x) {return clamp(x, 0, 10);}},
+  fPxtiltS: {text:"Key tilt (y) factor", help:"[-4.0-4.0]", check:function(x) {return clamp(x, -10, 10);}},
   fPxvolum: {text:"Volume", help:"[0.0-127.0]", check:function(x) {return clamp(x, 0, 255);}},
 }
 
@@ -145,7 +145,7 @@ function setValue(key, value) {
       value = parseFloat(value);
       if (isNaN(value)) value = 0;
       if (!isFinite(value)) value = 99999999;
-      if (Math.abs(value < 1e-6)) value = 0;
+      if (Math.abs(value) < 1e-6) value = 0;
       if (key[0] === "i") value = Math.round(value);
     }
     if ("check" in d) {
@@ -446,6 +446,10 @@ function keybindings(e) {
         e.preventDefault();
         undo();
       }
+    }
+    if (e.code === "KeyS") {
+      e.preventDefault();
+      getUF2();
     }
   }
   if (e.ctrlKey && !e.altKey && e.shiftKey) {
@@ -1098,9 +1102,6 @@ body {
     <p>
       This configuration editor let's you change the persistent configuration of the Striso board.
       To save the changed settings, click 'Save configuration', and save or copy the file on the Striso USB drive.
-    </p>
-    <p>
-      The first letter of a key defines the expected type, i=integer, f=float, h=hexadecimal color code, s=string.
     </p>
     <p>
       To reset a value click on its default value. To reset all values in the table click on the Default header.
