@@ -284,6 +284,7 @@ class Instrument {
         float notegen1 = 7.00;
         int tuning_color = 0x00aa00;
         int cur_tuning = 0;
+        float tuning_note_offset = 0;
         float note_offset = 0;
         float start_note_offset = 62;
         float min_note_offset = 32;
@@ -436,7 +437,7 @@ class Instrument {
                 notegen0 = 12.0f;
                 set_notegen1(7.0f);
                 reset_note_offsets();
-                note_offset = 0.0f;
+                note_offset = tuning_note_offset = 0.0f;
                 led_rgb(tuning_color);
                 cur_tuning = n;
                 return;
@@ -454,7 +455,7 @@ class Instrument {
             strset(key, 3, "off  ");
             f = getConfigFloat(key);
             if (f == CONFIG_UNDEFINED) f = 0.0f;
-            note_offset = f / 100;
+            note_offset = tuning_note_offset = f / 100;
             for (int n = 0; n < 61; n++) {
                 put_button_name(n, &key[3]);
                 int but = button_number_map[n];
@@ -1189,6 +1190,14 @@ void load_preset(int n) {
         config.message_interval = i;
     }
 
+    key[0] = 'f';
+    strset(key, 3, "Toff ");
+    f = getConfigFloat(key);
+    if (f >= -4800.0f && f <= 4800.0f) {
+        dis.note_offset = dis.tuning_note_offset + f / 100.0f;
+    }
+
+    key[0] = 'i';
     strset(key, 3, "Mpres");
     i = getConfigInt(key);
     if (i >= 0 && i <= 127) {

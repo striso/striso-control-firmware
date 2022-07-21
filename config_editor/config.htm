@@ -58,6 +58,7 @@ const doc = {
   sPxMnote: {text:"MIDI note mode", help:"[default/tuning/button]", options:["", "default", "tuning", "button"]},
   sPxjack2: {text:"Pedal/MIDI jack mode", help:"[midi/pedal/linein] - not implemented yet!", options:["", "midi", "pedal", "linein"]},
   iPxtunin: {text:"Load tuning", help:"[0-8]", check:function(x) {return clamp(x, 0, 8);}},
+  fPxToff:  {text:"Additional tuning offset", help:"in cents", check:function(x) {return clamp(x, -4800, 4800);}},
   iPxMpres: {text:"MIDI CC for key pressure", help:"Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure", check:function(x) {return clamp(x, 0, 127);}},
   iPxMx:    {text:"MIDI CC for key X movement", help:"Special values 127 = Disable, 122 = Pitch Bend", check:function(x) {return clamp(x, 0, 127);}},
   iPxMy:    {text:"MIDI CC for key Y movement", help:"Special values 127 = Disable", check:function(x) {return clamp(x, 0, 127);}},
@@ -1083,7 +1084,10 @@ body {
         </div>
         <p>Tunings in the Striso are defined by the size of the octave and fifth intervals, which define the pitch of all notes in a regular way.</p>
         <p>The default tuning is fixed to the standard western tuning: 12tet with A=440Hz.</p>
-        <p>The tuning offset can be used to change the reference, to change the A from 440Hz to <input value="443" style="width:4ch" oninput="x=this.value; document.getElementById('tuninghz').innerHTML=x; document.getElementById('tuningcent').innerHTML=(1200*Math.log2(x/440)).toFixed(2);">Hz use 1200*log2(<span id="tuninghz">443</span>/440) = <span id="tuningcent">11.76</span> cent.</p>
+        <p>The tuning offset can be used to change the reference, to change the A from 440Hz to
+          <input value="443" style="width:4ch" oninput="x=this.value; document.getElementById('tuninghz').innerHTML=x; document.getElementById('tuningcent').innerHTML=(1200*Math.log2(x/440)).toFixed(2);">Hz
+          use 1200*log2(<span id="tuninghz">443</span>/440) = <span id="tuningcent">11.76</span> cent.
+          Alternatively this offset can be defined in a preset.</p>
         <p>For irregular tunings an offset per note can be given.</p>
         <p>All values are given in cents.</p>
         <p>Copy and Paste can be used to copy between tunings, but also to the forum or a spreadsheet.</p>

@@ -15,6 +15,7 @@ See the updated quick start guide for more information and an updated settings o
 - On board settings for MPE voice count, midi channel, tuning offset, MPE pitch bend range
 - Volume parameter in presets, and listen to MIDI CC7 - Volume
 - Send MPE and pitch bend range RPN messages on start, mode change, and send cfg key
+- Additional tuning offset parameter in presets
 
 ### Changed
 - New settings system and layout
