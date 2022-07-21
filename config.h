@@ -192,7 +192,7 @@ const ConfigParam default_config[] = {
   // preset 2
   {"sP2name ", "preset2 "},
   {"hP2color", "#342000 "},
-  {"iP2Mpgm ", "1       "}, // MIDI program change [0-127]
+  {"iP2Mpgm ", "        "}, // MIDI program change [0-127]
   {"iP2Mint ", "        "}, // MIDI message interval in ms [1-127]
   {"iP2Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
   {"sP2Mmode", "        "}, // MIDI mode [mpe/normal/mono]
@@ -217,7 +217,7 @@ const ConfigParam default_config[] = {
   // preset 3
   {"sP3name ", "preset3 "},
   {"hP3color", "#383800 "},
-  {"iP3Mpgm ", "2       "}, // MIDI program change [0-127]
+  {"iP3Mpgm ", "        "}, // MIDI program change [0-127]
   {"iP3Mint ", "        "}, // MIDI message interval in ms [1-127]
   {"iP3Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
   {"sP3Mmode", "        "}, // MIDI mode [mpe/normal/mono]
@@ -242,7 +242,7 @@ const ConfigParam default_config[] = {
   // preset 4
   {"sP4name ", "preset4 "},
   {"hP4color", "#0e6000 "},
-  {"iP4Mpgm ", "3       "}, // MIDI program change [0-127]
+  {"iP4Mpgm ", "        "}, // MIDI program change [0-127]
   {"iP4Mint ", "        "}, // MIDI message interval in ms [1-127]
   {"iP4Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
   {"sP4Mmode", "        "}, // MIDI mode [mpe/normal/mono]
@@ -267,7 +267,7 @@ const ConfigParam default_config[] = {
   // preset 5
   {"sP5name ", "preset5 "},
   {"hP5color", "#003838 "},
-  {"iP5Mpgm ", "4       "}, // MIDI program change [0-127]
+  {"iP5Mpgm ", "        "}, // MIDI program change [0-127]
   {"iP5Mint ", "        "}, // MIDI message interval in ms [1-127]
   {"iP5Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
   {"sP5Mmode", "        "}, // MIDI mode [mpe/normal/mono]
@@ -292,7 +292,7 @@ const ConfigParam default_config[] = {
   // preset 6
   {"sP6name ", "preset6 "},
   {"hP6color", "#000ea8 "},
-  {"iP6Mpgm ", "5       "}, // MIDI program change [0-127]
+  {"iP6Mpgm ", "        "}, // MIDI program change [0-127]
   {"iP6Mint ", "        "}, // MIDI message interval in ms [1-127]
   {"iP6Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
   {"sP6Mmode", "        "}, // MIDI mode [mpe/normal/mono]
@@ -317,7 +317,7 @@ const ConfigParam default_config[] = {
   // preset 7
   {"sP7name ", "preset7 "},
   {"hP7color", "#300064 "},
-  {"iP7Mpgm ", "6       "}, // MIDI program change [0-127]
+  {"iP7Mpgm ", "        "}, // MIDI program change [0-127]
   {"iP7Mint ", "        "}, // MIDI message interval in ms [1-127]
   {"iP7Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
   {"sP7Mmode", "        "}, // MIDI mode [mpe/normal/mono]
@@ -342,7 +342,7 @@ const ConfigParam default_config[] = {
   // preset 8
   {"sP8name ", "preset8 "},
   {"hP8color", "#2a2a2a "},
-  {"iP8Mpgm ", "7       "}, // MIDI program change [0-127]
+  {"iP8Mpgm ", "        "}, // MIDI program change [0-127]
   {"iP8Mint ", "        "}, // MIDI message interval in ms [1-127]
   {"iP8Mmint", "        "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
   {"sP8Mmode", "        "}, // MIDI mode [mpe/normal/mono]

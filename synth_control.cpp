@@ -431,7 +431,10 @@ class Instrument {
         }
 
         void load_tuning(int n) {
-            if (cur_tuning == n) return;
+            if (cur_tuning == n) {
+                led_rgb(tuning_color);
+                return;
+            }
             if (n == 0) {
                 // tuning 0 hard coded to 12tet
                 notegen0 = 12.0f;
