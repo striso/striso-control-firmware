@@ -167,7 +167,9 @@ void serial_midi_init(void) {
   palSetLineMode(LINE_AUX_VDD, PAL_MODE_OUTPUT_OPENDRAIN);
   palClearLine(LINE_AUX_VDD);
 
-  sdStart(&SDMIDI, &sdMidiCfg);
+  if (SDMIDI.state != SD_READY) {
+    sdStart(&SDMIDI, &sdMidiCfg);
   // chThdCreateStatic(waThreadMidiIn, sizeof(waThreadMidi), NORMALPRIO, ThreadMidi,
   //                   NULL);
+  }
 }

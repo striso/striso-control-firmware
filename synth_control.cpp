@@ -26,9 +26,9 @@ extern "C" {
     #include "synth.h"
     #include "ws2812.h"
     #include "led.h"
+    #include "aux_jack.h"
 }
 
-#include "aux_jack.h"
 #include "config.h"
 #include "config_store.h"
 #include "striso.h"
@@ -1175,15 +1175,15 @@ void load_preset(int n) {
         config.midinote_mode = MIDINOTE_MODE_BUTTON;
     }
 
-    //strset(key, 3, "jack2");
-    //s = getConfigSetting(key);
-    //if (cmp8(s, "pedal   ")) {
-    //    aux_jack_switch_mode(JACK2_MODE_PEDAL);
-    //} else if (cmp8(s, "linein  ")) {
-    //    aux_jack_switch_mode(JACK2_MODE_LINEIN);
-    //} else if (cmp8(s, "midi    ")) {
-    //    aux_jack_switch_mode(JACK2_MODE_MIDI);
-    //}
+    strset(key, 3, "jack2");
+    s = getConfigSetting(key);
+    if (cmp8(s, "pedal   ")) {
+       aux_jack_switch_mode(JACK2_MODE_PEDAL);
+    } else if (cmp8(s, "linein  ")) {
+       aux_jack_switch_mode(JACK2_MODE_LINEIN);
+    } else if (cmp8(s, "midi    ")) {
+       aux_jack_switch_mode(JACK2_MODE_MIDI);
+    }
 
     key[0] = 'i';
     strset(key, 3, "tunin");

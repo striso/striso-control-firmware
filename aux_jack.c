@@ -69,15 +69,22 @@ void aux_jack_init(void) {
 }
 
 void aux_jack_switch_mode(jack2_mode_t mode) {
-  // TODO: implement
+  if (config.jack2_mode == JACK2_MODE_LINEIN) {
+    codec_linein_disable();
+  }
+
   switch (mode) {
   case (JACK2_MODE_DISABLED): {
   } break;
   case (JACK2_MODE_MIDI): {
+    serial_midi_init();
+    config.jack2_mode = JACK2_MODE_MIDI;
   } break;
   case (JACK2_MODE_PEDAL): {
   } break;
   case (JACK2_MODE_LINEIN): {
+    codec_linein_enable();
+    config.jack2_mode = JACK2_MODE_LINEIN;
   } break;
   }
 }

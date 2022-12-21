@@ -56,7 +56,7 @@ const doc = {
   iPxMmint: {text:"MIDI motion sensor message interval", help:" 0 = disable, 127 only internal, else x10ms [0-127]", check:function(x) {return clamp(x, 0, 127);}},
   sPxMmode: {text:"MIDI mode", help:"[mpe/normal/mono]", options:["", "mpe", "normal", "mono"]},
   sPxMnote: {text:"MIDI note mode", help:"[default/tuning/button]", options:["", "default", "tuning", "button"]},
-  sPxjack2: {text:"Pedal/MIDI jack mode", help:"[midi/pedal/linein] - not implemented yet!", options:["", "midi", "pedal", "linein"]},
+  sPxjack2: {text:"Pedal/MIDI jack mode", help:"[midi/pedal/linein] - pedal is not implemented yet!", options:["", "midi", "pedal", "linein"]},
   iPxtunin: {text:"Load tuning", help:"[0-8]", check:function(x) {return clamp(x, 0, 8);}},
   fPxToff:  {text:"Additional tuning offset", help:"in cents", check:function(x) {return clamp(x, -4800, 4800);}},
   iPxMpres: {text:"MIDI CC for key pressure", help:"Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure", check:function(x) {return clamp(x, 0, 127);}},
