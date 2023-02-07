@@ -292,6 +292,7 @@ class Instrument {
         int altmode = 0;
         int portamento = 0;
         int transposemode = 0;
+        int flipdir = 1;
         int last_button = 0;
         int master_button = -1;
         int transpose_button = -1;
@@ -475,6 +476,7 @@ class Instrument {
 
         /* Rotate the layout 180 degrees */
         void flip(void) {
+            flipdir = -flipdir;
             for (int n = 0; n < BUTTONCOUNT; n++) {
                 buttons[n].coord0 = -buttons[n].coord0;
                 buttons[n].coord1 = -buttons[n].coord1;
@@ -1092,8 +1094,8 @@ int synth_message(int size, int* msg) {
                 }
             } else {
                 note_offset_old = dis.start_note_offset;
-                float dif = dis.notegen0;
-                if (dis.altmode & 1) dif = 1.0f;
+                float dif = dis.flipdir * dis.notegen0;
+                if (dis.altmode & 1) dif = dis.flipdir * 1.0f;
                 if (id == IDC_OCT_UP) {
                     dis.change_note_offset(dif);
                 }
@@ -2069,7 +2071,7 @@ void update_leds(void) {
     int m = 64 + 16 * (dis.altmode + (dis.portamento & 1));
     led_rgb3(r * m / 64, g * m / 64, b * m / 64);
 
-    int note_offset = (int)(dis.start_note_offset + 0.5f) - 62;
+    int note_offset = dis.flipdir * ((int)(dis.start_note_offset + 0.5f) - 62);
     if      (note_offset <= -24) led_updown(0xff00);
     else if (note_offset <  -12) led_updown(0xaf00);
     else if (note_offset <= -12) led_updown(0x0f00);
