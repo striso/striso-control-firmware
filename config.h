@@ -187,6 +187,7 @@ const ConfigParam default_config[] = {
   {"fP1presS", "1.0     "}, // Key pressure factor [0-4]
   {"fP1veloS", "1.0     "}, // Key velocity factor [0-4]
   {"fP1tiltS", "1.0     "}, // Key tilt factor [-4.0-4.0]
+  {"iP1veloO", "0       "}, // MIDI velocity offset [0-127]
   {"fP1volum", "90.0    "}, // Volume [0-127]
 
   // preset 2
@@ -212,6 +213,7 @@ const ConfigParam default_config[] = {
   {"fP2presS", "        "}, // Key pressure factor [0-4]
   {"fP2veloS", "        "}, // Key velocity factor [0-4]
   {"fP2tiltS", "        "}, // Key tilt factor [-4.0-4.0]
+  {"iP2veloO", "        "}, // MIDI velocity offset [0-127]
   {"fP2volum", "        "}, // Volume [0-127]
 
   // preset 3
@@ -237,6 +239,7 @@ const ConfigParam default_config[] = {
   {"fP3presS", "        "}, // Key pressure factor [0-4]
   {"fP3veloS", "        "}, // Key velocity factor [0-4]
   {"fP3tiltS", "        "}, // Key tilt factor [-4.0-4.0]
+  {"iP3veloO", "        "}, // MIDI velocity offset [0-127]
   {"fP3volum", "        "}, // Volume [0-127]
 
   // preset 4
@@ -262,6 +265,7 @@ const ConfigParam default_config[] = {
   {"fP4presS", "        "}, // Key pressure factor [0-4]
   {"fP4veloS", "        "}, // Key velocity factor [0-4]
   {"fP4tiltS", "        "}, // Key tilt factor [-4.0-4.0]
+  {"iP4veloO", "        "}, // MIDI velocity offset [0-127]
   {"fP4volum", "        "}, // Volume [0-127]
 
   // preset 5
@@ -287,6 +291,7 @@ const ConfigParam default_config[] = {
   {"fP5presS", "        "}, // Key pressure factor [0-4]
   {"fP5veloS", "        "}, // Key velocity factor [0-4]
   {"fP5tiltS", "        "}, // Key tilt factor [-4.0-4.0]
+  {"iP5veloO", "        "}, // MIDI velocity offset [0-127]
   {"fP5volum", "        "}, // Volume [0-127]
 
   // preset 6
@@ -312,6 +317,7 @@ const ConfigParam default_config[] = {
   {"fP6presS", "        "}, // Key pressure factor [0-4]
   {"fP6veloS", "        "}, // Key velocity factor [0-4]
   {"fP6tiltS", "        "}, // Key tilt factor [-4.0-4.0]
+  {"iP6veloO", "        "}, // MIDI velocity offset [0-127]
   {"fP6volum", "        "}, // Volume [0-127]
 
   // preset 7
@@ -337,6 +343,7 @@ const ConfigParam default_config[] = {
   {"fP7presS", "        "}, // Key pressure factor [0-4]
   {"fP7veloS", "        "}, // Key velocity factor [0-4]
   {"fP7tiltS", "        "}, // Key tilt factor [-4.0-4.0]
+  {"iP7veloO", "        "}, // MIDI velocity offset [0-127]
   {"fP7volum", "        "}, // Volume [0-127]
 
   // preset 8
@@ -362,6 +369,7 @@ const ConfigParam default_config[] = {
   {"fP8presS", "        "}, // Key pressure factor [0-4]
   {"fP8veloS", "        "}, // Key velocity factor [0-4]
   {"fP8tiltS", "        "}, // Key tilt factor [-4.0-4.0]
+  {"iP8veloO", "        "}, // MIDI velocity offset [0-127]
   {"fP8volum", "        "}, // Volume [0-127]
 
   // tuning 0, 12tet

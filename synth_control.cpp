@@ -305,6 +305,7 @@ class Instrument {
         float y_sensitivity = 1.0f;
         float pres_sensitivity = 1.0f;
         float velo_sensitivity = 1.0f;
+        int midi_velo_offset = 0;
 
         Instrument(int* c0, int* c1, int n_buttons, synth_interface_t* si) {
             int n;
@@ -557,7 +558,7 @@ class Instrument {
                         buttons[but].midinote = buttons[but].midinote_base + (int)(start_note_offset + 0.5);
                         buttons[but].start_note_offset = start_note_offset;
                         // multiply velo by 2 to cover full midi range on note on
-                        int velo = 0 + buttons[but].vpres * velo_sensitivity * 128 * 2;
+                        int velo = midi_velo_offset + buttons[but].vpres * velo_sensitivity * 128 * 2;
                         velo = clamp(velo, 1, 127);
                         MidiSend3(MIDI_NOTE_ON | midi_channel_offset,
                                         buttons[but].midinote, velo);
@@ -892,7 +893,7 @@ class Instrument {
 
 #ifdef USE_MIDI_OUT
                 // multiply velo by 2 to cover full midi range on note on
-                int velo = 0 + buttons[but].vpres * velo_sensitivity * 128 * 2;
+                int velo = midi_velo_offset + buttons[but].vpres * velo_sensitivity * 128 * 2;
                 velo = clamp(velo, 1, 127);
 
                 MidiSend3(MIDI_NOTE_ON | (midi_channel_offset + buttons[but].voice),
@@ -1297,11 +1298,18 @@ void load_preset(int n) {
         set_volume(f);
     }
 
+    key[0] = 'i';
+
+    strset(key, 3, "veloO");
+    i = getConfigFloat(key);
+    if (i >= 0 && i <= 127) {
+        dis.midi_velo_offset = i;
+    }
+
     if (sendcfg) {
         midi_config();
     }
 
-    key[0] = 'i';
     strset(key, 3, "Mpgm ");
     i = getConfigInt(key);
     if (i >= 0 && i <= 127) {

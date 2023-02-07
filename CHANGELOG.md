@@ -1,5 +1,14 @@
 # Changelog
 
+## next release
+
+### Added
+-
+
+### Changed
+- Invert up-down buttons and leds when layout is inverted
+- Add MIDI velocity offset setting to make it possible to send constant velocity notes
+
 ## v2.2.0 - 2022-07-21
 
 With this release the way settings work has drastically changed to allow more flexible settings and give better feedback.

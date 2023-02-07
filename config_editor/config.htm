@@ -71,6 +71,7 @@ const doc = {
   fPxpresS: {text:"Key pressure factor", help:"[0.0-4.0]", check:function(x) {return clamp(x, 0, 10);}},
   fPxveloS: {text:"Key velocity factor", help:"[0.0-4.0]", check:function(x) {return clamp(x, 0, 10);}},
   fPxtiltS: {text:"Key tilt (y) factor", help:"[-4.0-4.0]", check:function(x) {return clamp(x, -10, 10);}},
+  iP1veloO: {text:"MIDI velocity offset", help:"[0-127]", check:function(x) {return clamp(x, 0, 127);}},
   fPxvolum: {text:"Volume", help:"[0.0-127.0]", check:function(x) {return clamp(x, 0, 255);}},
 }
 
