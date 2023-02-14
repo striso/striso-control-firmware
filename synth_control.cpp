@@ -500,7 +500,7 @@ class Instrument {
                 if (buttons[but].state == STATE_OFF && buttons[but].pres > 0.05) {
                     buttons[but].state = STATE_ALT;
                     altmode |= 2;
-                    config_but(but, 0, 0);
+                    config_but(but, 0, 0); // show current setting
                 } else if (buttons[but].pres == 0.0) {
                     buttons[but].state = STATE_OFF;
                     altmode &= 1;
@@ -521,6 +521,7 @@ class Instrument {
                                 config_but(but, 1, -1.0f);
                             }
                             nudged = true;
+                            next_knobchange = chVTGetSystemTime() + TIME_MS2I(500);
                         }
                         old_angle = angle;
                     } else {
@@ -531,6 +532,16 @@ class Instrument {
                             if (fabsf(adjust) > 4.0f) {
                                 nudged = false;
                                 old_angle = angle;
+                            } else {
+                                if (chVTGetSystemTime() > next_knobchange) {
+                                    // nudge up or down
+                                    if (buttons[but].but_y > 0) {
+                                        config_but(but, 1, 1.0f);
+                                    } else {
+                                        config_but(but, 1, -1.0f);
+                                    }
+                                    next_knobchange = chVTGetSystemTime() + TIME_MS2I(200 / (4*pow2(buttons[but].but_y)));
+                                }
                             }
                         } else {
                             if (chVTGetSystemTime() > next_knobchange) {

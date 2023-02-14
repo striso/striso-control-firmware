@@ -3,11 +3,11 @@
 ## next release
 
 ### Added
--
+- Add MIDI velocity offset setting to make it possible to send constant velocity notes
+- Settings up/down autorepeat (with dynamic repeat rate!)
 
 ### Changed
 - Invert up-down buttons and leds when layout is inverted
-- Add MIDI velocity offset setting to make it possible to send constant velocity notes
 
 ## v2.2.0 - 2022-07-21
 
