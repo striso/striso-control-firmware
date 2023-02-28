@@ -1093,6 +1093,10 @@ int synth_message(int size, int* msg) {
             dis.set_portamento(msg[0]);
             update_leds();
         }
+        else if (id == IDC_PEDAL) {
+            // Pedal
+            MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_DAMPER, clamp((msg[0]+(1<<5))>>6, 0, 127));
+        }
         else if (msg[0]) {
             aux_button_map |= 1<<id;
             if (aux_button_map == ((1<<IDC_OCT_UP) | (1<<IDC_OCT_DOWN))) {

@@ -152,7 +152,7 @@ static const SerialConfig sdMidiCfg = {31250, // baud
 //   }
 // }
 
-void serial_midi_init(void) {
+void serial_midi_enable(void) {
   /*
    * Activates the serial driver 2 using the driver default configuration.
    * PA2(TX) and PA3(RX) are routed to USART2.
@@ -172,4 +172,9 @@ void serial_midi_init(void) {
   // chThdCreateStatic(waThreadMidiIn, sizeof(waThreadMidi), NORMALPRIO, ThreadMidi,
   //                   NULL);
   }
+}
+
+void serial_midi_disable(void) {
+  palSetLineMode(LINE_AUX_UART2_TX, PAL_MODE_INPUT_ANALOG);
+  palSetLine(LINE_AUX_VDD); // aux_power_disable();
 }

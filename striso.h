@@ -51,6 +51,7 @@ Button message:
 #define IDC_SLD_SLIDEZOOM 10  // length 2
 #define IDC_SLD_ONE_TAP 3     // length 1
 #define IDC_SLD_TWO_TAP 4     // length 1
+#define IDC_PEDAL 6           // length 1
 
 // system numbers
 #define ID_SYS_MSGQUE_OVERFLOW_BB 1

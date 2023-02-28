@@ -25,7 +25,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-void serial_midi_init(void);
+void serial_midi_enable(void);
+void serial_midi_disable(void);
 void serial_MidiSend1(uint8_t b0);
 void serial_MidiSend2(uint8_t b0, uint8_t b1);
 void serial_MidiSend3(uint8_t b0, uint8_t b1, uint8_t b2);
