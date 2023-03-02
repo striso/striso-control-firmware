@@ -119,6 +119,37 @@ typedef enum {
     STATE_TRANSPOSE = 4,
 } button_state_t;
 
+/*
+ * Send midi messages with hysteresis filtering
+ */
+class MidiParam {
+    public:
+        int last_value = INT32_MAX;
+        int midi_cc = CFG_DISABLE;
+
+        MidiParam(int cc) {
+            midi_cc = cc;
+        }
+
+        /*
+         * Send midi message if more than 0.75 different from last value
+         */
+        void send(int value_x4, int midi_channel) {
+            int d = (value_x4 < last_value*4) * 2 + 1; // calculate direction for hysteresis
+            int value = __USAT((value_x4 + d) >> 2, 7) & 0x7F;
+            if (value != last_value) {
+                if (midi_cc < 120) {
+                    MidiSend3(MIDI_CONTROL_CHANGE | midi_channel,
+                                    midi_cc, value);
+                } else if (midi_cc == CFG_CHANNEL_PRESSURE) {
+                    MidiSend2(MIDI_CHANNEL_PRESSURE | midi_channel,
+                                    value);
+                }
+                last_value = value;
+            }
+        }
+};
+
 class MotionSensor {
     public:
         int send_motion_time = 0;
@@ -1066,6 +1097,8 @@ Instrument dis(c0_dis, c1_dis, BUTTONCOUNT, NULL);
 #endif
 MotionSensor motion;
 
+MidiParam pedal(MIDI_C_DAMPER);
+
 void int2float(int *msg, float *fmsg, int n) {
     int c;
     for (c=0; c<n; c++) {
@@ -1097,7 +1130,7 @@ int synth_message(int size, int* msg) {
             // Pedal
             int2float(msg, fmsg, size);
             *(dis.synth_interface->pedal) = fmsg[0];
-            MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_DAMPER, clamp((msg[0]+(1<<5))>>6, 0, 127));
+            pedal.send(msg[0]>>4, 0);//dis.midi_channel_offset);
         }
         else if (msg[0]) {
             aux_button_map |= 1<<id;
