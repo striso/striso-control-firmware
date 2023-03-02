@@ -30,7 +30,7 @@ const ADCConversionGroup adcgrpcfg3 = {
   .end_cb       = NULL,
   .error_cb     = NULL,
   .cfgr         = ADC_CFGR_RES_14BITS,
-  .cfgr2        = 0U,
+  .cfgr2        = ADC_CFGR2_ROVSE | ADC_CFGR2_OVSR_N(127) | ADC_CFGR2_OVSS_N(7), // 128x oversampling, gives around 80Hz sample rate
   .ccr          = 0U,
   .pcsel        = ADC_SELMASK_IN10 | ADC_SELMASK_IN11,
   .ltr1         = 0x00000000U,
@@ -42,7 +42,7 @@ const ADCConversionGroup adcgrpcfg3 = {
   .smpr         = {
     0U,
     ADC_SMPR2_SMP_AN10(ADC_SMPR_SMP_810P5) |
-    ADC_SMPR2_SMP_AN11(ADC_SMPR_SMP_810P5)
+    ADC_SMPR2_SMP_AN11(ADC_SMPR_SMP_64P5)
   },
   .sqr          = {
     ADC_SQR1_SQ1_N(ADC_CHANNEL_IN10) | ADC_SQR1_SQ2_N(ADC_CHANNEL_IN11),
@@ -70,7 +70,6 @@ static THD_FUNCTION(AuxJack, arg) {
       msg[2] = aux_adc_samples[0] >> 1;
       msgSend(3, msg);
     }
-    chThdSleepMilliseconds(10);
   }
 }
 
