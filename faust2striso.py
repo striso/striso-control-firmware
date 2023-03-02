@@ -28,7 +28,7 @@ def interface2embedded_interface(interface_cpp):
             par = add_re.findall(line)[0].split(',')
             name = par[0].strip('"')
             loc = par[1].strip()
-            if name in ('acc_abs','acc_x','acc_y','acc_z','rot_x','rot_y','rot_z'):
+            if name in ('acc_abs','acc_x','acc_y','acc_z','rot_x','rot_y','rot_z','pedal'):
                 ch_lines.append('synth_interface.{} = {};'.format(name, loc))
             elif cur_voice and name in ('note','pres','vpres','but_x','but_y'):
                 ch_lines.append('synth_interface{}.{}[{}] = {};'.format(

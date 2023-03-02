@@ -63,6 +63,7 @@ static void synthThread(void *arg) {  // THE SYNTH THREAD
 	synth_interface.rot_x = &dump;
 	synth_interface.rot_y = &dump;
 	synth_interface.rot_z = &dump;
+	synth_interface.pedal = &dump;
 
 	// initialization
 	dsp.init(SAMPLINGFREQ);

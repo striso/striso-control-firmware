@@ -35,6 +35,7 @@ typedef struct struct_synth_interface {
 	float* rot_x;
 	float* rot_y;
 	float* rot_z;
+	float* pedal;
 	float* note[MAX_VOICECOUNT];
 	float* pres[MAX_VOICECOUNT];
 	float* vpres[MAX_VOICECOUNT];

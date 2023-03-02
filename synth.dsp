@@ -43,6 +43,8 @@ rot_x = vslider("v:gyroscope/rot_x[style:knob]",0,-1,1,0.01);
 rot_y = vslider("v:gyroscope/rot_y[style:knob]",0,-1,1,0.01);
 rot_z = vslider("v:gyroscope/rot_z[style:knob]",0,-1,1,0.01);
 
+pedal = vslider("v:control/pedal[style:knob]",0.2,0,1,0.01);
+
 posDecay = hslider("v:[0]config/posDecay[style:knob]",0.1,0,1,0.01):halftime2fac;
 negDecay = hslider("v:[0]config/negDecay[style:knob]",0.2,0,1,0.01):halftime2fac;
 pDecay = hslider("v:[0]config/pDecay[style:knob]",0.05,0,1,0.01):halftime2fac;
@@ -85,7 +87,7 @@ with {
     but_y = but_y1 : LPF(K_f0(20),0.71);
     pluck = but_y^2 : envdecay(select2(pres==0, halftime2fac_fast(0.01), 1));
     // decaytime = max(max(min(pluck * 2 - 0.4, 0.5+pluck), min(pres * 16, 0.5+pres)), 0.05) * 64 / note;
-    decaytime = max(min(pres * 16, 0.5+pres*0.5), 0.05) * 64 / note;
+    decaytime = max(min(pres * 16, 0.5+pres*0.5), pedal * 0.2 + 0.01) * 64 / note;
     vpres1 = max(vpres - 0.02, 0);
     vplev = vpres1 / (0.5+vpres1);// + min(pres, 0.001);
     rotlev = min(pres * 2, max(rot_y^2+rot_z^2 - 0.005, 0));

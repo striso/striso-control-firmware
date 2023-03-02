@@ -1095,6 +1095,8 @@ int synth_message(int size, int* msg) {
         }
         else if (id == IDC_PEDAL) {
             // Pedal
+            int2float(msg, fmsg, size);
+            *(dis.synth_interface->pedal) = fmsg[0];
             MidiSend3(MIDI_CONTROL_CHANGE, MIDI_C_DAMPER, clamp((msg[0]+(1<<5))>>6, 0, 127));
         }
         else if (msg[0]) {
