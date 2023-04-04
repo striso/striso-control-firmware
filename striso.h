@@ -40,6 +40,7 @@ Button message:
 #define ID_CONTROL 2  // other controls
 #define ID_ACCEL 3    // motion sensor
 #define ID_SYS 4      // system, status, debug
+#define ID_MIDI 5     // midi monitor
 
 // control numbers
 #define IDC_PORTAMENTO 0      // length 1

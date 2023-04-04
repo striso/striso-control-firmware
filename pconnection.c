@@ -163,7 +163,15 @@ void PExReceiveByte(unsigned char c) {
       }
       else if (c == 's') { // disable binary protocol over USB Bulk
         config.send_usb_bulk = 0;
+        config.send_midi_monitor = 0;
         chprintf((BaseSequentialStream * )&BDU1, "Stcs\r\n");
+      }
+      else if (c == 'M') { // enable MIDI monitor over binary protocol
+        config.send_usb_bulk = 1;
+        config.send_midi_monitor = 1;
+      }
+      else if (c == 'm') { // disable MIDI monitor over binary protocol
+        config.send_midi_monitor = 0;
       }
       else if (c == 'V') { // firmware version
         config.send_usb_bulk = 0;

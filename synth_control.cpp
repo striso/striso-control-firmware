@@ -27,6 +27,7 @@ extern "C" {
     #include "ws2812.h"
     #include "led.h"
     #include "aux_jack.h"
+    #include "messaging.h"
 }
 
 #include "config.h"
@@ -1943,7 +1944,19 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
 
     uint8_t channel = status & 0x0f;
     status &= 0xf0;
-    ws2812_write_led(0, 18, 0, 9);
+
+    led_rgb3_blink(255, 0, 127, TIME_MS2I(100));
+
+    if (config.send_midi_monitor) {
+        // Monitor MIDI input
+        int msg[5];
+        msg[0] = ID_MIDI;
+        msg[1] = channel;
+        msg[2] = status >> 4;
+        msg[3] = data1;
+        msg[4] = data2;
+        msgSend(5, msg);
+    }
 
     if (status == MIDI_CONTROL_CHANGE) {
         switch (data1) {
@@ -1970,6 +1983,7 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
             } break;
             case  1: { // Fifth (microtonal) tuning
                 dis.set_notegen1(6.80 + (float)data2 * (0.20/64) + (float)lsb_cc1 * (0.20/8192));
+                update_leds();
             } break;
             case  1|MIDI_C_LSB: lsb_cc1 = data2; break;
             case  7: set_volume(data2); break;
@@ -1979,8 +1993,12 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
             // case 17|MIDI_C_LSB: config.send_button_14bit = data2; break;
             case 18: { // Note offset
                 dis.set_note_offset(data2 - 2);
+                update_leds();
             } break;
-            case 65: dis.set_portamento(data2); break;
+            case 65: {
+                dis.set_portamento(data2);
+                update_leds();
+            } break;
             case 70: { // pressure
                 if (data2 == 0) data2 = CFG_DISABLE;
                 if (config.midi_mode == MIDI_MODE_MPE) {
@@ -2034,7 +2052,6 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
     } else if (status == MIDI_PITCH_BEND) {
         dis.note_offset = (float)((int)((data2<<7)+data1)-0x2000) * (2.0/8192);
     }
-    update_leds();
 }
 
 void set_midi_mode(midi_mode_t mode) {

@@ -5,6 +5,7 @@
 ### Added
 - Add MIDI velocity offset setting to make it possible to send constant velocity notes
 - Settings up/down autorepeat (with dynamic repeat rate!)
+- Blink pink light on MIDI receive
 
 ### Changed
 - Invert up-down buttons and leds when layout is inverted

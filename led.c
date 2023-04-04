@@ -1,6 +1,11 @@
 #include <ch.h>
 #include <hal.h>
 
+#include "led.h"
+
+int last_color[3] = {0};
+systime_t led_blink_timer = UINT32_MAX;
+
 static PWMConfig pwmcfg = {
   8000000,                                 /* PWM clock frequency.   */
   2048,                                    /* Initial PWM period.    */
@@ -41,6 +46,10 @@ static PWMConfig pwmcfg_updown = {
   0
 };
 
+/* Gamma correction to make light response close to linear.
+ * Input range: 0-256
+ * Ouput range: 0-2048
+ */
 int gamma8(int x) {
   if (x < 33) return x;
   else return ((x+1)*(x+1))/32-1;
@@ -59,15 +68,30 @@ void led_rgb(uint32_t rgb) {
   int r = rgb >> 16 & 0xff;
   int g = rgb >>  8 & 0xff;
   int b = rgb >>  0 & 0xff;
-  pwmEnableChannel(&PWMD4, 0, gamma8(r));
-  pwmEnableChannel(&PWMD4, 2, gamma8(g));
-  pwmEnableChannel(&PWMD4, 1, gamma8(b));
+  led_rgb3(r, g, b);
 }
 
 void led_rgb3(int r, int g, int b) {
   pwmEnableChannel(&PWMD4, 0, gamma8(r));
   pwmEnableChannel(&PWMD4, 2, gamma8(g));
   pwmEnableChannel(&PWMD4, 1, gamma8(b));
+  last_color[0] = r;
+  last_color[1] = g;
+  last_color[2] = b;
+}
+
+void led_rgb3_blink(int r, int g, int b, sysinterval_t time) {
+  pwmEnableChannel(&PWMD4, 0, gamma8(r));
+  pwmEnableChannel(&PWMD4, 2, gamma8(g));
+  pwmEnableChannel(&PWMD4, 1, gamma8(b));
+  led_blink_timer = chVTGetSystemTime() + time;
+}
+
+void led_tick(void) {
+  if (chVTGetSystemTime() > led_blink_timer) {
+    led_rgb3(last_color[0], last_color[1], last_color[2]);
+    led_blink_timer = UINT32_MAX;
+  }
 }
 
 inline int led_updown_state(ioline_t line, uint32_t state) {

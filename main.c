@@ -229,6 +229,7 @@ int main(void) {
   while (1) {
     chThdSleepMilliseconds(2);
     synth_tick();
+    led_tick();
 
 #ifdef USE_USB
     PExReceive();

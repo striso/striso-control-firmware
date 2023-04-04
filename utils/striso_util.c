@@ -128,6 +128,7 @@ static enum test_type {
 	USE_PIPEBULK,
 	USE_PIPETEXT,
 	USE_PIPESTOP,
+	USE_MIDI_MONITOR,
 	USE_VERSION,
 	USE_SYSINFO,
 	USE_CALIBRATION,
@@ -530,6 +531,9 @@ static int test_device(uint16_t vid, uint16_t pid)
 	case USE_PIPESTOP:
 		striso_command(handle, endpoint_in, endpoint_out, 's');
 		break;
+	case USE_MIDI_MONITOR:
+		striso_command(handle, endpoint_in, endpoint_out, 'M');
+		break;
 	case USE_GENERIC:
 		break;
 	}
@@ -603,6 +607,9 @@ int main(int argc, char** argv)
 				case 's':
 					test_mode = USE_PIPESTOP;
 					break;
+				case 'm':
+					test_mode = USE_MIDI_MONITOR;
+					break;
 				case 'v':
 					test_mode = USE_VERSION;
 					break;
@@ -641,6 +648,7 @@ int main(int argc, char** argv)
 		printf("   -I      : show ChibiOS thread info\n");
 		printf("   -C      : calibration mode\n");
 		printf("   -i      : show usb info\n");
+		printf("   -m      : enable MIDI in monitor\n");
 		return 0;
 	}
 
