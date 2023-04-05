@@ -1127,40 +1127,53 @@ int synth_message(int size, int* msg) {
             dis.set_portamento(msg[0]);
             update_leds();
         }
-        else if (id == IDC_PEDAL) {
+        else if (id == IDC_PEDAL_EXP) {
             // Pedal
             int2float(msg, fmsg, size);
             *(dis.synth_interface->pedal) = fmsg[0];
             pedal.send(msg[0]>>4, 0);//dis.midi_channel_offset);
         }
-        else if (msg[0]) {
-            aux_button_map |= 1<<id;
-            if (aux_button_map == ((1<<IDC_OCT_UP) | (1<<IDC_OCT_DOWN))) {
-                if (dis.altmode & 1) {
-                    // transpose reset
-                    dis.set_note_offset(62);
+        else if (id == IDC_PEDAL_1) {
+            // Switch pedal 1 (tip)
+            int val = config.pedal_sw1_values[msg[0]>0];
+            *(dis.synth_interface->pedal) = (float)val/127;
+            pedal.send(val*4, 0);//dis.midi_channel_offset);
+        }
+        else if (id == IDC_PEDAL_2) {
+            // Switch pedal 2 (ring)
+            dis.set_portamento(msg[0]);
+            update_leds();
+        }
+        else if (id == IDC_OCT_DOWN || id == IDC_OCT_UP) {
+            if (msg[0]) {
+                aux_button_map |= 1<<id;
+                if (aux_button_map == ((1<<IDC_OCT_UP) | (1<<IDC_OCT_DOWN))) {
+                    if (dis.altmode & 1) {
+                        // transpose reset
+                        dis.set_note_offset(62);
+                    } else {
+                        // cancel last transpose and enable free transpose
+                        dis.set_note_offset(note_offset_old);
+                        dis.set_free_transpose_mode(1);
+                    }
                 } else {
-                    // cancel last transpose and enable free transpose
-                    dis.set_note_offset(note_offset_old);
-                    dis.set_free_transpose_mode(1);
+                    note_offset_old = dis.start_note_offset;
+                    float dif = dis.flipdir * dis.notegen0;
+                    if (dis.altmode & 1) dif = dis.flipdir * 1.0f;
+                    if (id == IDC_OCT_UP) {
+                        dis.change_note_offset(dif);
+                    }
+                    if (id == IDC_OCT_DOWN) {
+                        dis.change_note_offset(-dif);
+                    }
                 }
             } else {
-                note_offset_old = dis.start_note_offset;
-                float dif = dis.flipdir * dis.notegen0;
-                if (dis.altmode & 1) dif = dis.flipdir * 1.0f;
-                if (id == IDC_OCT_UP) {
-                    dis.change_note_offset(dif);
+                aux_button_map &= ~(1<<id);
+                if (aux_button_map != ((1<<IDC_OCT_UP) | (1<<IDC_OCT_DOWN))) {
+                    dis.set_free_transpose_mode(0);
                 }
-                if (id == IDC_OCT_DOWN) {
-                    dis.change_note_offset(-dif);
-                }
+                update_leds();
             }
-        } else {
-            aux_button_map &= ~(1<<id);
-            if (aux_button_map != ((1<<IDC_OCT_UP) | (1<<IDC_OCT_DOWN))) {
-                dis.set_free_transpose_mode(0);
-            }
-            update_leds();
         }
     }
     else if (src == ID_ACCEL && size == 7) {
@@ -1231,12 +1244,16 @@ void load_preset(int n) {
 
     strset(key, 3, "jack2");
     s = getConfigSetting(key);
-    if (cmp8(s, "pedal   ")) {
-       aux_jack_switch_mode(JACK2_MODE_PEDAL);
-    } else if (cmp8(s, "linein  ")) {
-       aux_jack_switch_mode(JACK2_MODE_LINEIN);
+    if (cmp8(s, "pedal_ex")) {
+        aux_jack_switch_mode_setting(JACK2_MODE_PEDAL_EXPRESSION);
+    } else if (cmp8(s, "pedal_sw")) {
+        aux_jack_switch_mode_setting(JACK2_MODE_PEDAL_SWITCH);
     } else if (cmp8(s, "midi    ")) {
-       aux_jack_switch_mode(JACK2_MODE_MIDI);
+        aux_jack_switch_mode_setting(JACK2_MODE_MIDI);
+    } else if (cmp8(s, "linein  ")) {
+        aux_jack_switch_mode_setting(JACK2_MODE_LINEIN);
+    } else if (cmp8(s, "auto    ")) {
+        aux_jack_switch_mode_setting(JACK2_MODE_AUTODETECT);
     }
 
     key[0] = 'i';
@@ -1855,6 +1872,16 @@ float config_but(int but, int type, float adjust) {
         led_rgb3(volume_linear*2, volume_linear*2, volume_linear*2);
         led_updown_dial((int)volume_linear/8);
         return rem * (1.0f/8.0f);
+        }
+    case (53): { // knob: sustain/decay rate
+        float rem = 0;
+        if (type > 0) {
+            *(dis.synth_interface->pedal) = clamp_rem(*(dis.synth_interface->pedal) + adjust * (1.0f/16.0f), 0, 1.0f, &rem);
+            pedal.send(*(dis.synth_interface->pedal) * 128 * 4, 0);
+        }
+        led_updown_dial(*(dis.synth_interface->pedal) * 15 + 0.5f);
+        led_rgb3(*(dis.synth_interface->pedal) * 64.0f, 0, *(dis.synth_interface->pedal) * 64.0f);
+        return rem * 16;
         }
     // row 8:       56 58 60 62 47 49
     case (56): { // knob: MPE pitchbend range

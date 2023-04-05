@@ -3,6 +3,7 @@
 ## next release
 
 ### Added
+- Pedal support!
 - Add MIDI velocity offset setting to make it possible to send constant velocity notes
 - Settings up/down autorepeat (with dynamic repeat rate!)
 - Blink pink light on MIDI receive

@@ -56,8 +56,6 @@ void synth_control_init(void);
 
 void clear_dead_notes(void);
 
-void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t b0, uint8_t b1, uint8_t b2);
-
 extern float volume;
 
 #endif /* SYNTH_H_ */

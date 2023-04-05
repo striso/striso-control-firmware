@@ -6,11 +6,9 @@
 
 void aux_jack_init(void);
 void aux_jack_switch_mode(jack2_mode_t mode);
+void aux_jack_switch_mode_setting(jack2_mode_t mode);
 
-void detect_jack(void);
-
-void aux_jack_mode_midi(void);
-void aux_jack_mode_pedal(void);
-void aux_jack_mode_audio_in(void);
+void aux_power_enable(void);
+void aux_power_disable(void);
 
 #endif

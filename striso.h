@@ -42,7 +42,7 @@ Button message:
 #define ID_SYS 4      // system, status, debug
 #define ID_MIDI 5     // midi monitor
 
-// control numbers
+// control numbers [0-127]
 #define IDC_PORTAMENTO 0      // length 1
 #define IDC_OCT_UP 1          // length 1
 #define IDC_OCT_DOWN 2        // length 1
@@ -52,9 +52,12 @@ Button message:
 #define IDC_SLD_SLIDEZOOM 10  // length 2
 #define IDC_SLD_ONE_TAP 3     // length 1
 #define IDC_SLD_TWO_TAP 4     // length 1
-#define IDC_PEDAL 6           // length 1
+#define IDC_PEDAL_EXP 11      // length 1
+#define IDC_PEDAL_1 12        // length 1
+#define IDC_PEDAL_2 13        // length 1
+#define IDC_PEDAL_3 14        // length 1
 
-// system numbers
+// system numbers [0-127]
 #define ID_SYS_MSGQUE_OVERFLOW_BB 1
 #define ID_SYS_MSGQUE_OVERFLOW_SYNTH 2
 #define ID_SYS_MSG_TOO_SHORT_SYNTH 3

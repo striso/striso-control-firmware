@@ -330,7 +330,7 @@ class mydsp : public dsp {
 		fslider4 = 0.0f;
 		fslider5 = 0.0f;
 		fslider6 = 0.0f;
-		fslider7 = 0.20000000000000001f;
+		fslider7 = 0.1875f;
 		fslider8 = 1.0f;
 		fslider9 = 69.0f;
 		fslider10 = 0.0f;

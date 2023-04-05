@@ -81,8 +81,11 @@ typedef enum {
 typedef enum {
   JACK2_MODE_DISABLED = 0,
   JACK2_MODE_MIDI,
-  JACK2_MODE_PEDAL,
+  JACK2_MODE_PEDAL_EXPRESSION,
+  JACK2_MODE_PEDAL_SWITCH,
   JACK2_MODE_LINEIN,
+  JACK2_MODE_AUTODETECT,
+  JACK2_MODE_ERROR,
 } jack2_mode_t;
 
 typedef struct struct_config {
@@ -96,7 +99,8 @@ typedef struct struct_config {
   int debug;
   midi_mode_t midi_mode;
   midinote_mode_t midinote_mode;
-  jack2_mode_t jack2_mode;
+  jack2_mode_t jack2_mode_setting; // mode from settings
+  jack2_mode_t jack2_mode; // active mode (when jack is inserted)
   uint8_t midi_pres;
   uint8_t midi_x;
   uint8_t midi_y;
@@ -104,6 +108,7 @@ typedef struct struct_config {
   uint8_t mpe_x;
   uint8_t mpe_y;
   uint8_t mpe_contvelo;
+  uint8_t pedal_sw1_values[2];
 } config_t;
 extern config_t config;
 
@@ -125,6 +130,7 @@ config_t config = {
   .debug = 0,
   .midi_mode = MIDI_MODE_MPE,
   .midinote_mode = MIDINOTE_MODE_DEFAULT,
+  .jack2_mode_setting = JACK2_MODE_AUTODETECT,
   .jack2_mode = JACK2_MODE_DISABLED,
   // for the following: < 120: CC, or CFG_* (not all options are supported)
   .midi_pres = CFG_POLY_PRESSURE,
@@ -134,6 +140,7 @@ config_t config = {
   .mpe_x = CFG_PITCH_BEND,
   .mpe_y = 74,
   .mpe_contvelo = CFG_DISABLE,
+  .pedal_sw1_values = {32, 96},
 };
 
 /*
@@ -163,7 +170,7 @@ const ConfigParam default_config[] = {
 
   // general settings
   {"iGoct   ", "0       "}, // default octave [-2..2]
-  {"sGjack2 ", "midi    "}, // midi/pedal/linein
+  {"sGjack2 ", "auto    "}, // auto/midi/pedal_ex/pedal_sw/linein
   {"iGmotion", "127     "}, // motion message interval, 0=disable, 127=internal only
 
   // preset 1
@@ -174,7 +181,7 @@ const ConfigParam default_config[] = {
   {"iP1Mmint", "127     "}, // MIDI motion sensor message interval. 0 = disable, 127 only internal, else x10ms [0-127]
   {"sP1Mmode", "mpe     "}, // MIDI mode [mpe/normal/mono]
   {"sP1Mnote", "default "}, // MIDI note mode [default/tuning/button]
-  {"sP1jack2", "midi    "}, // jack2 mode [midi/pedal/linein]
+  {"sP1jack2", "auto    "}, // jack2 mode [auto/midi/pedal_ex/pedal_sw/linein]
   {"iP1tunin", "0       "}, // load tuning [0-8]
   {"fP1Toff ", "        "}, // additional tuning offset in cent
   {"iP1Mpres", "121     "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure

@@ -43,7 +43,7 @@ const UF2_FAMILYID = 0xa21e1295 // Striso STM32H7 familyID
 
 const doc = {
   iGoct:    {text:"Default octave", help:"[-2..2]", check:function(x) {return clamp(x, -2, 2);}},
-  sGjack2:  {text:"Pedal/MIDI jack mode", help:"[midi/pedal/linein] - experimental!", options:["midi", "pedal", "linein"]},
+  sGjack2:  {text:"Pedal/MIDI jack mode", help:"[auto: autodetect MIDI or pedal, midi: TRS MIDI out type A, pedal_ex: expression pedal (TRS/wiper on tip), pedal_sw: sustain or 1/2/3 switch pedal, linein: forward audio to audio out]", options:["auto", "midi", "pedal_ex", "pedal_sw", "linein"]},
   iGmotion: {text:"Default motion sensor state", help:"0=disable, 127=internal only, else motion message interval x10ms", check:function(x) {return clamp(x, 0, 127);}},
   hTxcolor: {text:"LED color", help:"hexadecimal rgb representation"},
   fTxoff:   {text:"Tuning offset", help:"offset in cents"},
@@ -56,7 +56,7 @@ const doc = {
   iPxMmint: {text:"MIDI motion sensor message interval", help:" 0 = disable, 127 only internal, else x10ms [0-127]", check:function(x) {return clamp(x, 0, 127);}},
   sPxMmode: {text:"MIDI mode", help:"[mpe/normal/mono]", options:["", "mpe", "normal", "mono"]},
   sPxMnote: {text:"MIDI note mode", help:"[default/tuning/button]", options:["", "default", "tuning", "button"]},
-  sPxjack2: {text:"Pedal/MIDI jack mode", help:"[midi/pedal/linein] - experimental!", options:["", "midi", "pedal", "linein"]},
+  sPxjack2: {text:"Pedal/MIDI jack mode", help:"[auto: autodetect MIDI or pedal, midi: TRS MIDI out type A, pedal_ex: expression pedal (TRS/wiper on tip), pedal_sw: sustain or 1/2/3 switch pedal, linein: forward audio to audio out]", options:["", "auto", "midi", "pedal_ex", "pedal_sw", "linein"]},
   iPxtunin: {text:"Load tuning", help:"[0-8]", check:function(x) {return clamp(x, 0, 8);}},
   fPxToff:  {text:"Additional tuning offset", help:"in cents", check:function(x) {return clamp(x, -4800, 4800);}},
   iPxMpres: {text:"MIDI CC for key pressure", help:"Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure", check:function(x) {return clamp(x, 0, 127);}},
@@ -66,12 +66,12 @@ const doc = {
   iPxvoice: {text:"Voice count/MPE channel count", help:"[1-15]", check:function(x) {return clamp(x, 1, 15);}},
   iPxMChan: {text:"MIDI channel", help:"[1-16] (MPE: first voice channel, normally 2)", check:function(x) {return clamp(x, 1, 16);}},
   iPxMPEpb: {text:"MPE pitch bend range", help:"[12/24/48/96]", check:function(x) {return clamp(x, 1, 127);}},
-  fPxthres: {text:"Key sensitivity threshold", help:"[0.0-1.0]", check:function(x) {return clamp(x, 0, 1);}},
+  fPxthres: {text:"Key sensitivity threshold", help:"higher value increases note trigger force [0.0-1.0]", check:function(x) {return clamp(x, 0, 1);}},
   fPxbendS: {text:"Pitch bend range", help:"in semitones [-4.0-4.0]", check:function(x) {return clamp(x, -10, 10);}},
   fPxpresS: {text:"Key pressure factor", help:"[0.0-4.0]", check:function(x) {return clamp(x, 0, 10);}},
   fPxveloS: {text:"Key velocity factor", help:"[0.0-4.0]", check:function(x) {return clamp(x, 0, 10);}},
   fPxtiltS: {text:"Key tilt (y) factor", help:"[-4.0-4.0]", check:function(x) {return clamp(x, -10, 10);}},
-  iP1veloO: {text:"MIDI velocity offset", help:"[0-127]", check:function(x) {return clamp(x, 0, 127);}},
+  iPxveloO: {text:"MIDI velocity offset", help:"[0-127]", check:function(x) {return clamp(x, 0, 127);}},
   fPxvolum: {text:"Volume", help:"[0.0-127.0]", check:function(x) {return clamp(x, 0, 255);}},
 }
 

@@ -18,9 +18,10 @@
 #include "ch.h"
 #include "hal.h"
 
+#include "aux_jack.h"
+#include "config.h"
 #include "midi.h"
 #include "midi_serial.h"
-#include "config.h"
 
 // static unsigned char StatusLengthLookup[16] = {0, 0, 0, 0, 0, 0, 0, 0, 3, // 0x80=note off, 3 bytes
 //                                                3, // 0x90=note on, 3 bytes
@@ -165,7 +166,7 @@ void serial_midi_enable(void) {
 
   // Enable AUX power on ring
   palSetLineMode(LINE_AUX_VDD, PAL_MODE_OUTPUT_OPENDRAIN);
-  palClearLine(LINE_AUX_VDD);
+  aux_power_enable();
 
   if (SDMIDI.state != SD_READY) {
     sdStart(&SDMIDI, &sdMidiCfg);
@@ -176,5 +177,5 @@ void serial_midi_enable(void) {
 
 void serial_midi_disable(void) {
   palSetLineMode(LINE_AUX_UART2_TX, PAL_MODE_INPUT_ANALOG);
-  palSetLine(LINE_AUX_VDD); // aux_power_disable();
+  aux_power_disable();
 }

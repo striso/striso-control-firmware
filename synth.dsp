@@ -43,7 +43,7 @@ rot_x = vslider("v:gyroscope/rot_x[style:knob]",0,-1,1,0.01);
 rot_y = vslider("v:gyroscope/rot_y[style:knob]",0,-1,1,0.01);
 rot_z = vslider("v:gyroscope/rot_z[style:knob]",0,-1,1,0.01);
 
-pedal = vslider("v:control/pedal[style:knob]",0.2,0,1,0.01);
+pedal = vslider("v:control/pedal[style:knob]",3/16,0,1,0.01);
 
 posDecay = hslider("v:[0]config/posDecay[style:knob]",0.1,0,1,0.01):halftime2fac;
 negDecay = hslider("v:[0]config/negDecay[style:knob]",0.2,0,1,0.01):halftime2fac;
