@@ -2022,6 +2022,9 @@ void MidiInMsgHandler(midi_device_t dev, uint8_t port, uint8_t status,
                 dis.set_note_offset(data2 - 2);
                 update_leds();
             } break;
+            case 64: {
+                *(dis.synth_interface->pedal) = (float)data2 * (1.0f/127.0f);
+            } break;
             case 65: {
                 dis.set_portamento(data2);
                 update_leds();
