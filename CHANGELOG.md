@@ -1,6 +1,27 @@
 # Changelog
 
-## next release
+## v2.2.1 - 2023-04-05
+
+This firmware release finally brings pedal support to the Striso board!
+With that also comes an extra control for the builtin synth: sustain/decay time, which can also be set with [settings] + Ab1 or by sending CC64 (continuous).
+
+By default the jack autodetects what is plugged in. It detect the following possibilities:
+- Cyan blink: MIDI out (TRS Type A)
+- Yellow blink: Expression pedal, TRS/wiper-on-tip type
+- Pink blink: Single/double switch pedal. Triple switch support will be added later.
+- Red blinking: Error, either wrong type MIDI or expression pedal or other issue. Unplug to reset.
+
+If autodetection doesn't work well for some reason the connection can be explicitly configured in a preset.
+Additionally the jack can be used as line-in to mix other audio (for example a second Striso board) with the audio output. For this you can make a preset.
+
+For now the pedal functions are fixed:
+- Expresssion pedal controls the sustain/decay time.
+- Switch pedal 1/Sustain (tip signal) toggles sustain between 32 and 96.
+- Switch pedal 2 (ring signal) controls the glissando mode.
+
+In addition three user feature requests are implemented, see below for all changes.
+
+Feedback about if the jack detection works well is very welcome!
 
 ### Added
 - Pedal support!

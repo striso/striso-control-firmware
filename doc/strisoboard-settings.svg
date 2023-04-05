@@ -32,13 +32,13 @@
      inkscape:measure-start="94.5,2036"
      inkscape:object-paths="true"
      inkscape:snap-nodes="false"
-     inkscape:current-layer="layer1"
+     inkscape:current-layer="g10632"
      inkscape:window-maximized="1"
      inkscape:window-y="-5"
      inkscape:window-x="0"
-     inkscape:cy="398.69704"
-     inkscape:cx="682.85348"
-     inkscape:zoom="1.252831"
+     inkscape:cy="436.03283"
+     inkscape:cx="845.93443"
+     inkscape:zoom="0.97584396"
      inkscape:document-units="mm"
      inkscape:snap-smooth-nodes="true"
      inkscape:object-nodes="true"
@@ -84,20 +84,6 @@
        width="45.938618"
        height="67.240093"
        id="rect6167" />
-    <filter
-       id="filter10374"
-       style="color-interpolation-filters:sRGB"
-       inkscape:collect="always"
-       x="-0.0026027474"
-       y="-0.0028751279"
-       width="1.0052055"
-       height="1.0057503">
-      <feBlend
-         id="feBlend10376"
-         in2="BackgroundImage"
-         mode="screen"
-         inkscape:collect="always" />
-    </filter>
     <marker
        inkscape:stockid="Arrow1Mstart"
        orient="auto"
@@ -183,7 +169,7 @@
     <path
        id="rect7668"
        d="m 43.75,73.455505 h 180.5 c 2.6315,0 4.75,2.116194 4.75,4.744828 V 240.71068 c 0,2.62863 -2.1185,4.74483 -4.75,4.74483 H 43.75 c -2.6315,0 -4.75,-2.1162 -4.75,-4.74483 V 78.200333 c 0,-2.628634 2.1185,-4.744828 4.75,-4.744828 z"
-       style="display:inline;opacity:1;fill:#ffeeaa;stroke:#000000;stroke-width:0.989044;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;filter:url(#filter10374)"
+       style="display:inline;opacity:1;fill:#ffeeaa;stroke:#000000;stroke-width:0.989044;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none"
        transform="matrix(1.0105263,0,0,1.0116279,59.304412,361.14586)"
        inkscape:connector-curvature="0" />
     <g
@@ -3929,16 +3915,16 @@
     <text
        id="text14122"
        y="577.35791"
-       x="194.67355"
-       style="font-size:3.175px;line-height:6.61458px;font-family:Andika;-inkscape-font-specification:Andika;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000"
+       x="173.52756"
+       style="font-size:3.175px;line-height:6.61458px;font-family:Andika;-inkscape-font-specification:Andika;text-align:start;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000"
        xml:space="preserve"><tspan
-         style="font-size:8.46667px;text-align:center;text-anchor:middle"
+         style="font-size:8.46667px;text-align:start;text-anchor:start"
          y="577.35791"
-         x="194.67355"
+         x="173.52756"
          id="tspan14120"
          sodipodi:role="line">Settings <tspan
-   style="font-size:4.23333px"
-   id="tspan54834">v2.2</tspan></tspan></text>
+   style="font-size:4.23333px;text-align:start;text-anchor:start"
+   id="tspan54834">v2.2.1</tspan></tspan></text>
     <text
        transform="rotate(-20.748581)"
        xml:space="preserve"
