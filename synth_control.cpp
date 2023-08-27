@@ -666,7 +666,6 @@ class Instrument {
                             }
                         }
                         if (config.midi_x == CFG_PITCH_BEND) {
-                            // x = (x - bend_threshold) / (1.0f - bend_threshold);
                             x = pow3(x) * bend_sensitivity;
                             d = (buttons[0].last_bend > (0x2000 + x * 0x2000)) * 0.5 - 0.25;
                             int bend = 0x2000 + x * 0x2000 + 0.5 + d;
