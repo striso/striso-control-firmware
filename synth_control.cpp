@@ -334,6 +334,7 @@ class Instrument {
         int midi_channel_offset = 1;
         float midi_bend_range = 48.0;
         float bend_sensitivity = 1.0f;
+        float bend_threshold = 0.0f;
         float y_sensitivity = 1.0f;
         float pres_sensitivity = 1.0f;
         float velo_sensitivity = 1.0f;
@@ -665,6 +666,7 @@ class Instrument {
                             }
                         }
                         if (config.midi_x == CFG_PITCH_BEND) {
+                            // x = (x - bend_threshold) / (1.0f - bend_threshold);
                             x = pow3(x) * bend_sensitivity;
                             d = (buttons[0].last_bend > (0x2000 + x * 0x2000)) * 0.5 - 0.25;
                             int bend = 0x2000 + x * 0x2000 + 0.5 + d;
@@ -950,7 +952,9 @@ class Instrument {
         }
 
         void update_voice(int but) {
-            float pb = bend_sensitivity * pow3(buttons[but].but_x);
+            float x = buttons[but].but_x;
+            // https://www.desmos.com/calculator/2ka73q4kpj
+            float pb = bend_sensitivity * pow3(1.0f / (1.0f - bend_threshold)) * (min(0, pow3(x + bend_threshold)) + max(0, pow3(x - bend_threshold)));
             float presf = buttons[but].pres * pres_sensitivity;
             float velof = buttons[but].vpres * velo_sensitivity;
             float y = clamp(buttons[but].but_y * y_sensitivity, -1.0f, 1.0f);
@@ -959,7 +963,7 @@ class Instrument {
             *(synth_interface->note[voice])  = buttons[but].note + pb;
             *(synth_interface->pres[voice])  = presf;
             *(synth_interface->vpres[voice]) = velof;
-            *(synth_interface->but_x[voice]) = buttons[but].but_x;
+            *(synth_interface->but_x[voice]) = x;
             *(synth_interface->but_y[voice]) = y;
 #endif
 
@@ -999,7 +1003,7 @@ class Instrument {
                 buttons[but].last_pres = pres;
             }
             if (config.mpe_x < 120) {
-                int bend = 64.5 + buttons[but].but_x * 64;
+                int bend = 64.5 + x * 64;
                 bend = clamp(bend, 0, 127);
                 if (bend != buttons[but].last_bend) {
                     MidiSend3(MIDI_CONTROL_CHANGE | (midi_channel_offset + buttons[but].voice),
@@ -1340,6 +1344,12 @@ void load_preset(int n) {
     f = getConfigFloat(key);
     if (f >= -10.0f && f <= 10.0f) {
         dis.bend_sensitivity = f * 2;
+    }
+
+    strset(key, 3, "bendZ");
+    f = getConfigFloat(key);
+    if (f >= 0 && f <= 0.5f) {
+        dis.bend_threshold = f;
     }
 
     strset(key, 3, "presS");
@@ -1750,6 +1760,15 @@ float config_but(int but, int type, float adjust) {
         }
         led_updown_dial(dis.y_sensitivity * 8 + 0.5f);
         led_rgb3(dis.y_sensitivity * 32.0f, 0, dis.y_sensitivity * 64.0f);
+        return rem * 8;
+        }
+    case (10): { // knob: pitchbend threshold
+        float rem = 0;
+        if (type > 0) {
+            dis.bend_threshold = clamp_rem(dis.bend_threshold + adjust * 0.125f, 0, 0.5f, &rem);
+        }
+        led_updown_dial(dis.bend_threshold * 16);
+        led_rgb3(dis.bend_threshold * 64.0f, 0, 0);
         return rem * 8;
         }
     // row 4: 18 20 22 24 26 28 13 15
