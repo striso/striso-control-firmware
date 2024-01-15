@@ -1700,6 +1700,15 @@ float config_but(int but, int type, float adjust) {
             return adjust - a;
         } return 0;
     // row 2:  1  3  5  7  9 11
+    case (5): { // knob: pitchbend threshold
+        float rem = 0;
+        if (type > 0) {
+            dis.bend_threshold = clamp_rem(dis.bend_threshold + adjust * 0.125f, 0, 0.5f, &rem);
+        }
+        led_updown_dial(dis.bend_threshold * 16);
+        led_rgb3(dis.bend_threshold * 64.0f, 0, 0);
+        return rem * 8;
+        }
     case (11): // debug setting for easy testing
         if (type == 0) {
             if (dis.portamento & 1) {
@@ -1714,15 +1723,6 @@ float config_but(int but, int type, float adjust) {
                 dis.flip();
             }
         } return 0;
-    case (5): { // knob: pitchbend threshold
-        float rem = 0;
-        if (type > 0) {
-            dis.bend_threshold = clamp_rem(dis.bend_threshold + adjust * 0.125f, 0, 0.5f, &rem);
-        }
-        led_updown_dial(dis.bend_threshold * 16);
-        led_rgb3(dis.bend_threshold * 64.0f, 0, 0);
-        return rem * 8;
-        }
     // row 3: 17 19 21  6  8 10 12 14 16
     case (17): { // knob: key detection threshold
         int a = adjust * ((1 << 24) / 256);
