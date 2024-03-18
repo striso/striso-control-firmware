@@ -725,6 +725,11 @@ class Instrument {
                     buttons[but].midinote = 17 * buttons[but].coord0 + 10 * buttons[but].coord1 + 30;
                 }
                 buttons[but].start_note_offset = start_note_offset;
+                // calculate note pitch
+                buttons[but].note = buttons[but].start_note_offset + buttons[but].tuning_note_offset +
+                                    notegen0 * buttons[but].coord0 +
+                                    notegen1 * buttons[but].coord1
+                                    + note_offset;
 
                 if (portamento) {
                     if (master_button == -1) {
@@ -938,6 +943,21 @@ class Instrument {
                 // multiply velo by 2 to cover full midi range on note on
                 int velo = midi_velo_offset + buttons[but].vpres * velo_sensitivity * 128 * 2;
                 velo = clamp(velo, 1, 127);
+
+                // send pitch bend before note on for correct tuning
+                // TODO: don't send it on 12et tuning?
+                // calculate note pitch
+                buttons[but].note = buttons[but].start_note_offset + buttons[but].tuning_note_offset +
+                                    notegen0 * buttons[but].coord0 +
+                                    notegen1 * buttons[but].coord1
+                                    + note_offset;
+                int pitchbend = (buttons[but].note - buttons[but].midinote)
+                                * (0x2000 / midi_bend_range) + 0x2000 + 0.5;
+                pitchbend = clamp(pitchbend, 0, 0x3fff);
+                MidiSend3(MIDI_PITCH_BEND | (midi_channel_offset + buttons[but].voice),
+                                   pitchbend & 0x7f, (pitchbend >> 7) & 0x7f);
+                // don't set last_pichbend to send pitchbend again after note_on for compatibility with some MPE implementations
+                // buttons[but].last_pitchbend = pitchbend;
 
                 MidiSend3(MIDI_NOTE_ON | (midi_channel_offset + buttons[but].voice),
                                    buttons[but].midinote, velo);
