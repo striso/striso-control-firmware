@@ -1158,8 +1158,12 @@ int synth_message(int size, int* msg) {
                     }
                 } else {
                     note_offset_old = dis.start_note_offset;
+                    // transpose by current tuning octave interval
                     float dif = dis.flipdir * dis.notegen0;
-                    if (dis.altmode & 1) dif = dis.flipdir * 1.0f;
+                    if (dis.altmode & 1) {
+                        // transpose by minor second interval (3 octaves up 5 fifths down)
+                        dif = dis.flipdir * (dis.notegen0 * 3 + dis.notegen1 * -5);
+                    }
                     if (id == IDC_OCT_UP) {
                         dis.change_note_offset(dif);
                     }
