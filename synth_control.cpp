@@ -719,7 +719,7 @@ class Instrument {
                 } else if (config.midinote_mode == MIDINOTE_MODE_TUNING) {
                     buttons[but].midinote = (int)(notegen0 * buttons[but].coord0 +
                                                   notegen1 * buttons[but].coord1 +
-                                                  start_note_offset +
+                                                  start_note_offset + buttons[but].tuning_note_offset +
                                                   note_offset + 0.5);
                 } else if (config.midinote_mode == MIDINOTE_MODE_BUTTON) {
                     buttons[but].midinote = 17 * buttons[but].coord0 + 10 * buttons[but].coord1 + 30;
