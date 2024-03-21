@@ -45,6 +45,7 @@ const doc = {
   iGoct:    {text:"Default octave", help:"[-2..2]", check:function(x) {return clamp(x, -2, 2);}},
   sGjack2:  {text:"Pedal/MIDI jack mode", help:"[auto: autodetect MIDI or pedal, midi: TRS MIDI out type A, pedal_ex: expression pedal (TRS/wiper on tip), pedal_sw: sustain or 1/2/3 switch pedal, linein: forward audio to audio out]", options:["auto", "midi", "pedal_ex", "pedal_sw", "linein"]},
   iGmotion: {text:"Default motion sensor state", help:"0=disable, 127=internal only, else motion message interval x10ms", check:function(x) {return clamp(x, 0, 127);}},
+  sGaltkey: {text:"Settings key mode", help:"[settings: Use key for settings (default), pedal: Disable settings and use key as pedal (for simplified use)]", options:["settings", "pedal"]},
   hTxcolor: {text:"LED color", help:"hexadecimal rgb representation"},
   fTxoff:   {text:"Tuning offset", help:"offset in cents"},
   fTxoct:   {text:"Octave interval", help:"octave interval in cents"},

@@ -1138,6 +1138,9 @@ int synth_message(int size, int* msg) {
     size -= 2;
 
     if (src == ID_CONTROL) {
+        if (config.altkey_pedal && id == IDC_ALT) {
+            id = IDC_PEDAL_1;
+        }
         if (id == IDC_ALT) {
             dis.set_altmode(msg[0]);
             update_leds();
@@ -2170,13 +2173,20 @@ void midi_config(void) {
 }
 
 void synth_control_init(void) {
-    int s = getConfigInt("iGoct   ");
-    if (s >= -2 && s <= 2) {
-        dis.change_note_offset(s * dis.notegen0);
-    }
-    s = getConfigInt("iGmotion");
-    if (s >= 0 && s <= 127) {
-        config.send_motion_interval = s;
+    // Load general settings. Use default settings when portamento key is pressed on boot
+    if (palReadLine(LINE_BUTTON_PORT)) {
+        int i = getConfigInt("iGoct   ");
+        if (i >= -2 && i <= 2) {
+            dis.change_note_offset(i * dis.notegen0);
+        }
+        i = getConfigInt("iGmotion");
+        if (i >= 0 && i <= 127) {
+            config.send_motion_interval = i;
+        }
+        const char* s = getConfigSetting("sGaltkey");
+        if (cmp8(s, "pedal   ")) {
+            config.altkey_pedal = true;
+        }
     }
 }
 

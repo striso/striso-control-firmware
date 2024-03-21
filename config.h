@@ -109,6 +109,7 @@ typedef struct struct_config {
   uint8_t mpe_y;
   uint8_t mpe_contvelo;
   uint8_t pedal_sw1_values[2];
+  uint8_t altkey_pedal;
 } config_t;
 extern config_t config;
 
@@ -141,6 +142,7 @@ config_t config = {
   .mpe_y = 74,
   .mpe_contvelo = CFG_DISABLE,
   .pedal_sw1_values = {32, 96},
+  .altkey_pedal = false,
 };
 
 /*
@@ -172,6 +174,7 @@ const ConfigParam default_config[] = {
   {"iGoct   ", "0       "}, // default octave [-2..2]
   {"sGjack2 ", "auto    "}, // auto/midi/pedal_ex/pedal_sw/linein
   {"iGmotion", "127     "}, // motion message interval, 0=disable, 127=internal only
+  {"sGaltkey", "settings"}, // settings/pedal
 
   // preset 1
   {"sP1name ", "preset1 "},
