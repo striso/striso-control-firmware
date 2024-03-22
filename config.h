@@ -177,7 +177,7 @@ const ConfigParam default_config[] = {
   {"sGaltkey", "settings"}, // settings/pedal
 
   // preset 1
-  {"sP1name ", "preset1 "},
+  {"sP1name ", "default "},
   {"hP1color", "#380000 "},
   {"iP1Mpgm ", "        "}, // MIDI program change [0-127]
   {"iP1Mint ", "1       "}, // MIDI message interval in ms [1-127]

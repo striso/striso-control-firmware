@@ -2187,6 +2187,7 @@ void synth_control_init(void) {
         if (cmp8(s, "pedal   ")) {
             config.altkey_pedal = true;
         }
+        load_preset(1);
     }
 }
 
