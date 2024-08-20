@@ -201,6 +201,8 @@ const ConfigParam default_config[] = {
   {"fP1tiltS", "1.0     "}, // Key tilt factor [-4.0-4.0]
   {"iP1veloO", "0       "}, // MIDI velocity offset [0-127]
   {"fP1volum", "90.0    "}, // Volume [0-127]
+  {"fP1decay", "32.0    "}, // Decay, how long it takes for the sound to decay after atack or release [0-127]
+  {"fP1decaP", "96.0    "}, // Pedal decay, decay value when sustain pedal is pressed [0-127]
 
   // preset 2
   {"sP2name ", "preset2 "},
@@ -227,6 +229,8 @@ const ConfigParam default_config[] = {
   {"fP2tiltS", "        "}, // Key tilt factor [-4.0-4.0]
   {"iP2veloO", "        "}, // MIDI velocity offset [0-127]
   {"fP2volum", "        "}, // Volume [0-127]
+  {"fP2decay", "        "}, // Decay, how long it takes for the sound to decay after atack or release [0-127]
+  {"fP2decaP", "        "}, // Pedal decay, decay value when sustain pedal is pressed [0-127]
 
   // preset 3
   {"sP3name ", "preset3 "},
@@ -253,6 +257,8 @@ const ConfigParam default_config[] = {
   {"fP3tiltS", "        "}, // Key tilt factor [-4.0-4.0]
   {"iP3veloO", "        "}, // MIDI velocity offset [0-127]
   {"fP3volum", "        "}, // Volume [0-127]
+  {"fP3decay", "        "}, // Decay, how long it takes for the sound to decay after atack or release [0-127]
+  {"fP3decaP", "        "}, // Pedal decay, decay value when sustain pedal is pressed [0-127]
 
   // preset 4
   {"sP4name ", "preset4 "},
@@ -279,6 +285,8 @@ const ConfigParam default_config[] = {
   {"fP4tiltS", "        "}, // Key tilt factor [-4.0-4.0]
   {"iP4veloO", "        "}, // MIDI velocity offset [0-127]
   {"fP4volum", "        "}, // Volume [0-127]
+  {"fP4decay", "        "}, // Decay, how long it takes for the sound to decay after atack or release [0-127]
+  {"fP4decaP", "        "}, // Pedal decay, decay value when sustain pedal is pressed [0-127]
 
   // preset 5
   {"sP5name ", "preset5 "},
@@ -305,6 +313,8 @@ const ConfigParam default_config[] = {
   {"fP5tiltS", "        "}, // Key tilt factor [-4.0-4.0]
   {"iP5veloO", "        "}, // MIDI velocity offset [0-127]
   {"fP5volum", "        "}, // Volume [0-127]
+  {"fP5decay", "        "}, // Decay, how long it takes for the sound to decay after atack or release [0-127]
+  {"fP5decaP", "        "}, // Pedal decay, decay value when sustain pedal is pressed [0-127]
 
   // preset 6
   {"sP6name ", "preset6 "},
@@ -331,6 +341,8 @@ const ConfigParam default_config[] = {
   {"fP6tiltS", "        "}, // Key tilt factor [-4.0-4.0]
   {"iP6veloO", "        "}, // MIDI velocity offset [0-127]
   {"fP6volum", "        "}, // Volume [0-127]
+  {"fP6decay", "        "}, // Decay, how long it takes for the sound to decay after atack or release [0-127]
+  {"fP6decaP", "        "}, // Pedal decay, decay value when sustain pedal is pressed [0-127]
 
   // preset 7
   {"sP7name ", "preset7 "},
@@ -357,6 +369,8 @@ const ConfigParam default_config[] = {
   {"fP7tiltS", "        "}, // Key tilt factor [-4.0-4.0]
   {"iP7veloO", "        "}, // MIDI velocity offset [0-127]
   {"fP7volum", "        "}, // Volume [0-127]
+  {"fP7decay", "        "}, // Decay, how long it takes for the sound to decay after atack or release [0-127]
+  {"fP7decaP", "        "}, // Pedal decay, decay value when sustain pedal is pressed [0-127]
 
   // preset 8
   {"sP8name ", "preset8 "},
@@ -383,6 +397,8 @@ const ConfigParam default_config[] = {
   {"fP8tiltS", "        "}, // Key tilt factor [-4.0-4.0]
   {"iP8veloO", "        "}, // MIDI velocity offset [0-127]
   {"fP8volum", "        "}, // Volume [0-127]
+  {"fP8decay", "        "}, // Decay, how long it takes for the sound to decay after atack or release [0-127]
+  {"fP8decaP", "        "}, // Pedal decay, decay value when sustain pedal is pressed [0-127]
 
   // tuning 0, 12tet
   // don't use, hard coded as default

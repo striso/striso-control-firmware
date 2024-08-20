@@ -1393,6 +1393,19 @@ void load_preset(int n) {
         set_volume(f);
     }
 
+    strset(key, 3, "decay");
+    f = getConfigFloat(key);
+    if (f >= 0.0f && f < 255.0f) {
+        config.pedal_sw1_values[0] = f;
+        *(dis.synth_interface->pedal) = f * (1.0f/127.0f);
+    }
+
+    strset(key, 3, "decaP");
+    f = getConfigFloat(key);
+    if (f >= 0.0f && f < 255.0f) {
+        config.pedal_sw1_values[1] = f;
+    }
+
     key[0] = 'i';
 
     strset(key, 3, "veloO");

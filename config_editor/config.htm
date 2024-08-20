@@ -74,6 +74,8 @@ const doc = {
   fPxtiltS: {text:"Key tilt (y) factor", help:"[-4.0-4.0]", check:function(x) {return clamp(x, -10, 10);}},
   iPxveloO: {text:"MIDI velocity offset", help:"[0-127]", check:function(x) {return clamp(x, 0, 127);}},
   fPxvolum: {text:"Volume", help:"[0.0-127.0]", check:function(x) {return clamp(x, 0, 255);}},
+  fPxdecay: {text:"Decay", help:"[0.0-127.0]", check:function(x) {return clamp(x, 0, 255);}},
+  fPxdecaP: {text:"Pedal decay", help:"[0.0-127.0]", check:function(x) {return clamp(x, 0, 255);}},
 }
 
 function getDoc(key) {
@@ -1040,7 +1042,7 @@ body {
     <div>
       <div id="G">
         <p>These settings are loaded on start up. Additional settings can be found under presets.</p>
-        <p>Press portamento at power on to load the default settings instead.</p>
+        <p>Press glissando at power on to load the default settings instead.</p>
       </div>
       <div id="P">
         <div class="radio-toolbar tight">
@@ -1062,7 +1064,7 @@ body {
           <label for="radioP8"><div id="ledP8">&#11044;</div>8</label>
         </div>
         <p>Presets can be used to quickly switch between different sets of settings.
-          Preset 1 is loaded at power on, except if the portamento button is pressed.
+          Preset 1 is loaded at power on, except if the glissando button is pressed.
           If a value is empty, that setting is not changed when activating the preset.</p>
         <p>Copy and Paste can be used to copy between presets, the forum or a spreadsheet.</p>
       </div>
