@@ -1409,7 +1409,7 @@ void load_preset(int n) {
     key[0] = 'i';
 
     strset(key, 3, "veloO");
-    i = getConfigFloat(key);
+    i = getConfigInt(key);
     if (i >= 0 && i <= 127) {
         dis.midi_velo_offset = i;
     }
