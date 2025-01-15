@@ -79,7 +79,7 @@ const ADCConversionGroup adcgrpcfg3 = {
 // ADC3 samples need to be in ram4!
 CC_SECTION(".ram4") CC_ALIGN(CACHE_LINE_SIZE) static adcsample_t aux_adc_samples[CACHE_SIZE_ALIGN(adcsample_t, ADC_GRP3_NUM_CHANNELS * ADC_GRP3_BUF_DEPTH)];
 
-static THD_WORKING_AREA(waAuxJack, 128);
+static THD_WORKING_AREA(waAuxJack, 256);
 static THD_FUNCTION(AuxJack, arg) {
   (void)arg;
   chRegSetThreadName("auxjack");

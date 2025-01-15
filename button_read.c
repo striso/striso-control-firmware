@@ -959,7 +959,7 @@ void update_slider(void) {
 /*
  * Read out buttons and create messages.
  */
-static THD_WORKING_AREA(waThreadReadButtons, 128);
+static THD_WORKING_AREA(waThreadReadButtons, 256);
 static void ThreadReadButtons(void *arg) {
   (void)arg;
 
