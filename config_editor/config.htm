@@ -41,12 +41,13 @@ const UF2_MAGIC_START1 = 0x9E5D5157 // Randomly selected
 const UF2_MAGIC_END = 0x0AB16F30 // Ditto
 const UF2_FAMILYID = 0xa21e1295 // Striso STM32H7 familyID
 
+const deprecated = {sGjack2:true, iGmotion:true};
 const doc = {
   iGpreset: {text:"Preset to load on start", help:"[1-8]", check:function(x) {return clamp(x, 1, 8);}},
   iGoct:    {text:"Default octave", help:"[-2..2]", check:function(x) {return clamp(x, -2, 2);}},
-  sGjack2:  {text:"Pedal/MIDI jack mode", help:"[auto: autodetect MIDI or pedal, midi: TRS MIDI out type A, pedal_ex: expression pedal (TRS/wiper on tip), pedal_sw: sustain or 1/2/3 switch pedal, linein: forward audio to audio out]", options:["auto", "midi", "pedal_ex", "pedal_sw", "linein"]},
-  iGmotion: {text:"Default motion sensor state", help:"0=disable, 127=internal only, else motion message interval x10ms", check:function(x) {return clamp(x, 0, 127);}},
   sGaltkey: {text:"Settings key mode", help:"[settings: Use key for settings (default), pedal: Disable settings and use key as pedal (for simplified use)]", options:["settings", "pedal"]},
+  sGjack2:  {text:"Pedal/MIDI jack mode (DEPRECATED: use preset)", help:"[auto: autodetect MIDI or pedal, midi: TRS MIDI out type A, pedal_ex: expression pedal (TRS/wiper on tip), pedal_sw: sustain or 1/2/3 switch pedal, linein: forward audio to audio out]", options:["auto", "midi", "pedal_ex", "pedal_sw", "linein"]},
+  iGmotion: {text:"Default motion sensor state (DEPRECATED: use preset)", help:"0=disable, 127=internal only, else motion message interval x10ms", check:function(x) {return clamp(x, 0, 127);}},
   hTxcolor: {text:"LED color", help:"hexadecimal rgb representation"},
   fTxoff:   {text:"Tuning offset", help:"offset in cents"},
   fTxoct:   {text:"Octave interval", help:"octave interval in cents"},
@@ -410,7 +411,7 @@ function parseConfig(buf) {
     key = buf.substring(i, i + 8)
     if (key === "MCfgEnd " || key.length === 0 || !/^[\x20-\x7E]*$/.test(key)) break
     value = buf.substring(i + 8, i + 16)
-    if (key in cfgdata) {
+    if (key in cfgdata || key in deprecated) {
       cfgdata[key]["current"] = value
     }
     else {

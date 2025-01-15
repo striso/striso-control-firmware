@@ -173,8 +173,6 @@ const ConfigParam default_config[] = {
   // general settings
   {"iGpreset", "1       "}, // Preset to load on start [1-8]
   {"iGoct   ", "0       "}, // default octave [-2..2]
-  {"sGjack2 ", "auto    "}, // auto/midi/pedal_ex/pedal_sw/linein
-  {"iGmotion", "127     "}, // motion message interval, 0=disable, 127=internal only
   {"sGaltkey", "settings"}, // settings/pedal
 
   // preset 1

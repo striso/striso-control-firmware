@@ -2197,10 +2197,13 @@ void synth_control_init(void) {
         if (i >= -2 && i <= 2) {
             dis.change_note_offset(i * dis.notegen0);
         }
+
+        // deprecated, keep loading if setting still exists
         i = getConfigInt("iGmotion");
         if (i >= 0 && i <= 127) {
             config.send_motion_interval = i;
         }
+
         const char* s = getConfigSetting("sGaltkey");
         if (cmp8(s, "pedal   ")) {
             config.altkey_pedal = true;
