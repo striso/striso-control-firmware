@@ -110,6 +110,7 @@ typedef struct struct_config {
   uint8_t mpe_contvelo;
   uint8_t pedal_sw1_values[2];
   uint8_t altkey_pedal;
+  uint8_t key_swap;
 } config_t;
 extern config_t config;
 
@@ -143,6 +144,7 @@ config_t config = {
   .mpe_contvelo = CFG_DISABLE,
   .pedal_sw1_values = {32, 96},
   .altkey_pedal = false,
+  .key_swap = false,
 };
 
 /*
@@ -173,7 +175,8 @@ const ConfigParam default_config[] = {
   // general settings
   {"iGpreset", "1       "}, // Preset to load on start [1-8]
   {"iGoct   ", "0       "}, // default octave [-2..2]
-  {"sGaltkey", "settings"}, // settings/pedal
+  {"sGaltkey", "settings"}, // Settings key mode [settings: Use key for settings (default), pedal: Disable settings and use key as pedal (for simplified use)]
+  {"sGkeyord", "normal  "}, // Swap settings/glissando keys [normal: (default), swap: Swap settings and glissando key location]
 
   // preset 1
   {"sP1name ", "default "},

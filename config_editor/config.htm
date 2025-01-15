@@ -46,6 +46,7 @@ const doc = {
   iGpreset: {text:"Preset to load on start", help:"[1-8]", check:function(x) {return clamp(x, 1, 8);}},
   iGoct:    {text:"Default octave", help:"[-2..2]", check:function(x) {return clamp(x, -2, 2);}},
   sGaltkey: {text:"Settings key mode", help:"[settings: Use key for settings (default), pedal: Disable settings and use key as pedal (for simplified use)]", options:["settings", "pedal"]},
+  sGkeyord: {text:"Swap settings/glissando keys", help:"[normal: (default), swap: Swap settings and glissando key location]", options:["normal", "swap"]},
   sGjack2:  {text:"Pedal/MIDI jack mode (DEPRECATED: use preset)", help:"[auto: autodetect MIDI or pedal, midi: TRS MIDI out type A, pedal_ex: expression pedal (TRS/wiper on tip), pedal_sw: sustain or 1/2/3 switch pedal, linein: forward audio to audio out]", options:["auto", "midi", "pedal_ex", "pedal_sw", "linein"]},
   iGmotion: {text:"Default motion sensor state (DEPRECATED: use preset)", help:"0=disable, 127=internal only, else motion message interval x10ms", check:function(x) {return clamp(x, 0, 127);}},
   hTxcolor: {text:"LED color", help:"hexadecimal rgb representation"},

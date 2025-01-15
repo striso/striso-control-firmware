@@ -1138,6 +1138,14 @@ int synth_message(int size, int* msg) {
     size -= 2;
 
     if (src == ID_CONTROL) {
+        if (config.key_swap) {
+            if (id == IDC_ALT) {
+                id = IDC_PORTAMENTO;
+            }
+            else if (id == IDC_PORTAMENTO) {
+                id = IDC_ALT;
+            }
+        }
         if (config.altkey_pedal && id == IDC_ALT) {
             id = IDC_PEDAL_1;
         }
@@ -2214,6 +2222,10 @@ void synth_control_init(void) {
         const char* s = getConfigSetting("sGaltkey");
         if (cmp8(s, "pedal   ")) {
             config.altkey_pedal = true;
+        }
+        s = getConfigSetting("sGkeyord");
+        if (cmp8(s, "swap    ")) {
+            config.key_swap = true;
         }
     }
 }
