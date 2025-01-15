@@ -2188,7 +2188,12 @@ void midi_config(void) {
 void synth_control_init(void) {
     // Load general settings. Use default settings when portamento key is pressed on boot
     if (palReadLine(LINE_BUTTON_PORT)) {
-        int i = getConfigInt("iGoct   ");
+        int i = getConfigInt("iGpreset");
+        if (!(i >= 1 && i <= 8)) {
+            i = 1;
+        }
+        load_preset(i);
+        i = getConfigInt("iGoct   ");
         if (i >= -2 && i <= 2) {
             dis.change_note_offset(i * dis.notegen0);
         }
@@ -2200,7 +2205,6 @@ void synth_control_init(void) {
         if (cmp8(s, "pedal   ")) {
             config.altkey_pedal = true;
         }
-        load_preset(1);
     }
 }
 

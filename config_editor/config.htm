@@ -42,6 +42,7 @@ const UF2_MAGIC_END = 0x0AB16F30 // Ditto
 const UF2_FAMILYID = 0xa21e1295 // Striso STM32H7 familyID
 
 const doc = {
+  iGpreset: {text:"Preset to load on start", help:"[1-8]", check:function(x) {return clamp(x, 1, 8);}},
   iGoct:    {text:"Default octave", help:"[-2..2]", check:function(x) {return clamp(x, -2, 2);}},
   sGjack2:  {text:"Pedal/MIDI jack mode", help:"[auto: autodetect MIDI or pedal, midi: TRS MIDI out type A, pedal_ex: expression pedal (TRS/wiper on tip), pedal_sw: sustain or 1/2/3 switch pedal, linein: forward audio to audio out]", options:["auto", "midi", "pedal_ex", "pedal_sw", "linein"]},
   iGmotion: {text:"Default motion sensor state", help:"0=disable, 127=internal only, else motion message interval x10ms", check:function(x) {return clamp(x, 0, 127);}},
@@ -1042,7 +1043,7 @@ body {
     <div>
       <div id="G">
         <p>These settings are loaded on start up. Additional settings can be found under presets.</p>
-        <p>Press glissando at power on to load the default settings instead.</p>
+        <p>Press glissando at power on to skip loading any settings and use factory defaults.</p>
       </div>
       <div id="P">
         <div class="radio-toolbar tight">
@@ -1064,8 +1065,9 @@ body {
           <label for="radioP8"><div id="ledP8">&#11044;</div>8</label>
         </div>
         <p>Presets can be used to quickly switch between different sets of settings.
-          Preset 1 is loaded at power on, except if the glissando button is pressed.
-          If a value is empty, that setting is not changed when activating the preset.</p>
+          Preset 1 is loaded at power on by default, except if the glissando button is pressed.
+          Another preset can be chosen as default in general settings.</p>
+        <p>If a value is empty, that setting is not changed when activating the preset.</p>
         <p>Copy and Paste can be used to copy between presets, the forum or a spreadsheet.</p>
       </div>
       <div id="T">
