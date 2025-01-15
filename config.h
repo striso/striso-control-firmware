@@ -186,6 +186,7 @@ const ConfigParam default_config[] = {
   {"sP1jack2", "auto    "}, // jack2 mode [auto/midi/pedal_ex/pedal_sw/linein]
   {"iP1tunin", "0       "}, // load tuning [0-8]
   {"fP1Toff ", "        "}, // additional tuning offset in cent
+  {"sP1flip ", "no      "}, // Flip layout 180 degrees [no/yes]
   {"iP1Mpres", "121     "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
   {"iP1Mx   ", "122     "}, // MIDI CC for key X movement. Special values 127 = Disable, 122 = Pitch Bend
   {"iP1My   ", "74      "}, // MIDI CC for key Y movement. Special values 127 = Disable
@@ -214,6 +215,7 @@ const ConfigParam default_config[] = {
   {"sP2jack2", "        "}, // jack2 mode [midi/pedal/linein]
   {"iP2tunin", "        "}, // load tuning [0-8]
   {"fP2Toff ", "        "}, // additional tuning offset in cent
+  {"sP2flip ", "        "}, // Flip layout 180 degrees [no/yes]
   {"iP2Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
   {"iP2Mx   ", "        "}, // MIDI CC for key X movement. Special values 127 = Disable, 122 = Pitch Bend
   {"iP2My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable
@@ -242,6 +244,7 @@ const ConfigParam default_config[] = {
   {"sP3jack2", "        "}, // jack2 mode [midi/pedal/linein]
   {"iP3tunin", "        "}, // load tuning [0-8]
   {"fP3Toff ", "        "}, // additional tuning offset in cent
+  {"sP3flip ", "        "}, // Flip layout 180 degrees [no/yes]
   {"iP3Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
   {"iP3Mx   ", "        "}, // MIDI CC for key X movement. Special values 127 = Disable, 122 = Pitch Bend
   {"iP3My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable
@@ -270,6 +273,7 @@ const ConfigParam default_config[] = {
   {"sP4jack2", "        "}, // jack2 mode [midi/pedal/linein]
   {"iP4tunin", "        "}, // load tuning [0-8]
   {"fP4Toff ", "        "}, // additional tuning offset in cent
+  {"sP4flip ", "        "}, // Flip layout 180 degrees [no/yes]
   {"iP4Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
   {"iP4Mx   ", "        "}, // MIDI CC for key X movement. Special values 127 = Disable, 122 = Pitch Bend
   {"iP4My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable
@@ -298,6 +302,7 @@ const ConfigParam default_config[] = {
   {"sP5jack2", "        "}, // jack2 mode [midi/pedal/linein]
   {"iP5tunin", "        "}, // load tuning [0-8]
   {"fP5Toff ", "        "}, // additional tuning offset in cent
+  {"sP5flip ", "        "}, // Flip layout 180 degrees [no/yes]
   {"iP5Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
   {"iP5Mx   ", "        "}, // MIDI CC for key X movement. Special values 127 = Disable, 122 = Pitch Bend
   {"iP5My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable
@@ -326,6 +331,7 @@ const ConfigParam default_config[] = {
   {"sP6jack2", "        "}, // jack2 mode [midi/pedal/linein]
   {"iP6tunin", "        "}, // load tuning [0-8]
   {"fP6Toff ", "        "}, // additional tuning offset in cent
+  {"sP6flip ", "        "}, // Flip layout 180 degrees [no/yes]
   {"iP6Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
   {"iP6Mx   ", "        "}, // MIDI CC for key X movement. Special values 127 = Disable, 122 = Pitch Bend
   {"iP6My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable
@@ -354,6 +360,7 @@ const ConfigParam default_config[] = {
   {"sP7jack2", "        "}, // jack2 mode [midi/pedal/linein]
   {"iP7tunin", "        "}, // load tuning [0-8]
   {"fP7Toff ", "        "}, // additional tuning offset in cent
+  {"sP7flip ", "        "}, // Flip layout 180 degrees [no/yes]
   {"iP7Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
   {"iP7Mx   ", "        "}, // MIDI CC for key X movement. Special values 127 = Disable, 122 = Pitch Bend
   {"iP7My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable
@@ -382,6 +389,7 @@ const ConfigParam default_config[] = {
   {"sP8jack2", "        "}, // jack2 mode [midi/pedal/linein]
   {"iP8tunin", "        "}, // load tuning [0-8]
   {"fP8Toff ", "        "}, // additional tuning offset in cent
+  {"sP8flip ", "        "}, // Flip layout 180 degrees [no/yes]
   {"iP8Mpres", "        "}, // MIDI CC for key pressure. Special values 127 = Disable, 120 = Polyphonic Pressure, 121 = Channel Pressure
   {"iP8Mx   ", "        "}, // MIDI CC for key X movement. Special values 127 = Disable, 122 = Pitch Bend
   {"iP8My   ", "        "}, // MIDI CC for key Y movement. Special values 127 = Disable

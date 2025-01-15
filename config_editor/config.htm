@@ -78,6 +78,7 @@ const doc = {
   fPxvolum: {text:"Volume", help:"[0.0-127.0]", check:function(x) {return clamp(x, 0, 255);}},
   fPxdecay: {text:"Decay", help:"[0.0-127.0]", check:function(x) {return clamp(x, 0, 255);}},
   fPxdecaP: {text:"Pedal decay", help:"[0.0-127.0]", check:function(x) {return clamp(x, 0, 255);}},
+  sPxflip:  {text:"Flip layout 180 degrees", help:"[no/yes]", options:["", "no", "yes"]},
 }
 
 function getDoc(key) {

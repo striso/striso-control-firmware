@@ -1283,6 +1283,13 @@ void load_preset(int n) {
         aux_jack_switch_mode_setting(JACK2_MODE_AUTODETECT);
     }
 
+    strset(key, 3, "flip ");
+    s = getConfigSetting(key);
+    if ((cmp8(s, "yes     ") && dis.flipdir == 1)
+        || (cmp8(s, "no      ") && dis.flipdir == -1)) {
+        dis.flip();
+    }
+
     key[0] = 'i';
     strset(key, 3, "tunin");
     i = getConfigInt(key);
