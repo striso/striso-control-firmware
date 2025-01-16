@@ -1372,7 +1372,7 @@ void load_preset(int n) {
     }
 
     key[0] = 'f';
-    strset(key, 3, "offse");
+    strset(key, 3, "thres");
     f = getConfigFloat(key);
     if (f >= 0.0f && f <= 1.0f) {
         config.zero_offset = f;
