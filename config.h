@@ -173,13 +173,13 @@ const ConfigParam default_config[] = {
   {"MConfig ", "v1.0    "}, // start tag
 
   // general settings
-  {"iGpreset", "1       "}, // Preset to load on start [1-8]
+  {"iGpreset", "        "}, // Preset to load on start [1-8]
   {"iGoct   ", "0       "}, // default octave [-2..2]
   {"sGaltkey", "settings"}, // Settings key mode [settings: Use key for settings (default), pedal: Disable settings and use key as pedal (for simplified use)]
   {"sGkeyord", "normal  "}, // Swap settings/glissando keys [normal: (default), swap: Swap settings and glissando key location]
 
   // preset 1
-  {"sP1name ", "default "},
+  {"sP1name ", "preset1 "},
   {"hP1color", "#380000 "},
   {"iP1Mpgm ", "        "}, // MIDI program change [0-127]
   {"iP1Mint ", "1       "}, // MIDI message interval in ms [1-127]
