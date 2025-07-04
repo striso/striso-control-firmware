@@ -223,37 +223,37 @@ class MotionSensor {
                     d = ((((last_rot_z-64)<<6) > rot_z)<<5)-(1<<4);
                     rot_z = __USAT(64+((rot_z+(1<<5)+d)>>6), 7)&0x7F;
                     if (acc_x != last_acc_x) {
-                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                        MidiSend3(MIDI_CONTROL_CHANGE,
                                            16, acc_x);
                         last_acc_x = acc_x;
                     }
                     if (acc_y != last_acc_y) {
-                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                        MidiSend3(MIDI_CONTROL_CHANGE,
                                            17, acc_y);
                         last_acc_y = acc_y;
                     }
                     if (acc_z != last_acc_z) {
-                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                        MidiSend3(MIDI_CONTROL_CHANGE,
                                            18, acc_z);
                         last_acc_z = acc_z;
                     }
                     if (acc_abs != last_acc_abs) {
-                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                        MidiSend3(MIDI_CONTROL_CHANGE,
                                            19, acc_abs);
                         last_acc_abs = acc_abs;
                     }
                     if (rot_x != last_rot_x) {
-                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                        MidiSend3(MIDI_CONTROL_CHANGE,
                                            80, rot_x);
                         last_rot_x = rot_x;
                     }
                     if (rot_y != last_rot_y) {
-                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                        MidiSend3(MIDI_CONTROL_CHANGE,
                                            81, rot_y);
                         last_rot_y = rot_y;
                     }
                     if (rot_z != last_rot_z) {
-                        midi_usb_MidiSend3(1, MIDI_CONTROL_CHANGE,
+                        MidiSend3(MIDI_CONTROL_CHANGE,
                                            82, rot_z);
                         last_rot_z = rot_z;
                     }
