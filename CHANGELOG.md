@@ -1,5 +1,26 @@
 # Changelog
 
+## v2.2.2 - 2025-07-04
+
+With this firmware release a preset can be selected to load on power on. This is useful in some scenario's, but may cause unexpected behaviour if you forget that you or someone else changed the default.
+
+To load the default settings instead press the glissando button during power on.
+
+### Added
+- A preset can now be loaded at power on.
+- Add option to disable settings button for simplified use (for SoundLAB). Then it controls pedal instead.
+- Add option to switch settings and glissando button position
+- Pressing the glissando button at power on now loads default settings
+- Make sustain pedal decay values configurable in presets
+
+### Removed
+- Settings for aux jack and motion sensor in 'General'. A preset should now be used instead.
+
+### Changed
+- Semitone transpose is now dependent on tuning, and transposes by a minor second
+- Take into account per note offsets in MIDI note mode
+- Send motion over serial MIDI too. Since sending motion data is disabled by default it shouldn't cause problems
+
 ## v2.2.1 - 2023-04-05
 
 This firmware release finally brings pedal support to the Striso board!
