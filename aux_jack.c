@@ -362,6 +362,7 @@ void aux_jack_init(void) {
 
   adcStart(&ADCD3, &adccfg3);
 
+  // deprecated, keep loading if setting still exists
   const char* s = getConfigSetting("sGjack2 ");
   if (cmp8(s, "pedal_ex")) {
     aux_jack_switch_mode_setting(JACK2_MODE_PEDAL_EXPRESSION);

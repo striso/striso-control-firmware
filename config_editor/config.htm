@@ -41,7 +41,7 @@ const UF2_MAGIC_START1 = 0x9E5D5157 // Randomly selected
 const UF2_MAGIC_END = 0x0AB16F30 // Ditto
 const UF2_FAMILYID = 0xa21e1295 // Striso STM32H7 familyID
 
-const deprecated = {sGjack2:true, iGmotion:true};
+const deprecated = {"sGjack2 ":true, "iGmotion":true};
 const doc = {
   iGpreset: {text:"Preset to load on start", help:"[1-8]", check:function(x) {return clamp(x, 1, 8);}},
   iGoct:    {text:"Default octave", help:"[-2..2]", check:function(x) {return clamp(x, -2, 2);}},
@@ -414,6 +414,9 @@ function parseConfig(buf) {
     if (key === "MCfgEnd " || key.length === 0 || !/^[\x20-\x7E]*$/.test(key)) break
     value = buf.substring(i + 8, i + 16)
     if (key in cfgdata || key in deprecated) {
+      if (key in deprecated) {
+        cfgdata[key] = {default: ""}
+      }
       cfgdata[key]["current"] = value
     }
     else {
