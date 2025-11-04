@@ -1375,7 +1375,7 @@ void load_preset(int n) {
     strset(key, 3, "thres");
     f = getConfigFloat(key);
     if (f >= 0.0f && f <= 1.0f) {
-        config.zero_offset = f;
+        config.zero_offset = clamp(f, 0.0f, 0.5f) * (1 << 24);
     }
 
     strset(key, 3, "bendS");
@@ -1764,9 +1764,9 @@ float config_but(int but, int type, float adjust) {
     case (17): { // knob: key detection threshold
         int a = adjust * ((1 << 24) / 256);
         if (type > 0) {
-            config.zero_offset = clamp(config.zero_offset + a, 0, (1 << 24) / 16);
+            config.zero_offset = clamp(config.zero_offset + a, 0, 16 * (1 << 24) / 256 - 1);
         }
-        int dial = config.zero_offset / ((1 << 24) / 256);
+        int dial = clamp(config.zero_offset / ((1 << 24) / 256), 0, 15);
         led_updown_dial(dial);
         led_rgb3(dial * 10, dial * 5, 0);
         return 0; // TODO: sticky ends
