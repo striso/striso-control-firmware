@@ -72,6 +72,7 @@ const doc = {
   iPxMPEpb: {text:"MPE pitch bend range", help:"[12/24/48/96]", check:function(x) {return clamp(x, 1, 127);}},
   fPxthres: {text:"Key sensitivity threshold", help:"higher value increases note trigger force [0.0-0.5]", check:function(x) {return clamp(x, 0, 0.5);}},
   fPxbendS: {text:"Pitch bend range", help:"in semitones [-4.0-4.0]", check:function(x) {return clamp(x, -10, 10);}},
+  fPxbendZ: {text:"Pitch bend threshold", help:"[0.0,0.5]", check:function(x) {return clamp(x, 0, 0.5);}},
   fPxpresS: {text:"Key pressure factor", help:"[0.0-4.0]", check:function(x) {return clamp(x, 0, 10);}},
   fPxveloS: {text:"Key velocity factor", help:"[0.0-4.0]", check:function(x) {return clamp(x, 0, 10);}},
   fPxtiltS: {text:"Key tilt (y) factor", help:"[-4.0-4.0]", check:function(x) {return clamp(x, -10, 10);}},
