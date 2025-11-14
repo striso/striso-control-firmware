@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.2.3 - 2025-11-14
+
+Small bugfix release.
+
+## Fixed
+- Correctly load key sensitivity threshold (fPxthres) in preset
+- Configuration editor didn't work when deprecated **iGmotion** setting was changed
+
 ## v2.2.2 - 2025-07-04
 
 With this firmware release a preset can be selected to load on power on. This is useful in some scenario's, but may cause unexpected behaviour if you forget that you or someone else changed the default.
