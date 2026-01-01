@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.2.4 - 2026-01-01
+
+Bugfix release.
+
+## Fixed
+- Fix key X movement (iPnMx) setting disabling pitch bend
+- Don't load a preset on start when no preset is selected
+
 ## v2.2.3 - 2025-11-14
 
 Small bugfix release.
