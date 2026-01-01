@@ -970,7 +970,10 @@ class Instrument {
         }
 
         void update_voice(int but) {
-            float pb = bend_sensitivity * pow3(buttons[but].but_x);
+            float pb = 0.0f;
+            if (config.mpe_x == CFG_PITCH_BEND) {
+                pb = bend_sensitivity * pow3(buttons[but].but_x);
+            }
             float presf = buttons[but].pres * pres_sensitivity;
             float velof = buttons[but].vpres * velo_sensitivity;
             float y = clamp(buttons[but].but_y * y_sensitivity, -1.0f, 1.0f);
