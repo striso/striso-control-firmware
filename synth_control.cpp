@@ -2204,10 +2204,9 @@ void synth_control_init(void) {
     // Load general settings. Use default settings when portamento key is pressed on boot
     if (palReadLine(LINE_BUTTON_PORT)) {
         int i = getConfigInt("iGpreset");
-        if (!(i >= 1 && i <= 8)) {
-            i = 1;
+        if (i >= 1 && i <= 8) {
+            load_preset(i);
         }
-        load_preset(i);
         i = getConfigInt("iGoct   ");
         if (i >= -2 && i <= 2) {
             dis.change_note_offset(i * dis.notegen0);
